@@ -41,6 +41,8 @@ export default defineConfig({
   webServer: [
     {
       command: `npm run build && npm run preview -- --port ${PORT} --strictPort`,
+      // The on-device build must stay on-device even when a developer's own .env points at a real server.
+      env: { VITE_SUPABASE_URL: '', VITE_SUPABASE_ANON_KEY: '' },
       url: `http://localhost:${PORT}`,
       reuseExistingServer: false,
       timeout: 180_000,

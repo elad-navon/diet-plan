@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { addDays, toEpochDay } from '../time';
-import { buildWeightChart, type PlanLine } from './index';
+import { buildWeightChart, monthTicks, type PlanLine } from './index';
 
 const TODAY = '2026-10-01';
 const day = (date: string): number => toEpochDay(date);
@@ -162,5 +162,52 @@ describe('recent view: zoom to the last weeks', () => {
       view: 'recent',
     });
     expect(old.weights.map((w) => w.date)).toEqual(['2026-11-25']);
+  });
+});
+
+describe('month labels on the horizontal axis', () => {
+  const labels = (from: string, to: string) =>
+    monthTicks(day(from), day(to)).map((t) => [t.date.slice(0, 7), t.showYear, t.edge]);
+
+  it('labels each 1st of a month, never a specific day, and at most four of them', () => {
+    const ticks = monthTicks(day('2026-10-02'), day('2027-06-11'));
+    expect(ticks.length).toBeLessThanOrEqual(4);
+    for (const tick of ticks) expect(tick.date.endsWith('-01')).toBe(true);
+    expect(ticks[0]).toMatchObject({ edge: false, showYear: true });
+  });
+
+  it('names the starting month at the left edge when the first month start is far from it', () => {
+    expect(labels('2026-10-02', '2027-01-20')).toEqual([
+      ['2026-10', true, true],
+      ['2026-11', false, false],
+      ['2026-12', false, false],
+      ['2027-01', true, false],
+    ]);
+  });
+
+  it('keeps every month on a short window and omits the edge label when a month starts near the left', () => {
+    expect(labels('2026-09-25', '2026-12-20')).toEqual([
+      ['2026-10', true, false],
+      ['2026-11', false, false],
+      ['2026-12', false, false],
+    ]);
+  });
+
+  it('adds the year at the first label, at every January and when the year changes', () => {
+    const ticks = monthTicks(day('2026-11-20'), day('2027-03-10'));
+    expect(ticks.map((t) => [t.date.slice(0, 7), t.showYear])).toEqual([
+      ['2026-12', true],
+      ['2027-01', true],
+      ['2027-02', false],
+      ['2027-03', false],
+    ]);
+  });
+
+  it('names the starting month when the whole axis lies inside one month', () => {
+    expect(labels('2026-10-05', '2026-10-25')).toEqual([['2026-10', true, true]]);
+  });
+
+  it('never shows more than four labels, even over several years', () => {
+    expect(monthTicks(day('2026-01-15'), day('2029-01-15')).length).toBeLessThanOrEqual(4);
   });
 });

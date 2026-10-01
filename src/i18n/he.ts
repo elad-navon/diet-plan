@@ -193,7 +193,7 @@ export const he = {
     email: 'כתובת אימייל',
     sendCode: 'שליחת קוד',
     sending: 'שולח…',
-    codeSent: (email: string) => `שלחנו קוד בן 6 ספרות אל ${email}. לפעמים זה לוקח דקה.`,
+    codeSent: (email: string) => `שלחנו קוד אל ${email}. לפעמים זה לוקח דקה.`,
     code: 'הקוד מהאימייל',
     verify: 'כניסה',
     verifying: 'בודק…',
@@ -201,7 +201,7 @@ export const he = {
     resendIn: (seconds: number) => `אפשר לבקש קוד חדש בעוד ${seconds} שניות`,
     changeEmail: 'להחליף כתובת',
     emailInvalid: 'הכנס כתובת אימייל תקינה',
-    codeInvalid: 'הקוד צריך להיות בן 6 ספרות',
+    codeInvalid: 'הקוד מורכב מספרות בלבד (כפי שהופיע באימייל)',
     errors: {
       invalid_email: 'כתובת האימייל לא תקינה',
       invalid_code: 'הקוד שגוי או שפג תוקפו. אפשר לבקש קוד חדש.',
@@ -258,7 +258,7 @@ export const he = {
     legendCone: 'טווח סביר',
     confirmDate: 'אשר תאריך חדש',
     dateAdjusted: (date: string) =>
-      `התאריך שביקשת קרוב מדי כדי להגיע ליעד בצורה בטוחה. התאריך הריאלי הוא ${date}.`,
+      `התאריך שביקשת קרוב מדי כדי להגיע ליעד בצורה בטוחה. מועד ריאלי: ${date}.`,
     rateAdjusted: 'הקצב הוגבל מטעמי בטיחות.',
     notFeasible:
       'לפי ההוצאה האנרגטית המשוערת שלך, אין מרווח בטוח לגירעון קלורי. אפשר לבחור בשמירה על המשקל או להעלות את רמת הפעילות.',

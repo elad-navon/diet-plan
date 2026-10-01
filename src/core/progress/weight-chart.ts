@@ -1,6 +1,6 @@
 import { computeTrend, type WeightEntry } from '../nutrition';
 import { NUTRITION_CONFIG } from '../nutrition/config';
-import { toEpochDay, type LocalDate } from '../time';
+import { formatLocalDate, fromEpochDay, parseLocalDate, toEpochDay, type LocalDate } from '../time';
 
 /**
  * Geometry of the weight chart: weigh-ins, their smoothed trend, and the plan's *projection* with an
@@ -62,6 +62,62 @@ export const RECENT_BACK_DAYS = 42;
 export const RECENT_FORWARD_DAYS = 28;
 
 const dayOf = (date: LocalDate): number => toEpochDay(date);
+
+/** A label position on the horizontal axis: a month, never a specific day (a projection is not that exact). */
+export interface MonthTick {
+  /** Where the label sits (days since 1970-01-01). */
+  day: number;
+  /** A day inside the month the label names. */
+  date: LocalDate;
+  /** Also print the year (first label, every January, and whenever the year changes). */
+  showYear: boolean;
+  /** The label stands at the left edge and names the month the axis starts in, rather than marking a 1st. */
+  edge: boolean;
+}
+
+const MAX_MONTH_LABELS = 4;
+/** A month start closer than this share of the width to the left edge makes the edge label unnecessary. */
+const EDGE_LABEL_GAP = 0.22;
+
+/**
+ * Month labels for a horizontal axis from `startDay` to `endDay`: one at each 1st of a month, thinned so at most
+ * four fit, plus a label for the starting month at the left edge when no month starts near it.
+ */
+export function monthTicks(startDay: number, endDay: number): MonthTick[] {
+  const span = Math.max(1, endDay - startDay);
+  const first = parseLocalDate(fromEpochDay(startDay));
+  const starts: number[] = [];
+  for (let year = first.year, month = first.month; ;) {
+    const day = dayOf(formatLocalDate(year, month, 1));
+    if (day > endDay) break;
+    if (day >= startDay) starts.push(day);
+    month += 1;
+    if (month > 12) {
+      month = 1;
+      year += 1;
+    }
+  }
+
+  const needsEdge = starts.length === 0 || (starts[0] ?? 0) - startDay > span * EDGE_LABEL_GAP;
+  const room = needsEdge ? MAX_MONTH_LABELS - 1 : MAX_MONTH_LABELS;
+  const step = Math.max(1, Math.ceil(starts.length / room));
+  const kept = starts.filter((_, i) => i % step === 0);
+
+  const ticks: MonthTick[] = [];
+  if (needsEdge) {
+    ticks.push({ day: startDay, date: fromEpochDay(startDay), showYear: false, edge: true });
+  }
+  for (const day of kept)
+    ticks.push({ day, date: fromEpochDay(day), showYear: false, edge: false });
+
+  let previousYear: number | null = null;
+  return ticks.map((tick, index) => {
+    const { year, month } = parseLocalDate(tick.date);
+    const showYear = index === 0 || month === 1 || year !== previousYear;
+    previousYear = year;
+    return { ...tick, showYear };
+  });
+}
 
 /** Planned weight on `day` for a straight descent at `rate` kg/week, never below the target. */
 function weightAt(plan: PlanLine, rate: number, day: number): number {

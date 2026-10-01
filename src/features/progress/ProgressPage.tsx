@@ -7,7 +7,7 @@ import { shouldSuggestRecalc } from '../../core/nutrition';
 import { buildWeightChart, type PlanLine, type WeightChartView } from '../../core/progress';
 import { addDays, localDateOf } from '../../core/time';
 import { type StoredPlan } from '../../data';
-import { formatShortDate } from '../../i18n/format';
+import { formatMonthYear, formatShortDate } from '../../i18n/format';
 import { formatDecimal, he } from '../../i18n/he';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
@@ -70,7 +70,7 @@ function ProgressContent() {
     shouldSuggestRecalc(current.plan.startWeightKg, trendNow);
 
   const projected = current?.plan.projectedDate
-    ? ` ${he.onboarding.projectionReach(formatShortDate(current.plan.projectedDate, tz))}.`
+    ? ` ${he.onboarding.projectionReach(formatMonthYear(current.plan.projectedDate, tz))}.`
     : '';
   const weightSummary =
     (trendNow !== null

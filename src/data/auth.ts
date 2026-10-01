@@ -31,7 +31,8 @@ export interface AuthService {
 }
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const CODE_PATTERN = /^\d{6}$/;
+/** The server decides the code length (6 by default, up to 10; this project uses 8), so accept any of them. */
+const CODE_PATTERN = /^\d{6,10}$/;
 
 /** Trimmed, lower-cased address, or null if it does not look like one. */
 export function normalizeEmail(text: string): string | null {
@@ -39,7 +40,7 @@ export function normalizeEmail(text: string): string | null {
   return EMAIL_PATTERN.test(email) && email.length <= 254 ? email : null;
 }
 
-/** The six digits, or null. Spaces are ignored: codes are often pasted as "123 456". */
+/** The digits of the code, or null. Spaces are ignored: codes are often pasted as "1234 5678". */
 export function normalizeCode(text: string): string | null {
   const code = text.replace(/\s+/g, '');
   return CODE_PATTERN.test(code) ? code : null;

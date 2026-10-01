@@ -44,12 +44,14 @@ describe('sign-in input', () => {
     expect(normalizeEmail(text)).toBeNull();
   });
 
-  it('accepts six digits, also pasted with spaces', () => {
+  it('accepts a code of any length the server may use (6 to 10 digits), also pasted with spaces', () => {
     expect(normalizeCode('123456')).toBe('123456');
-    expect(normalizeCode(' 123 456 ')).toBe('123456');
+    expect(normalizeCode('12345678')).toBe('12345678');
+    expect(normalizeCode(' 1234 5678 ')).toBe('12345678');
+    expect(normalizeCode('1234567890')).toBe('1234567890');
   });
 
-  it.each(['', '12345', '1234567', '12a456', '12-456'])('rejects the code "%s"', (text) => {
+  it.each(['', '12345', '12345678901', '12a456', '12-456'])('rejects the code "%s"', (text) => {
     expect(normalizeCode(text)).toBeNull();
   });
 

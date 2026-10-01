@@ -1,7 +1,7 @@
 import { buildWeightChart } from '../../core/progress';
 import { type Plan, type PlanOutcome } from '../../core/nutrition';
 import { type LocalDate, type Tz } from '../../core/time';
-import { formatShortDate } from '../../i18n/format';
+import { formatMonthYear } from '../../i18n/format';
 import { formatDecimal, formatInt, he } from '../../i18n/he';
 import { Button } from '../../ui/Button';
 import { WeightChart } from '../progress/WeightChart';
@@ -76,7 +76,7 @@ export function PlanResult({
   }
 
   const { plan } = outcome;
-  const projected = plan.projectedDate ? formatShortDate(plan.projectedDate, tz) : null;
+  const projected = plan.projectedDate ? formatMonthYear(plan.projectedDate, tz) : null;
   const chart =
     plan.goalType === 'lose' && plan.targetWeightKg !== null && plan.weeklyRateKg > 0
       ? buildWeightChart({
@@ -100,7 +100,7 @@ export function PlanResult({
       {outcome.kind === 'needs_confirmation' && plan.projectedDate && (
         <div className="space-y-2 rounded-xl border border-warning p-3" role="status">
           <p className="text-base">
-            {he.onboarding.dateAdjusted(formatShortDate(plan.projectedDate, tz))}
+            {he.onboarding.dateAdjusted(formatMonthYear(plan.projectedDate, tz))}
           </p>
           <Button variant="primary" onClick={onConfirmDate}>
             {he.onboarding.confirmDate}

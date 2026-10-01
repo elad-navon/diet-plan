@@ -1,7 +1,7 @@
 import { useId } from 'react';
-import { type DayKg, type WeightChartModel } from '../../core/progress';
-import { fromEpochDay, type Tz } from '../../core/time';
-import { formatDayMonth } from '../../i18n/format';
+import { monthTicks, type DayKg, type WeightChartModel } from '../../core/progress';
+import { type Tz } from '../../core/time';
+import { formatMonthLabel } from '../../i18n/format';
 import { formatDecimal, he } from '../../i18n/he';
 
 const W = 360;
@@ -52,7 +52,7 @@ export function WeightChart({ model, tz, summary, showWeighIns = true }: WeightC
         .join(' ')} Z`
     : null;
 
-  const xTicks = [0, 1, 2, 3].map((i) => Math.round(startDay + ((endDay - startDay) * i) / 3));
+  const xTicks = monthTicks(startDay, endDay);
   const hasTrend = showWeighIns && model.trend.length > 0;
 
   return (
@@ -139,16 +139,16 @@ export function WeightChart({ model, tz, summary, showWeighIns = true }: WeightC
           stroke="var(--axis)"
           strokeWidth="1"
         />
-        {xTicks.map((day, index) => (
+        {xTicks.map((tick) => (
           <text
-            key={day}
-            x={x(day)}
+            key={tick.day}
+            x={x(tick.day)}
             y={H - 10}
-            textAnchor={index === 0 ? 'start' : index === xTicks.length - 1 ? 'end' : 'middle'}
+            textAnchor={tick.edge ? 'start' : x(tick.day) > W - PAD.right - 26 ? 'end' : 'middle'}
             fontSize="11"
             fill="var(--muted)"
           >
-            {formatDayMonth(fromEpochDay(day), tz)}
+            {formatMonthLabel(tick.date, tz, tick.showYear)}
           </text>
         ))}
 

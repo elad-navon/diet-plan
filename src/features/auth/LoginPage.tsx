@@ -10,7 +10,7 @@ const RESEND_SECONDS = 60;
 type Step = 'email' | 'code';
 
 /**
- * Sign-in with an e-mailed six-digit code. No password to remember; the first sign-in creates the account.
+ * Sign-in with an e-mailed one-time code. No password to remember; the first sign-in creates the account.
  * Shown instead of the app until someone is signed in.
  */
 export function LoginPage({ auth }: { auth: AuthService }) {
