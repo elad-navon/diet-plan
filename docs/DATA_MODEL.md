@@ -22,7 +22,7 @@
 `id` · `user_id` · `effective_from date` · `UNIQUE(user_id, effective_from)` · `engine_version` · `reason ∈ {onboarding,profile_edit,goal_edit,activity_edit,schedule_edit,recalc}` ·
 קלטים: `inputs jsonb` (מין, גיל, גובה, משקל, פעילות, יעד מבוקש) + עמודות לשאילתות: `goal_type ∈ {lose,maintain,gain}`, `activity_level`, `start_weight_kg`, `start_date`, `target_weight_kg`, `weekly_rate_kg`, `projected_date` ·
 תוצאות: `bmr`, `tdee`, `kcal_target int 1200..6000`, `protein_g/carbs_g/fat_g int null`, `macro_state ∈ {ok,relaxed,low_carb,conflict}`, `plan_state ∈ {ok,adjusted_rate,lose_not_feasible,date_adjusted}`, `warnings jsonb` ·
-`meal_schedule jsonb` (3–6 Slots; חלונות לא חופפים; משקלים סכומם 1±0.001; מאומת ב-RPC).
+`meal_schedule jsonb` (3–4 Slots, כל `id` מ-{breakfast,lunch,snack,dinner} לכל היותר פעם אחת; חלונות לא חופפים ובסדר זמן; משקלים סכומם 1±0.001; מאומת ב-RPC).
 
 **`weight_entries`**: `id`, `user_id`, `local_date` (נגזר בשרת), `measured_at`, `tz`, `weight_kg numeric(4,1) 30..350`, `UNIQUE(user_id, local_date)` (שקילה מאוחרת באותו יום מחליפה), `version`. שינוי >3 ק"ג מהשקילה האחרונה → אישור בממשק.
 
