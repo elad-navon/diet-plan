@@ -1,0 +1,9 @@
+node_modules
+dist
+coverage
+playwright-report
+test-results
+package-lock.json
+# Hebrew spec docs: tables and RTL text are hand-maintained
+docs
+*.md

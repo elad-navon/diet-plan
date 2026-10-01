@@ -1,0 +1,75 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens. Status colors are meaning-bearing (ok / warn / over) and must always be paired
+ * with an icon + text, never color alone (docs/TEST_PLAN.md A11Y-03). Values here are placeholders:
+ * contrast (4.5:1 text, 3:1 graphics) is verified by an automated test in the accessibility stage.
+ */
+:root {
+  color-scheme: light dark;
+  --canvas: #f7f8f5;
+  --surface: #ffffff;
+  --ink: #1b2420;
+  --muted: #5c6a63;
+  --line: #d9e0db;
+  --accent: #1f7a5a;
+  --ok: #1f7a5a;
+  --warn: #a35f00;
+  --over: #b3261e;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --canvas: #101512;
+    --surface: #1a211d;
+    --ink: #e8eeea;
+    --muted: #a3b1a9;
+    --line: #2c3731;
+    --accent: #52c79b;
+    --ok: #52c79b;
+    --warn: #f0b44c;
+    --over: #ff8a80;
+  }
+}
+
+:root[data-theme='dark'] {
+  --canvas: #101512;
+  --surface: #1a211d;
+  --ink: #e8eeea;
+  --muted: #a3b1a9;
+  --line: #2c3731;
+  --accent: #52c79b;
+  --ok: #52c79b;
+  --warn: #f0b44c;
+  --over: #ff8a80;
+}
+
+@theme inline {
+  --font-sans: 'Heebo Variable', system-ui, sans-serif;
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-over: var(--over);
+}
+
+@layer base {
+  body {
+    @apply bg-canvas font-sans text-ink antialiased;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

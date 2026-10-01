@@ -1,0 +1,30 @@
+# IMPLEMENTATION_PLAN – תוכנית מימוש
+
+> **סטטוס:** טיוטה לסקירה (v0.1) · **תאריך:** 2026-10-01 · **נגזר מ:** התוכנית המאושרת, חלקים J.1, J.3
+> **מזהי סעיפים:** האותיות A–J הן מרחב שמות גלובלי בין המסמכים (ראו [README](README.md)).
+> **קשור:** [TEST_PLAN](TEST_PLAN.md) · [DEFINITION_OF_DONE](DEFINITION_OF_DONE.md) · [ARCHITECTURE](ARCHITECTURE.md)
+
+**מטרת המסמך:** שלבי המימוש (0–10) עם שער יציאה לכל שלב, דרישות מקדימות ובדיקת עקביות של ה-Spec. **אין להתחיל בקוד לפני אישור המסמכים (שלב 0).**
+
+---
+
+
+## J.1 שלבים (כל שלב נסגר רק כשהשער שלו ירוק)
+| שלב | תוכן | שער יציאה (Exit gate) |
+|---|---|---|
+| **0 – מסמכים** | הפקת 8 המסמכים ל-`docs/` מתוך חלקים A–I; סקירה שלך | **אישורך – לפני כל קוד** |
+| **1 – יסודות** | `git init` + CI (לפי B4), Vite/React/TS, Tailwind RTL + Heebo, ESLint (גבולות שכבות, `no-Date`, `no-danger`), Vitest, Playwright, Supabase local, מבנה `core/` | `tsc`+lint+Unit ריק ירוקים ב-CI |
+| **2 – ליבה (TDD)** | `core/time` (Clock, wallToInstant, Corpus), `core/nutrition` (V1–V7 + Property), `core/schedule`, `core/recommend` (R1–R7), `core/dayview`, `core/contracts` (Zod) | NUT-*, TIME-01..04,08,10, REC-* ירוקים |
+| **3 – מסד נתונים** | Migrations: 6 טבלאות v1 (profiles, target_plans, weight_entries, meals, favorites, audit_events), Triggers, RPC, RLS, `target_for`; pgTAP למטריצה המלאה; Seed. **בלי טבלאות AI** | RLS-*, DB-*, INT-01..03,08,10, TIME-05 ירוקים |
+| **4 – מאגר מזון** | `scripts/build-food-db` (CSV של משרד הבריאות → JSON קומפקטי + שער איכות נתונים), `core/food` (נרמול עברית, חיפוש, חישוב כמות), ייחוס מקור, רשימת שאילתות Golden לסקירתך | FOOD-01..04, FOOD-07 ירוקים |
+| **5 – אפליקציה: Auth ו-Onboarding** | OTP, הסכמות/הצהרות, אשף 4 שלבים, מסך תוצאה (V1–V7 בממשק), `apply_plan_change` | E2E-01, NUT-03/05/06/08 ברמת UI |
+| **6 – "היום" והזנה** | טבעת, מאקרו, רשימה, AddMealSheet (חיפוש מאגר מזון / ידני / מועדפים), עריכה/מחיקה/Undo, Idempotency+OCC+Optimistic | E2E-02..05,12, INT-04..09, ERR-01..06, FOOD-05,06,08 |
+| **7 – גרף מרכזי והמלצות** | `ChartModel`+SVG, טבלה חלופית, NextMealCard, מאגר הצעות (60), Seams | CHART-*, REC-* ברמת UI, E2E-06 |
+| **8 – התקדמות/הגדרות/יצוא** | משקל+Trend+חרוט, שבועי, שקילה, עריכת פרופיל/יעד (Snapshot), יצוא JSON/CSV, מחיקת חשבון, מועדפים מלאים | E2E-07..10, EXP-01, FAV-01, DB-04/05/08 |
+| **9 – PWA, נגישות, Responsive** | SW (prompt-update), Offline Shell/Cache, Install, Hardening, axe, Snapshots בכל הרוחבים | PWA-*, A11Y-*, RESP-01, Lighthouse |
+| **10 – אבטחה ושחרור** | Pass אבטחה מלא, בדיקת DST 2026-10-25, Load קל, רשימת שחרור, README פריסה (Supabase, SMTP, Secrets, אירוח) | כל שערי H.6 ירוקים; כל P0 עובר |
+
+**דרישות מקדימות ממך:** פרויקט Supabase (חינמי) · אירוח חינמי · חשבון GitHub (אופציונלי) · ספק SMTP רק אם יותר ממשתמש אחד יתחבר · **סקירת רשימת שאילתות Golden של החיפוש** · יועץ משפטי לפרטיות (אופציונלי). **לא נדרש:** חשבון/מפתח Anthropic, כרטיס אשראי.
+
+## J.3 אימות ה-Spec עצמו (לפני מימוש)
+בדיקת עקביות צולבת: (1) כל קוד שגיאה ב-D.5 מופיע ב-G.2 וב-I · (2) כל טבלה/תא ב-E.4 מכוסים ב-RLS-01 · (3) כל וקטור V1–V7/R1–R7 משוחזר בדיקות U · (4) כל P-ID ב-A ממופה לבדיקה ב-I · (5) כל קבוע ב-F.1 מופיע פעם אחת ב-`NUTRITION_CONFIG`.
