@@ -22,3 +22,6 @@ evals/reports/
 .DS_Store
 Thumbs.db
 *.log
+
+# raw downloads of the Ministry of Health nutrition database (~8 MB, re-created by npm run build:food-db)
+data/raw/
