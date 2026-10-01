@@ -23,11 +23,14 @@
   "dependencies": {
     "@fontsource-variable/heebo": "^5.3.0",
     "@supabase/supabase-js": "^2.117.2",
+    "@tanstack/react-query": "^5.104.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
+    "react-router": "^8.4.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^9.39.5",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/vite": "^4.3.3",

@@ -1,8 +1,52 @@
-export function App() {
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useState } from 'react';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
+import { ServicesProvider, type Services } from './app/services';
+import { OnboardingPage } from './features/onboarding/OnboardingPage';
+import { WelcomePage } from './features/onboarding/WelcomePage';
+import { ProgressPage } from './features/progress/ProgressPage';
+import { SettingsPage } from './features/settings/SettingsPage';
+import { AppShell } from './features/shell/AppShell';
+import { RequireProfile } from './features/shell/ProfileGate';
+import { TodayPage } from './features/today/TodayPage';
+import { ToastProvider } from './ui/Toast';
+
+/** Everything the app is made of: data services, caching, messages and the screens. */
+export function App({ services }: { services?: Services }) {
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        // Data is local and invalidated by the mutations that change it, so it never goes stale by itself.
+        defaultOptions: {
+          queries: { staleTime: Infinity, retry: false, refetchOnWindowFocus: false },
+        },
+      }),
+  );
+
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-3 p-6">
-      <h1 className="text-3xl font-bold text-ink">יומן תזונה</h1>
-      <p className="text-muted">שלד האפליקציה מוכן. המסכים האמיתיים נבנים בשלבים הבאים.</p>
-    </main>
+    <ServicesProvider {...(services ? { services } : {})}>
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/welcome" element={<WelcomePage />} />
+              <Route
+                element={
+                  <RequireProfile>
+                    <AppShell />
+                  </RequireProfile>
+                }
+              >
+                <Route path="/today" element={<TodayPage />} />
+                <Route path="/progress" element={<ProgressPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/settings/goal" element={<OnboardingPage mode="edit" />} />
+              </Route>
+              <Route path="*" element={<Navigate to="/today" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </ToastProvider>
+      </QueryClientProvider>
+    </ServicesProvider>
   );
 }

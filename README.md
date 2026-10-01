@@ -11,12 +11,14 @@
 | `npm test` | בדיקות Vitest (כולל בדיקת חוקי הארכיטקטורה) |
 | `npm run e2e` | Playwright מול ה-build (פורט 4391, לא משתמש בשרת קיים) |
 | `npm run format` | Prettier |
+| `npm run build:food-db` | בניית מאגר המזון מנתוני משרד הבריאות (`-- --refresh` להורדה מחדש) |
+| `SCREENSHOTS=1 npx playwright test e2e/screens.spec.ts` | צילומי מסך לבדיקה ויזואלית (נשמרים ב-`test-results/screens`) |
 
 ## מבנה
 ```
 src/core/      TypeScript טהור – ללא React/DOM/Supabase; זמן רק דרך core/time
-src/data/      Repositories + Supabase (לא מייבא מ-features)
 src/features/  UI בלבד (לא מייבא Supabase ישירות)
+src/data/      Repositories (לא מייבא מ-features): כרגע אחסון מקומי במכשיר; Supabase ייכנס מאחורי אותם ממשקים
 ```
 הגבולות והאיסור על `Date` גולמי נאכפים ב-[eslint.config.js](eslint.config.js) ונבדקים ב-[tests/lint-rules.test.ts](tests/lint-rules.test.ts).
 

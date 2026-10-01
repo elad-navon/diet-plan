@@ -1,47 +1,56 @@
 @import 'tailwindcss';
 
 /*
- * Design tokens. Status colors are meaning-bearing (ok / warn / over) and must always be paired
- * with an icon + text, never color alone (docs/TEST_PLAN.md A11Y-03). Values here are placeholders:
- * contrast (4.5:1 text, 3:1 graphics) is verified by an automated test in the accessibility stage.
+ * Design tokens. The neutral and chart colors are the validated reference palette (colorblind-safe
+ * and contrast-checked in light and dark); tests/contrast.test.ts guards the text pairs below.
+ *
+ * Meaning is never carried by color alone: status colors always come with an icon and a label
+ * (docs/TEST_PLAN.md A11Y-03), and a color is used for text only through the ink tokens.
  */
 :root {
   color-scheme: light dark;
-  --canvas: #f7f8f5;
-  --surface: #ffffff;
-  --ink: #1b2420;
-  --muted: #5c6a63;
-  --line: #d9e0db;
-  --accent: #1f7a5a;
-  --ok: #1f7a5a;
-  --warn: #a35f00;
-  --over: #b3261e;
+  --canvas: #f9f9f7;
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --muted: #52514e; /* secondary ink - also used for chart axis text */
+  --faint: #e1e0d9; /* hairlines: grid, card borders */
+  --axis: #c3c2b7;
+  --accent: #256abf;
+  --on-accent: #ffffff;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --good: #0ca30c;
+  --warning: #fab219;
+  --serious: #ec835a;
+  --critical: #d03b3b;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --canvas: #101512;
-    --surface: #1a211d;
-    --ink: #e8eeea;
-    --muted: #a3b1a9;
-    --line: #2c3731;
-    --accent: #52c79b;
-    --ok: #52c79b;
-    --warn: #f0b44c;
-    --over: #ff8a80;
+  :root:where(:not([data-theme='light'])) {
+    --canvas: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #ffffff;
+    --muted: #c3c2b7;
+    --faint: #2c2c2a;
+    --axis: #383835;
+    --accent: #3987e5;
+    --on-accent: #0b0b0b;
+    --series-1: #3987e5;
+    --series-2: #d95926;
   }
 }
 
 :root[data-theme='dark'] {
-  --canvas: #101512;
-  --surface: #1a211d;
-  --ink: #e8eeea;
-  --muted: #a3b1a9;
-  --line: #2c3731;
-  --accent: #52c79b;
-  --ok: #52c79b;
-  --warn: #f0b44c;
-  --over: #ff8a80;
+  --canvas: #0d0d0d;
+  --surface: #1a1a19;
+  --ink: #ffffff;
+  --muted: #c3c2b7;
+  --faint: #2c2c2a;
+  --axis: #383835;
+  --accent: #3987e5;
+  --on-accent: #0b0b0b;
+  --series-1: #3987e5;
+  --series-2: #d95926;
 }
 
 @theme inline {
@@ -50,16 +59,37 @@
   --color-surface: var(--surface);
   --color-ink: var(--ink);
   --color-muted: var(--muted);
-  --color-line: var(--line);
+  --color-faint: var(--faint);
+  --color-axis: var(--axis);
   --color-accent: var(--accent);
-  --color-ok: var(--ok);
-  --color-warn: var(--warn);
-  --color-over: var(--over);
+  --color-on-accent: var(--on-accent);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-good: var(--good);
+  --color-warning: var(--warning);
+  --color-serious: var(--serious);
+  --color-critical: var(--critical);
 }
 
 @layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     @apply bg-canvas font-sans text-ink antialiased;
+  }
+
+  /* One consistent, visible keyboard focus ring (WCAG 2.2 AA). */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  /* Dialogs animate in unless the user asks for reduced motion. */
+  dialog::backdrop {
+    background: rgb(0 0 0 / 0.45);
   }
 
   @media (prefers-reduced-motion: reduce) {
