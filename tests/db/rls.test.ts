@@ -313,12 +313,18 @@ describe('The set-up itself (guards against a forgotten table or function)', () 
     expect(granted).toEqual(expected);
   });
 
-  it('only signed-in users can run the public functions', async () => {
+  it('only signed-in users can run the public functions, except the harmless keep_alive', async () => {
     const rows = await db.admin.query<{ proname: string }>(
       `select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
        where n.nspname = 'public'
          and (has_function_privilege('anon', p.oid, 'execute') or has_function_privilege('public', p.oid, 'execute'))`,
     );
-    expect(rows).toEqual([]);
+    expect(rows.map((r) => r.proname)).toEqual(['keep_alive']);
+  });
+
+  it('keep_alive answers anyone with the server time and nothing else', async () => {
+    const rows = await db.anon.query<{ now: string }>('select public.keep_alive()::text as now');
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.now).toMatch(/^\d{4}-\d{2}-\d{2} /);
   });
 });

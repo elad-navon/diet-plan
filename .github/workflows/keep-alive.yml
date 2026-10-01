@@ -1,0 +1,32 @@
+name: Keep Supabase awake
+
+# A free Supabase project is paused after about a week of low activity. This asks the database a trivial
+# question every three days, so the pause does not happen while the app is not in use.
+# If the project is already paused (or unreachable) the run fails and GitHub emails the repository owner.
+# Needs the same two repository variables as the Pages deployment: SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY.
+# Note: GitHub switches scheduled workflows off in a public repository after 60 days without any repository
+# activity; a push (or running this workflow by hand) switches it back on.
+
+on:
+  schedule:
+    - cron: '17 5 */3 * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ask the database for the time
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          curl --fail --silent --show-error --max-time 30 --retry 2 --retry-delay 5 \
+            -X POST "$SUPABASE_URL/rest/v1/rpc/keep_alive" \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{}'
+          echo
