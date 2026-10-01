@@ -13,6 +13,14 @@
 
 ## E.1 טבלאות
 
+> **מימוש בפועל (2026-10-02, [`supabase/migrations/20261002000000_init.sql`](../supabase/migrations/20261002000000_init.sql)):** שש טבלאות (`profiles`, `target_plans`, `weight_entries`, `meals`, `favorites`, `audit_events`). הבדלים מהתכנון שלמטה, בכוונה:
+> - **`target_plans`** שומרת את הקלט והתוצאה המלאים כ-`inputs`/`result` (JSON) ורק את מה שהאפליקציה שואלת עליו כעמודות; לוח הארוחות נבדק בבסיס הנתונים (`_valid_schedule`, אותם כללים כמו `validateSchedule` ב-TS). אין פונקציית `target_for` ב-SQL: הבחירה "התוכנית שבתוקף ביום D" נעשית ב-`resolvePlanForDate` (TS) כי אין חישוב בצד השרת ב-v1.
+> - **ללא `FORCE ROW LEVEL SECURITY`**: פונקציות `SECURITY DEFINER` רצות כבעלים וצריכות לעקוף RLS; ההגנה היא ש-`anon`/`authenticated` אין להם הרשאות כתיבה ישירה (נבדק בטסט "הרשאות הטבלאות").
+> - **מחיקת חשבון** היא פונקציית SQL (`delete_my_account`) ולא Edge Function: אין צורך במפתח `service_role` בשרת. `reset_my_data` מוחקת את כל הנתונים ומשאירה את ההתחברות.
+> - פונקציות: `save_profile`, `save_plan` (מחליפה `apply_plan_change`), `add_meal`, `update_meal`, `delete_meal`, `restore_meal`, `upsert_weight`, `food_usage`, `mark_favorite_used`, `reset_my_data`, `delete_my_account`.
+> - המגבלות (60 ארוחות ליום, 200 מועדפים, חלון הזמן, גבולות הערכים) נבדקות בטסטים מול הקבועים של האפליקציה (`MEAL_LIMITS`, `WEIGHT_LIMITS`), כך ששינוי באחד בלי השני נכשל.
+> - **איך נבדק:** `tests/db/` מריץ את אותם קבצי SQL על Postgres אמיתי בתוך Vitest (PGlite, בלי Docker): מטריצת הרשאות, אידמפוטנטיות, גרסאות, מגבלות, Audit, מחיקת חשבון, והשוואת "איזה יום" בין TypeScript ל-Postgres סביב מעברי שעון (5 אזורים, 3 שנים). מה שאי אפשר להוכיח שם: חיבורים מקבילים אמיתיים והשכבה של Supabase עצמה (PostgREST/Auth) – נבדקים ידנית מול הפרויקט (ראו [SERVER_SETUP](SERVER_SETUP.md)).
+
 > **היקף v1 (2026-10-01):** הטבלאות `ai_estimates`, `ai_quota_counters`, `ai_global_counters`, העמודות `profiles.ai_consent_*` ו-`meals.ai_estimate_id / ai_original / corrected_at_save`, והפונקציות `consume/refund/get_ai_quota` – **נדחו** ואינן נכללות ב-migrations של v1 (migration עתידי יוסיף אותן). `meals.source ∈ {food_db, manual, favorite, copy}` (הערך `ai` שמור לעתיד). `meals.items[]` שומר Snapshot: `{ food_id?, food_db_version?, name, grams, unit?, count?, kcal, protein_g?, carbs_g?, fat_g? }`. בהתאם, ב-v1 יש **6 טבלאות**: profiles, target_plans, weight_entries, meals, favorites, audit_events.
 
 **`profiles`** (שורה למשתמש; זהות/הסכמות בלבד – לא יעדים)

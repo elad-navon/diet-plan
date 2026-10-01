@@ -93,7 +93,16 @@ export type DataErrorCode =
   | 'invalid'
   | 'limit_reached'
   | 'no_profile'
-  | 'plan_in_past';
+  | 'plan_in_past'
+  /** The server's clock says the time is too far ahead / too long ago (checked there, not on the phone). */
+  | 'in_future'
+  | 'too_old'
+  /** Not signed in, or the sign-in expired. */
+  | 'unauthenticated'
+  /** The server could not be reached. */
+  | 'network'
+  /** The server failed in a way the user cannot fix. */
+  | 'server';
 
 /** A failure the UI knows how to explain (maps to HTTP-style conflicts once a server is involved). */
 export class DataError extends Error {

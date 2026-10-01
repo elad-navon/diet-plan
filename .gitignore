@@ -1,12 +1,14 @@
 # dependencies & build output
 node_modules/
 dist/
+dist-e2e-server/
 coverage/
 
 # secrets - never commit (see docs/SECURITY_PLAN.md, SEC-02)
 .env
 .env.*
 !.env.example
+!.env.e2e-server
 supabase/.env
 supabase/.temp/
 

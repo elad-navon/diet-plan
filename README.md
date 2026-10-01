@@ -9,7 +9,8 @@
 | `npm run dev` | שרת פיתוח |
 | `npm run verify` | כל שערי ה-CI המקומיים: typecheck → lint → format → unit → build |
 | `npm test` | בדיקות Vitest (כולל בדיקת חוקי הארכיטקטורה) |
-| `npm run e2e` | Playwright מול ה-build (פורט 4391, לא משתמש בשרת קיים) |
+| `npm run e2e` | Playwright מול ה-build (פורט 4391 למצב מקומי, 4392 למצב שרת עם שרת מדומה; לא משתמש בשרת קיים) |
+| `npx vitest run tests/db` | בדיקות בסיס הנתונים: Postgres אמיתי בתוך Vitest (PGlite, בלי Docker) |
 | `npm run format` | Prettier |
 | `npm run build:food-db` | בניית מאגר המזון מנתוני משרד הבריאות (`-- --refresh` להורדה מחדש) |
 | `SCREENSHOTS=1 npx playwright test e2e/screens.spec.ts` | צילומי מסך לבדיקה ויזואלית (נשמרים ב-`test-results/screens`) |
@@ -18,7 +19,9 @@
 ```
 src/core/      TypeScript טהור – ללא React/DOM/Supabase; זמן רק דרך core/time
 src/features/  UI בלבד (לא מייבא Supabase ישירות)
-src/data/      Repositories (לא מייבא מ-features): כרגע אחסון מקומי במכשיר; Supabase ייכנס מאחורי אותם ממשקים
+src/data/      Repositories (לא מייבא מ-features): אחסון מקומי במכשיר (local/) או חשבון בשרת (supabase/) מאחורי אותם ממשקים
+supabase/      migrations: הסכמה, RLS והפונקציות (ראו docs/SERVER_SETUP.md לחיבור)
+tests/db/      בדיקות של ה-SQL הזה על Postgres אמיתי
 ```
 הגבולות והאיסור על `Date` גולמי נאכפים ב-[eslint.config.js](eslint.config.js) ונבדקים ב-[tests/lint-rules.test.ts](tests/lint-rules.test.ts).
 

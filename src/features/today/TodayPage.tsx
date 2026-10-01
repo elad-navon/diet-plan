@@ -11,13 +11,15 @@ import { buildDayChart, buildDayView, resolvePlanForDate } from '../../core/dayv
 import { type Recommendation, type Suggestion } from '../../core/recommend';
 import { DEFAULT_SCHEDULE } from '../../core/schedule';
 import { localDateOf } from '../../core/time';
-import { type StoredMeal } from '../../data';
+import { DataError, type StoredMeal } from '../../data';
+import { dataErrorMessage } from '../../i18n/data-errors';
 import { formatDayTitle } from '../../i18n/format';
 import { he } from '../../i18n/he';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { useToast } from '../../ui/Toast';
 import { AddMealSheet, type MealPrefill } from '../meals/AddMealSheet';
+import { LoadGate } from '../shell/LoadGate';
 import { useRequiredProfile } from '../shell/ProfileGate';
 import { CalorieRing } from './CalorieRing';
 import { DayChart } from './DayChart';
@@ -36,6 +38,17 @@ const CLOSED: SheetState = { open: false, editing: null, prefill: null };
 const round1 = (value: number): number => Math.round(value * 10) / 10;
 
 export function TodayPage() {
+  const tz = useRequiredProfile().timezone;
+  const date = localDateOf(useNow(), tz);
+  // The day is only shown once its meals and targets have really loaded (see LoadGate).
+  return (
+    <LoadGate queries={[usePlans(), useMealsOfDay(date)]}>
+      <TodayContent />
+    </LoadGate>
+  );
+}
+
+function TodayContent() {
   const profile = useRequiredProfile();
   const tz = profile.timezone;
   const now = useNow();
@@ -104,8 +117,8 @@ export function TodayPage() {
         actionLabel: he.undo,
         onAction: () => restoreMeal.mutate({ id: deleted.id, baseVersion: deleted.version }),
       });
-    } catch {
-      toast.show({ message: he.today.conflict });
+    } catch (error) {
+      toast.show({ message: dataErrorMessage(error instanceof DataError ? error.code : null) });
     }
   }
 

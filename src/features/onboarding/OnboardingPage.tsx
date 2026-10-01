@@ -13,7 +13,8 @@ import {
 import { parseDecimalInput } from '../../core/contracts';
 import { DEFAULT_SCHEDULE } from '../../core/schedule';
 import { addDays, localDateOf } from '../../core/time';
-import { type Profile, type StoredPlan } from '../../data';
+import { DataError, type Profile, type StoredPlan } from '../../data';
+import { dataErrorMessage } from '../../i18n/data-errors';
 import { he } from '../../i18n/he';
 import { Button } from '../../ui/Button';
 import { TextField } from '../../ui/Field';
@@ -29,6 +30,7 @@ import {
   type DraftField,
   type Step,
 } from './draft';
+import { LoadGate } from '../shell/LoadGate';
 import { PlanResult } from './PlanResult';
 
 const LAST_STEP: Step = 4;
@@ -54,14 +56,12 @@ function errorText(field: DraftField, code: string): string {
 export function OnboardingPage({ mode }: { mode: 'new' | 'edit' }) {
   const profile = useProfile();
   const plans = usePlans();
-  if (profile.isPending || plans.isPending) {
-    return (
-      <p role="status" className="p-6 text-muted">
-        {he.loading}
-      </p>
-    );
-  }
-  return <Wizard mode={mode} existing={profile.data ?? null} plans={plans.data ?? []} />;
+  // Never start (or edit) a profile before the stored one has been read: it could overwrite it.
+  return (
+    <LoadGate queries={[profile, plans]}>
+      <Wizard mode={mode} existing={profile.data ?? null} plans={plans.data ?? []} />
+    </LoadGate>
+  );
 }
 
 function Wizard({
@@ -88,7 +88,7 @@ function Wizard({
   const [errors, setErrors] = useState<DraftErrors>({});
   const [acknowledged, setAcknowledged] = useState(mode === 'edit');
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
 
   // Move focus to the step heading so screen readers announce where they are.
@@ -115,7 +115,7 @@ function Wizard({
       return;
     if (outcome.kind === 'needs_confirmation' || saving) return;
     setSaving(true);
-    setSaveError(false);
+    setSaveError(null);
     try {
       const saved: Profile = {
         sex: inputs.sex,
@@ -137,15 +137,15 @@ function Wizard({
         plan,
         createdAt: now,
       };
-      // Plan first, then profile, then the first weigh-in; the screens refresh once at the end, so nobody
-      // lands on "today" while the target is still missing.
-      await repos.plans.save(stored, today);
+      // Profile first (a plan belongs to a profile), then the plan, then the first weigh-in. The screens
+      // refresh once at the end, and the app only opens once both profile and plan exist.
       await repos.profile.save(saved);
+      await repos.plans.save(stored, today);
       await repos.weights.upsert({ id: newId(), kg: inputs.weightKg, measuredAt: now });
       await queryClient.invalidateQueries();
       void navigate('/today', { replace: true });
-    } catch {
-      setSaveError(true);
+    } catch (error) {
+      setSaveError(dataErrorMessage(error instanceof DataError ? error.code : null));
       setSaving(false);
     }
   }
@@ -317,7 +317,7 @@ function Wizard({
           )}
           {saveError && (
             <p role="alert" className="text-base font-medium">
-              {he.genericError}
+              {saveError}
             </p>
           )}
         </div>

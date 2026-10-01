@@ -2,6 +2,7 @@ import { type RecommendationNote, type DayStatus } from '../core/recommend';
 import { type MealSlot } from '../core/schedule';
 import { type ActivityLevel, type Sex, type ValidationErrorCode } from '../core/nutrition';
 import { type InputErrorCode } from '../core/contracts';
+import { type AuthErrorCode } from '../data/auth';
 
 /** All user-facing text lives here (Hebrew). Components never hard-code strings. */
 
@@ -174,6 +175,51 @@ export const he = {
     weight_out_of_range: 'הכנס משקל בין 30 ל-350 ק"ג',
   } satisfies Record<InputErrorCode, string>,
   genericError: 'משהו השתבש. נסה שוב.',
+  retry: 'נסה שוב',
+  loadFailed: 'לא הצלחנו לטעון את הנתונים.',
+  /** What a failed save says, by cause (see src/i18n/data-errors.ts). */
+  dataErrors: {
+    offline: 'אין חיבור לשרת. בדוק את האינטרנט ונסה שוב.',
+    signedOut: 'ההתחברות פגה. יש להתחבר מחדש.',
+    server: 'השרת לא זמין כרגע. נסה שוב בעוד רגע.',
+    timeInFuture: 'אי אפשר לדווח על העתיד. בדוק את השעה במכשיר.',
+    timeTooOld: 'אפשר לדווח עד 31 יום אחורה.',
+    noProfile: 'הפרופיל עדיין לא נשמר.',
+    planInPast: 'אי אפשר לשנות יעד של ימים שעברו.',
+  },
+  auth: {
+    title: 'התחברות',
+    intro: 'הנתונים נשמרים בחשבון שלך ומסונכרנים בין המכשירים. אין סיסמה: נשלח קוד לאימייל.',
+    email: 'כתובת אימייל',
+    sendCode: 'שליחת קוד',
+    sending: 'שולח…',
+    codeSent: (email: string) => `שלחנו קוד בן 6 ספרות אל ${email}. לפעמים זה לוקח דקה.`,
+    code: 'הקוד מהאימייל',
+    verify: 'כניסה',
+    verifying: 'בודק…',
+    resend: 'שליחת קוד חדש',
+    resendIn: (seconds: number) => `אפשר לבקש קוד חדש בעוד ${seconds} שניות`,
+    changeEmail: 'להחליף כתובת',
+    emailInvalid: 'הכנס כתובת אימייל תקינה',
+    codeInvalid: 'הקוד צריך להיות בן 6 ספרות',
+    errors: {
+      invalid_email: 'כתובת האימייל לא תקינה',
+      invalid_code: 'הקוד שגוי או שפג תוקפו. אפשר לבקש קוד חדש.',
+      rate_limited: 'נשלחו יותר מדי בקשות. נסה שוב בעוד כמה דקות.',
+      network: 'אין חיבור לאינטרנט. נסה שוב.',
+      unknown: 'משהו השתבש. נסה שוב.',
+    } satisfies Record<AuthErrorCode, string>,
+    account: 'החשבון',
+    signedInAs: (email: string) => `מחובר בתור ${email}`,
+    signedInNoEmail: 'מחובר',
+    signOut: 'התנתקות',
+    signOutNote: 'ההתנתקות נוגעת רק במכשיר הזה. הנתונים נשארים בחשבון.',
+    deleteAccount: 'מחיקת החשבון',
+    deleteAccountTitle: 'למחוק את החשבון?',
+    deleteAccountBody:
+      'הפעולה מוחקת לצמיתות את החשבון ואת כל הנתונים שבו (ארוחות, שקילות, יעדים), מכל המכשירים. אי אפשר לבטל אותה.',
+    deleteAccountAction: 'מחק את החשבון',
+  },
 
   onboarding: {
     title: 'בואו נכיר',
@@ -299,6 +345,8 @@ export const he = {
     deleteConfirmTitle: 'למחוק את כל הנתונים?',
     deleteConfirmBody:
       'הפעולה מוחקת את כל הארוחות, השקילות והיעדים מהמכשיר הזה ואי אפשר לבטל אותה.',
+    deleteConfirmBodyServer:
+      'הפעולה מוחקת את כל הארוחות, השקילות והיעדים מהחשבון, מכל המכשירים, ואי אפשר לבטל אותה. ההתחברות עצמה נשארת.',
     deleteConfirmAction: 'מחק הכול',
     sources: 'מקורות',
     sourcesBody: (name: string, date: string) =>
@@ -307,6 +355,7 @@ export const he = {
     notPersistent:
       'הדפדפן חוסם שמירת נתונים, ולכן הנתונים יימחקו כשתסגור את החלון. כדאי לבטל מצב גלישה פרטית.',
     localOnly: 'בשלב זה הנתונים נשמרים במכשיר הזה בלבד.',
+    synced: 'הנתונים נשמרים בחשבון ומסונכרנים בין המכשירים.',
     summary: (age: number, height: string) => `גיל ${age} · גובה ${height} ס"מ`,
     currentTarget: (kcal: string) => `היעד היומי הנוכחי: ${kcal} קק"ל`,
     noPlan: 'עדיין אין יעד.',

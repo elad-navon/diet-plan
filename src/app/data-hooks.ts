@@ -3,6 +3,7 @@ import { buildFoodIndex, buildMealIdeas, type FoodDb, type FoodIndex } from '../
 import { type MealCandidate } from '../core/recommend';
 import { type LocalDate } from '../core/time';
 import {
+  DataError,
   type MealPatch,
   type NewFavorite,
   type NewMeal,
@@ -10,6 +11,18 @@ import {
   type StoredPlan,
 } from '../data';
 import { useServices } from './services';
+
+/** A failure that may go away by itself: the server was unreachable or hiccuped. */
+export function isTransient(error: unknown): boolean {
+  return error instanceof DataError && (error.code === 'network' || error.code === 'server');
+}
+
+/**
+ * Retry policy for saves that are safe to repeat (same client id, so the server recognises the retry:
+ * docs/DATA_MODEL.md E.3). Edits and deletes carry a version and are never retried automatically.
+ */
+export const retryTransient = (failures: number, error: unknown): boolean =>
+  failures < 2 && isTransient(error);
 
 /** Query keys in one place, so invalidation never misses a screen. */
 export const keys = {
@@ -102,6 +115,7 @@ export function useSaveProfile() {
   const invalidate = useInvalidate();
   return useMutation({
     mutationFn: (profile: Profile) => repos.profile.save(profile),
+    retry: retryTransient,
     onSuccess: () => invalidate(keys.profile),
   });
 }
@@ -112,6 +126,7 @@ export function useSavePlan() {
   return useMutation({
     mutationFn: ({ plan, today }: { plan: StoredPlan; today: LocalDate }) =>
       repos.plans.save(plan, today),
+    retry: retryTransient,
     onSuccess: () => invalidate(keys.plans),
   });
 }
@@ -121,6 +136,7 @@ export function useAddMeal() {
   const invalidate = useInvalidate();
   return useMutation({
     mutationFn: (meal: NewMeal) => repos.meals.add(meal),
+    retry: retryTransient,
     onSuccess: () => invalidate(keys.meals, keys.usage),
   });
 }
@@ -161,6 +177,7 @@ export function useSaveWeight() {
   return useMutation({
     mutationFn: (entry: { id: string; kg: number; measuredAt: number }) =>
       repos.weights.upsert(entry),
+    retry: retryTransient,
     onSuccess: () => invalidate(keys.weights),
   });
 }
@@ -170,6 +187,7 @@ export function useAddFavorite() {
   const invalidate = useInvalidate();
   return useMutation({
     mutationFn: (favorite: NewFavorite) => repos.favorites.add(favorite),
+    retry: retryTransient,
     onSuccess: () => invalidate(keys.favorites),
   });
 }

@@ -5,6 +5,8 @@ import { useNow, useServices } from '../../app/services';
 import { applyTheme, getTheme, type ThemeChoice } from '../../app/theme';
 import { ageOn, localDateOf } from '../../core/time';
 import foodMeta from '../../assets/food-db/food-db.meta.json';
+import { DataError } from '../../data';
+import { dataErrorMessage } from '../../i18n/data-errors';
 import { formatShortDate } from '../../i18n/format';
 import { formatInt, he } from '../../i18n/he';
 import { Button } from '../../ui/Button';
@@ -18,18 +20,25 @@ export function SettingsPage() {
   const tz = profile.timezone;
   const now = useNow();
   const today = localDateOf(now, tz);
-  const { repos, persistent } = useServices();
+  const { repos, persistent, account } = useServices();
   const plans = usePlans().data ?? [];
   const resetAll = useResetAll();
   const navigate = useNavigate();
   const toast = useToast();
   const [theme, setTheme] = useState<ThemeChoice>(getTheme);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
 
   const current = plans.filter((p) => p.effectiveFrom <= today).at(-1) ?? null;
 
   async function download(): Promise<void> {
-    const document_ = await repos.exportAll();
+    let document_;
+    try {
+      document_ = await repos.exportAll();
+    } catch (error) {
+      toast.show({ message: dataErrorMessage(error instanceof DataError ? error.code : null) });
+      return;
+    }
     const blob = new Blob([JSON.stringify(document_, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -41,9 +50,33 @@ export function SettingsPage() {
   }
 
   async function deleteEverything(): Promise<void> {
-    await resetAll.mutateAsync();
+    try {
+      await resetAll.mutateAsync();
+    } catch (error) {
+      setConfirmOpen(false);
+      toast.show({ message: dataErrorMessage(error instanceof DataError ? error.code : null) });
+      return;
+    }
     setConfirmOpen(false);
     void navigate('/welcome', { replace: true });
+  }
+
+  async function deleteAccount(): Promise<void> {
+    try {
+      await account?.deleteAccount();
+      // The sign-in screen takes over once the session ends.
+    } catch (error) {
+      setDeleteAccountOpen(false);
+      toast.show({ message: dataErrorMessage(error instanceof DataError ? error.code : null) });
+    }
+  }
+
+  async function signOut(): Promise<void> {
+    try {
+      await account?.signOut();
+    } catch {
+      toast.show({ message: he.genericError });
+    }
   }
 
   return (
@@ -78,6 +111,25 @@ export function SettingsPage() {
         </Link>
       </section>
 
+      {account && (
+        <section
+          aria-labelledby="account-title"
+          className="space-y-2 rounded-2xl border border-faint bg-surface p-4"
+        >
+          <h2 id="account-title" className="text-lg font-bold">
+            {he.auth.account}
+          </h2>
+          <p className="text-base">
+            {account.email ? he.auth.signedInAs(account.email) : he.auth.signedInNoEmail}
+          </p>
+          <Button onClick={() => void signOut()}>{he.auth.signOut}</Button>
+          <p className="text-sm text-muted">{he.auth.signOutNote}</p>
+          <Button variant="danger" onClick={() => setDeleteAccountOpen(true)}>
+            {he.auth.deleteAccount}
+          </Button>
+        </section>
+      )}
+
       <section
         aria-labelledby="look-title"
         className="rounded-2xl border border-faint bg-surface p-4"
@@ -108,7 +160,7 @@ export function SettingsPage() {
         <h2 id="data-title" className="text-lg font-bold">
           {he.settings.data}
         </h2>
-        <p className="text-sm text-muted">{he.settings.localOnly}</p>
+        <p className="text-sm text-muted">{account ? he.settings.synced : he.settings.localOnly}</p>
         <div>
           <Button onClick={() => void download()}>{he.settings.export}</Button>
           <p className="mt-1 text-sm text-muted">{he.settings.exportNote}</p>
@@ -147,12 +199,28 @@ export function SettingsPage() {
         onClose={() => setConfirmOpen(false)}
         title={he.settings.deleteConfirmTitle}
       >
-        <p className="mb-4 text-base">{he.settings.deleteConfirmBody}</p>
+        <p className="mb-4 text-base">
+          {account ? he.settings.deleteConfirmBodyServer : he.settings.deleteConfirmBody}
+        </p>
         <div className="flex gap-2">
           <Button variant="danger" onClick={() => void deleteEverything()}>
             {he.settings.deleteConfirmAction}
           </Button>
           <Button onClick={() => setConfirmOpen(false)}>{he.cancel}</Button>
+        </div>
+      </Sheet>
+
+      <Sheet
+        open={deleteAccountOpen}
+        onClose={() => setDeleteAccountOpen(false)}
+        title={he.auth.deleteAccountTitle}
+      >
+        <p className="mb-4 text-base">{he.auth.deleteAccountBody}</p>
+        <div className="flex gap-2">
+          <Button variant="danger" onClick={() => void deleteAccount()}>
+            {he.auth.deleteAccountAction}
+          </Button>
+          <Button onClick={() => setDeleteAccountOpen(false)}>{he.cancel}</Button>
         </div>
       </Sheet>
     </div>

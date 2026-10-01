@@ -13,6 +13,7 @@ import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { Segmented } from '../../ui/Segmented';
 import { useToast } from '../../ui/Toast';
+import { LoadGate } from '../shell/LoadGate';
 import { useRequiredProfile } from '../shell/ProfileGate';
 import { WeeklyChart } from './WeeklyChart';
 import { WeighInSheet } from './WeighInSheet';
@@ -28,6 +29,16 @@ const toPlanLine = (stored: StoredPlan): PlanLine => ({
 });
 
 export function ProgressPage() {
+  const tz = useRequiredProfile().timezone;
+  const today = localDateOf(useNow(), tz);
+  return (
+    <LoadGate queries={[usePlans(), useWeights(), useMealsRange(addDays(today, -6), today)]}>
+      <ProgressContent />
+    </LoadGate>
+  );
+}
+
+function ProgressContent() {
   const profile = useRequiredProfile();
   const tz = profile.timezone;
   const now = useNow();

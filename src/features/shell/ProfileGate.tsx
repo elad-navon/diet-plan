@@ -1,8 +1,8 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import { Navigate } from 'react-router';
-import { useProfile } from '../../app/data-hooks';
+import { usePlans, useProfile } from '../../app/data-hooks';
 import { type Profile } from '../../data';
-import { he } from '../../i18n/he';
+import { LoadGate } from './LoadGate';
 
 const ProfileContext = createContext<Profile | null>(null);
 
@@ -13,16 +13,29 @@ export function useRequiredProfile(): Profile {
   return profile;
 }
 
+/**
+ * Whether first-run setup is finished: a profile AND a target plan exist. (Setup saves them in separate
+ * steps; if the second one failed, the person is sent back to finish rather than landing on an empty day.)
+ */
+export function useOnboarded(): { profile: Profile | null; done: boolean } {
+  const profile = useProfile().data ?? null;
+  const plans = usePlans().data ?? [];
+  return { profile, done: profile !== null && plans.length > 0 };
+}
+
 /** Sends people who have not finished onboarding to the welcome flow; everyone else sees the app. */
 export function RequireProfile({ children }: { children: ReactNode }) {
   const profile = useProfile();
-  if (profile.isPending) {
-    return (
-      <p role="status" className="p-6 text-muted">
-        {he.loading}
-      </p>
-    );
-  }
-  if (!profile.data) return <Navigate to="/welcome" replace />;
-  return <ProfileContext.Provider value={profile.data}>{children}</ProfileContext.Provider>;
+  const plans = usePlans();
+  return (
+    <LoadGate queries={[profile, plans]}>
+      <Gate>{children}</Gate>
+    </LoadGate>
+  );
+}
+
+function Gate({ children }: { children: ReactNode }) {
+  const { profile, done } = useOnboarded();
+  if (!profile || !done) return <Navigate to="/welcome" replace />;
+  return <ProfileContext.Provider value={profile}>{children}</ProfileContext.Provider>;
 }

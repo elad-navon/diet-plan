@@ -10,11 +10,13 @@ import {
   diffDays,
   elapsedMinutes,
   fixedClock,
+  formatInstant,
   fromEpochDay,
   isValidLocalDate,
   isValidTimeZone,
   localDateOf,
   localTimeOf,
+  parseInstant,
   offsetClock,
   offsetMinutesAt,
   startOfWeek,
@@ -243,5 +245,22 @@ describe('properties across zones (TIME-05)', () => {
       }),
       { numRuns: 400 },
     );
+  });
+});
+
+describe('server timestamps', () => {
+  it('formats an instant as ISO UTC and reads it back exactly', () => {
+    const instant = iso('2026-10-25T01:30:00.123Z');
+    expect(formatInstant(instant)).toBe('2026-10-25T01:30:00.123Z');
+    expect(parseInstant(formatInstant(instant))).toBe(instant);
+  });
+
+  it('reads the formats PostgREST returns (offset, short fractions)', () => {
+    expect(parseInstant('2026-10-01T19:42:23.15+00:00')).toBe(iso('2026-10-01T19:42:23.150Z'));
+    expect(parseInstant('2026-10-01T22:42:23+03:00')).toBe(iso('2026-10-01T19:42:23Z'));
+  });
+
+  it('rejects text that is not a timestamp', () => {
+    expect(() => parseInstant('yesterday')).toThrow(RangeError);
   });
 });

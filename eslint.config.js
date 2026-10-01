@@ -35,6 +35,7 @@ const domGlobals = [
 export default defineConfig([
   globalIgnores([
     'dist',
+    'dist-e2e-server',
     'coverage',
     'playwright-report',
     'test-results',

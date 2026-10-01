@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
+import { retryTransient } from './app/data-hooks';
 import { ServicesProvider, type Services } from './app/services';
 import { OnboardingPage } from './features/onboarding/OnboardingPage';
 import { WelcomePage } from './features/onboarding/WelcomePage';
@@ -12,13 +13,23 @@ import { TodayPage } from './features/today/TodayPage';
 import { ToastProvider } from './ui/Toast';
 
 /** Everything the app is made of: data services, caching, messages and the screens. */
-export function App({ services }: { services?: Services }) {
+export function App({ services, synced = false }: { services?: Services; synced?: boolean }) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
-        // Data is local and invalidated by the mutations that change it, so it never goes stale by itself.
         defaultOptions: {
-          queries: { staleTime: Infinity, retry: false, refetchOnWindowFocus: false },
+          queries: synced
+            ? // Data lives on a server and other devices change it: refresh when the app comes back into
+              // view or the connection returns, and retry a failed read once or twice.
+              {
+                staleTime: 30_000,
+                retry: retryTransient,
+                retryDelay: (failures) => 500 * 2 ** failures,
+                refetchOnWindowFocus: true,
+                refetchOnReconnect: true,
+              }
+            : // Data is on this device and invalidated by the mutations that change it, so it never goes stale.
+              { staleTime: Infinity, retry: false, refetchOnWindowFocus: false },
         },
       }),
   );

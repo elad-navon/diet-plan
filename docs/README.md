@@ -28,6 +28,7 @@
 | [SECURITY_PLAN](SECURITY_PLAN.md) | בדיקות אבטחה ופרטיות + נספחים רלוונטיים | H.3 (+D.4, D.8, E.4, G.5, A6) |
 | [DEFINITION_OF_DONE](DEFINITION_OF_DONE.md) | קריטריוני "גמור" לכל Feature | J.2 |
 | [IMPLEMENTATION_PLAN](IMPLEMENTATION_PLAN.md) | שלבי מימוש 0–10 עם שערי יציאה | J.1, J.3 |
+| [SERVER_SETUP](SERVER_SETUP.md) | חיבור לשרת (Supabase) בעברית פשוטה: צעדים, מה מותר לשתף, בדיקה ידנית | – |
 | [REVIEW_FINDINGS](REVIEW_FINDINGS.md) | 51 הבעיות שנמצאו בתוכנית המקורית (P-01…P-51) | A |
 
 > המסמכים 9–10 (IMPLEMENTATION_PLAN, REVIEW_FINDINGS) נוספו לשמונת המסמכים המבוקשים, כדי שתוכנית המימוש ומזהי הבעיות (P-xx) יהיו ניתנים לאיתור.

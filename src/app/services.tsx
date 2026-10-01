@@ -8,6 +8,13 @@ export interface Services {
   clock: Clock;
   /** False when the browser blocks storage and data lives in memory only. */
   persistent: boolean;
+  /** Present when data lives in a signed-in account on the server (null: on this device only). */
+  account?: {
+    email: string | null;
+    signOut(): Promise<void>;
+    /** Permanently deletes the account and everything stored in it. */
+    deleteAccount(): Promise<void>;
+  } | null;
 }
 
 const ServicesContext = createContext<Services | null>(null);

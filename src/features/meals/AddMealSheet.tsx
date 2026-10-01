@@ -28,6 +28,7 @@ import {
   type Tz,
 } from '../../core/time';
 import { DataError, type MealSource, type StoredMeal } from '../../data';
+import { dataErrorMessage } from '../../i18n/data-errors';
 import { formatDecimal, formatInt, he } from '../../i18n/he';
 import { Button } from '../../ui/Button';
 import { SelectField, TextField } from '../../ui/Field';
@@ -282,14 +283,7 @@ function MealForm({
       onClose();
     } catch (error) {
       const code = error instanceof DataError ? error.code : null;
-      setErrors({
-        form:
-          code === 'version_conflict'
-            ? he.today.conflict
-            : code === 'limit_reached'
-              ? he.addMeal.limitReached
-              : he.genericError,
-      });
+      setErrors({ form: dataErrorMessage(code) });
       if (code === 'version_conflict') onClose();
     } finally {
       setSaving(false);

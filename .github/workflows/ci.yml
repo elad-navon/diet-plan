@@ -1,7 +1,8 @@
 name: CI
 
-# Regression gates 1, 2 and 6 from docs/TEST_PLAN.md H.6 (+ gate 7 smoke). pgTAP, Edge Function and
-# AI-schema gates (3-5) are added together with the stages that introduce them.
+# Regression gates 1, 2, 4 and 6 from docs/TEST_PLAN.md H.6 (+ gate 7 smoke). The database gate (4) runs inside
+# `npm test`: tests/db applies supabase/migrations to a real Postgres (PGlite) - no Docker or account needed.
+# Edge Function and AI gates (3, 5) do not exist in v1 (no Edge Functions, no AI).
 
 on:
   push:
