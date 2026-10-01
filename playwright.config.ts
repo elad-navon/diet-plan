@@ -18,6 +18,9 @@ export default defineConfig({
     trace: 'on-first-retry',
     locale: 'he-IL',
     timezoneId: 'Asia/Jerusalem',
+    // A service worker would answer requests itself, bypassing the fake server of the tests. Only
+    // e2e/pwa.spec.ts turns it on.
+    serviceWorkers: 'block',
   },
   // WebKit (iPhone) joins in the PWA/accessibility stage - docs/IMPLEMENTATION_PLAN.md stage 9.
   projects: [

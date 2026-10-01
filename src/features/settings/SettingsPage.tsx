@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useResetAll, usePlans } from '../../app/data-hooks';
+import { isIos, isStandalone, useInstall } from '../../app/pwa';
 import { useNow, useServices } from '../../app/services';
 import { applyTheme, getTheme, type ThemeChoice } from '../../app/theme';
 import { ageOn, localDateOf } from '../../core/time';
@@ -25,6 +26,7 @@ export function SettingsPage() {
   const resetAll = useResetAll();
   const navigate = useNavigate();
   const toast = useToast();
+  const install = useInstall();
   const [theme, setTheme] = useState<ThemeChoice>(getTheme);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
@@ -110,6 +112,25 @@ export function SettingsPage() {
           {he.settings.editGoal}
         </Link>
       </section>
+
+      {!isStandalone() && (install.canPrompt || isIos()) && (
+        <section
+          aria-labelledby="install-title"
+          className="space-y-2 rounded-2xl border border-faint bg-surface p-4"
+        >
+          <h2 id="install-title" className="text-lg font-bold">
+            {he.pwa.installTitle}
+          </h2>
+          <p className="text-base">{he.pwa.installBody}</p>
+          {install.canPrompt ? (
+            <Button variant="primary" onClick={() => void install.prompt()}>
+              {he.pwa.installAction}
+            </Button>
+          ) : (
+            <p className="text-base">{he.pwa.installIos}</p>
+          )}
+        </section>
+      )}
 
       {account && (
         <section

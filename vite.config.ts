@@ -1,10 +1,60 @@
 import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 import { defineConfig } from 'vitest/config';
 
+// Where the app is served from: "/" normally, "/diet-plan/" on GitHub Pages (set by the deploy workflow).
+const base = process.env['VITE_BASE'] ?? '/';
+
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  base,
+  plugins: [
+    react(),
+    tailwindcss(),
+    VitePWA({
+      // The app decides when to update (a banner), so a reload never interrupts a half-typed meal.
+      registerType: 'prompt',
+      injectRegister: false,
+      includeAssets: ['icons/*'],
+      manifest: {
+        id: base,
+        name: 'יומן תזונה',
+        short_name: 'יומן תזונה',
+        description: 'מעקב קלוריות ומאקרו, עם יעד יומי והמלצות לארוחה הבאה',
+        lang: 'he',
+        dir: 'rtl',
+        start_url: base,
+        scope: base,
+        display: 'standalone',
+        background_color: '#fcfcfb',
+        theme_color: '#256abf',
+        icons: [
+          { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+          {
+            src: 'icons/maskable-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+        ],
+      },
+      workbox: {
+        // The whole app (including the food database) works offline once opened.
+        globPatterns: ['**/*.{js,css,html,woff2,json,png,svg}'],
+        navigateFallback: `${base}index.html`,
+        cleanupOutdatedCaches: true,
+        // Health data is never kept in a cache: calls to the server always go to the network.
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.hostname.endsWith('.supabase.co'),
+            handler: 'NetworkOnly',
+          },
+        ],
+      },
+    }),
+  ],
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },

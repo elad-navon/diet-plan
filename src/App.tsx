@@ -22,6 +22,8 @@ export function App({ services, synced = false }: { services?: Services; synced?
             ? // Data lives on a server and other devices change it: refresh when the app comes back into
               // view or the connection returns, and retry a failed read once or twice.
               {
+                // Offline, a read fails at once (and says so) instead of waiting forever.
+                networkMode: 'always',
                 staleTime: 30_000,
                 retry: retryTransient,
                 retryDelay: (failures) => 500 * 2 ** failures,
@@ -30,6 +32,8 @@ export function App({ services, synced = false }: { services?: Services; synced?
               }
             : // Data is on this device and invalidated by the mutations that change it, so it never goes stale.
               { staleTime: Infinity, retry: false, refetchOnWindowFocus: false },
+          // A save with no connection must fail right away with a clear message, not queue silently.
+          mutations: synced ? { networkMode: 'always' } : {},
         },
       }),
   );
@@ -38,7 +42,7 @@ export function App({ services, synced = false }: { services?: Services; synced?
     <ServicesProvider {...(services ? { services } : {})}>
       <QueryClientProvider client={queryClient}>
         <ToastProvider>
-          <BrowserRouter>
+          <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
             <Routes>
               <Route path="/welcome" element={<WelcomePage />} />
               <Route

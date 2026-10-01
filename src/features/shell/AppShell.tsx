@@ -1,5 +1,8 @@
 import { NavLink, Outlet } from 'react-router';
+import { useOnline, usePwaUpdate } from '../../app/pwa';
+import { useServices } from '../../app/services';
 import { he } from '../../i18n/he';
+import { Button } from '../../ui/Button';
 import { Icon, type IconName } from '../../ui/Icon';
 
 const TABS: { to: string; label: string; icon: IconName }[] = [
@@ -10,6 +13,9 @@ const TABS: { to: string; label: string; icon: IconName }[] = [
 
 /** Page frame: content area plus the bottom navigation (always reachable with the thumb). */
 export function AppShell() {
+  const { updateReady, applyUpdate } = usePwaUpdate();
+  const online = useOnline();
+  const { account } = useServices();
   return (
     <div className="mx-auto flex min-h-dvh max-w-xl flex-col">
       <a
@@ -18,6 +24,22 @@ export function AppShell() {
       >
         דלג לתוכן
       </a>
+      {updateReady && (
+        <div
+          role="status"
+          className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-faint bg-surface px-4 py-2"
+        >
+          <p className="text-base">{he.pwa.updateReady}</p>
+          <Button variant="primary" onClick={applyUpdate}>
+            {he.pwa.updateAction}
+          </Button>
+        </div>
+      )}
+      {account && !online && (
+        <p role="status" className="border-b border-warning bg-surface px-4 py-2 text-base">
+          {he.pwa.offline}
+        </p>
+      )}
       <main id="main" className="flex-1 px-4 pb-28 pt-4">
         <Outlet />
       </main>
