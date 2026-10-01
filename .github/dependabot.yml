@@ -8,8 +8,8 @@ updates:
     # Major versions (ESLint 10, TypeScript 7, ...) wait until the tools around them support them: they are
     # upgraded by hand, with the checklist in README.md "הערות". Minor and patch updates still arrive.
     ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule:
