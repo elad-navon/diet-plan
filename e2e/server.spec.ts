@@ -226,6 +226,24 @@ test.describe('signing in', () => {
     await expect(page.getByText(he.auth.codeInvalid)).toBeVisible();
   });
 
+  test('an unexpected failure says so and shows what went wrong, so it can be fixed', async ({
+    page,
+  }) => {
+    await fakeServer(page, {
+      verify: {
+        status: 500,
+        body: { code: 500, error_code: 'unexpected_failure', msg: 'Database error' },
+      },
+    });
+    await page.goto('/');
+    await page.getByLabel(he.auth.email).fill(EMAIL);
+    await page.getByRole('button', { name: he.auth.sendCode }).click();
+    await page.getByLabel(he.auth.code).fill('12345678');
+    await page.getByRole('button', { name: he.auth.verify }).click();
+    await expect(page.getByRole('alert')).toContainText(he.auth.errors.unknown);
+    await expect(page.getByText(he.auth.technical)).toContainText('500');
+  });
+
   test('too many requests are explained', async ({ page }) => {
     await fakeServer(page, {
       otp: {

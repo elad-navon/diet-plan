@@ -228,6 +228,7 @@ export const he = {
       network: 'אין חיבור לאינטרנט. נסה שוב.',
       unknown: 'משהו השתבש. נסה שוב.',
     } satisfies Record<AuthErrorCode, string>,
+    technical: 'פרטים טכניים (אפשר לשלוח לבעל האפליקציה):',
     account: 'החשבון',
     signedInAs: (email: string) => `מחובר בתור ${email}`,
     signedInNoEmail: 'מחובר',

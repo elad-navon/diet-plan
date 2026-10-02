@@ -20,6 +20,8 @@ export function LoginPage({ auth }: { auth: AuthService }) {
   const [codeText, setCodeText] = useState('');
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
+  // For an unexpected failure only: what exactly went wrong, so it can be fixed.
+  const [detail, setDetail] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -38,18 +40,22 @@ export function LoginPage({ auth }: { auth: AuthService }) {
     else heading.current?.focus();
   }, [step]);
 
-  const messageFor = (error: unknown): string =>
-    he.auth.errors[error instanceof AuthError ? error.code : 'unknown'];
+  const fail = (error: unknown): void => {
+    const code = error instanceof AuthError ? error.code : 'unknown';
+    setProblem(he.auth.errors[code]);
+    setDetail(code === 'unknown' && error instanceof Error ? error.message : null);
+  };
 
   async function sendCode(address: string): Promise<boolean> {
     setBusy(true);
     setProblem(null);
+    setDetail(null);
     try {
       await auth.sendCode(address);
       setCooldown(RESEND_SECONDS);
       return true;
     } catch (error) {
-      setProblem(messageFor(error));
+      fail(error);
       return false;
     } finally {
       setBusy(false);
@@ -83,11 +89,12 @@ export function LoginPage({ auth }: { auth: AuthService }) {
     setFieldError(null);
     setBusy(true);
     setProblem(null);
+    setDetail(null);
     try {
       await auth.verifyCode(email, code);
       // The app opens by itself as soon as the session starts.
     } catch (error) {
-      setProblem(messageFor(error));
+      fail(error);
       setBusy(false);
     }
   }
@@ -118,6 +125,14 @@ export function LoginPage({ auth }: { auth: AuthService }) {
               ⚠ {problem}
             </p>
           )}
+          {problem && detail && (
+            <p className="text-sm text-muted">
+              {he.auth.technical}{' '}
+              <span dir="ltr" className="inline-block break-all">
+                {detail}
+              </span>
+            </p>
+          )}
           <Button type="submit" variant="primary" disabled={busy}>
             {busy ? he.auth.sending : he.auth.sendCode}
           </Button>
@@ -145,6 +160,14 @@ export function LoginPage({ auth }: { auth: AuthService }) {
               ⚠ {problem}
             </p>
           )}
+          {problem && detail && (
+            <p className="text-sm text-muted">
+              {he.auth.technical}{' '}
+              <span dir="ltr" className="inline-block break-all">
+                {detail}
+              </span>
+            </p>
+          )}
           <div className="flex flex-wrap gap-2">
             <Button type="submit" variant="primary" disabled={busy}>
               {busy ? he.auth.verifying : he.auth.verify}
@@ -158,6 +181,7 @@ export function LoginPage({ auth }: { auth: AuthService }) {
               onClick={() => {
                 setStep('email');
                 setProblem(null);
+                setDetail(null);
                 setFieldError(null);
               }}
             >
