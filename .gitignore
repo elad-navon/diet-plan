@@ -27,3 +27,6 @@ Thumbs.db
 
 # raw downloads of the Ministry of Health nutrition database (~8 MB, re-created by npm run build:food-db)
 data/raw/
+
+# working files for design reviews (icon ideas, previews)
+design/
