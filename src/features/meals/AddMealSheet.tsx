@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { newId } from '../../app/ids';
 import {
   useAddFavorite,
@@ -40,6 +40,13 @@ import { SelectField, TextField } from '../../ui/Field';
 import { Icon } from '../../ui/Icon';
 import { Sheet } from '../../ui/Sheet';
 import { FoodSearch } from './FoodSearch';
+import {
+  clearMealDraft,
+  isMeaningful,
+  loadMealDraft,
+  saveMealDraft,
+  type MealDraft,
+} from './meal-draft';
 import { QuantityEditor } from './QuantityEditor';
 
 /** Values to start the form with (a suggestion, a favorite, a repeated meal). */
@@ -70,13 +77,22 @@ interface AddMealSheetProps {
 }
 
 export function AddMealSheet(props: AddMealSheetProps) {
+  // Bumping the key starts the form over, from nothing (after the person drops the draft it came back with).
+  const [generation, setGeneration] = useState(0);
   return (
     <Sheet
       open={props.open}
       onClose={props.onClose}
       title={props.editing ? he.addMeal.editTitle : he.addMeal.title}
     >
-      <MealForm {...props} />
+      <MealForm
+        key={generation}
+        {...props}
+        onRestart={() => {
+          clearMealDraft();
+          setGeneration((current) => current + 1);
+        }}
+      />
     </Sheet>
   );
 }
@@ -103,7 +119,8 @@ function MealForm({
   prefill,
   onClose,
   onSaved,
-}: AddMealSheetProps) {
+  onRestart,
+}: AddMealSheetProps & { onRestart: () => void }) {
   const database = useFoodDb(false);
   const favorites = useFavorites().data ?? [];
   const addMeal = useAddMeal();
@@ -113,46 +130,66 @@ function MealForm({
 
   // One id per open sheet: pressing "save" twice, or retrying after a hiccup, can only ever create one meal.
   const [mealId] = useState(() => editing?.id ?? newId());
+  // A new meal opened plainly (no suggestion, favorite or edit to start from) picks up the draft left by the
+  // last time the sheet was closed before saving.
+  const [draft] = useState<MealDraft | null>(() =>
+    editing || prefill ? null : loadMealDraft({ date, now }),
+  );
   const seed = editing ?? prefill ?? null;
-  const seedItems = editing?.items ?? prefill?.items ?? [];
+  const seedItems = editing?.items ?? prefill?.items ?? draft?.items ?? [];
 
   const [mode, setMode] = useState<Mode>(
-    seedItems.length > 0 ? 'search' : seed ? 'manual' : 'search',
+    draft?.mode ?? (seedItems.length > 0 ? 'search' : seed ? 'manual' : 'search'),
   );
   const [items, setItems] = useState<FoodEntry[]>(seedItems);
   const [pickedFood, setPickedFood] = useState<FoodRecord | null>(null);
   const [editIndex, setEditIndex] = useState<number | null>(null);
 
-  const [name, setName] = useState(seed?.name ?? '');
-  const [kcalText, setKcalText] = useState(seed ? String(seed.kcal) : '');
+  const [name, setName] = useState(draft?.name ?? seed?.name ?? '');
+  const [kcalText, setKcalText] = useState(draft?.kcalText ?? (seed ? String(seed.kcal) : ''));
   const seedMacros: Macros | null =
     editing && editing.proteinG !== null && editing.carbsG !== null && editing.fatG !== null
       ? { proteinG: editing.proteinG, carbsG: editing.carbsG, fatG: editing.fatG }
       : (prefill?.macros ?? null);
-  const [macrosOn, setMacrosOn] = useState(seedMacros !== null);
-  const [proteinText, setProteinText] = useState(seedMacros ? String(seedMacros.proteinG) : '');
-  const [carbsText, setCarbsText] = useState(seedMacros ? String(seedMacros.carbsG) : '');
-  const [fatText, setFatText] = useState(seedMacros ? String(seedMacros.fatG) : '');
+  const [macrosOn, setMacrosOn] = useState(draft?.macrosOn ?? seedMacros !== null);
+  const [proteinText, setProteinText] = useState(
+    draft?.proteinText ?? (seedMacros ? String(seedMacros.proteinG) : ''),
+  );
+  const [carbsText, setCarbsText] = useState(
+    draft?.carbsText ?? (seedMacros ? String(seedMacros.carbsG) : ''),
+  );
+  const [fatText, setFatText] = useState(
+    draft?.fatText ?? (seedMacros ? String(seedMacros.fatG) : ''),
+  );
   // A meal built from foods keeps the name it was given (an edited meal, or a suggestion such as "טוסט גבינה").
   const seedSugar = editing?.addedSugarG ?? prefill?.addedSugarG ?? null;
-  const [sugarText, setSugarText] = useState(seedSugar === null ? '' : String(seedSugar));
-  const [mealName, setMealName] = useState(seedItems.length > 0 && seed ? seed.name : '');
-
-  const [dateText, setDateText] = useState<string>(editing?.localDate ?? date);
-  const [timeText, setTimeText] = useState<string>(
-    editing
-      ? localTimeOf(editing.eatenAt, tz)
-      : date === localDateOf(now, tz)
-        ? localTimeOf(now, tz)
-        : '12:00',
+  const [sugarText, setSugarText] = useState(
+    draft?.sugarText ?? (seedSugar === null ? '' : String(seedSugar)),
   );
+  const [mealName, setMealName] = useState(
+    draft?.mealName ?? (seedItems.length > 0 && seed ? seed.name : ''),
+  );
+
+  const defaultDate: string = editing?.localDate ?? date;
+  const defaultTime: string = editing
+    ? localTimeOf(editing.eatenAt, tz)
+    : date === localDateOf(now, tz)
+      ? localTimeOf(now, tz)
+      : '12:00';
+  const [dateText, setDateText] = useState<string>(draft?.dateText ?? defaultDate);
+  const [timeText, setTimeText] = useState<string>(draft?.timeText ?? defaultTime);
   const [slotChoice, setSlotChoice] = useState<MealSlot | null>(
-    editing?.slot ?? prefill?.slot ?? null,
+    draft ? draft.slotChoice : (editing?.slot ?? prefill?.slot ?? null),
   );
   const [sourceHint, setSourceHint] = useState<MealSource>(
-    editing?.source ?? prefill?.source ?? 'manual',
+    draft?.sourceHint ?? editing?.source ?? prefill?.source ?? 'manual',
   );
-  const [favoriteId, setFavoriteId] = useState<string | null>(prefill?.favoriteId ?? null);
+  const [favoriteId, setFavoriteId] = useState<string | null>(
+    draft ? draft.favoriteId : (prefill?.favoriteId ?? null),
+  );
+  const cameBack = draft !== null;
+  /** Set once the meal is saved, so the draft is not written again behind the save. */
+  const savedRef = useRef(false);
 
   const [submitted, setSubmitted] = useState(false);
   const [confirmLarge, setConfirmLarge] = useState(false);
@@ -163,6 +200,54 @@ function MealForm({
 
   const kind: 'food' | 'manual' = items.length > 0 ? 'food' : 'manual';
   const totals = sumEntries(items);
+
+  // Keep what is typed as a draft, so closing the sheet by accident (a tap outside it, "back") loses nothing.
+  useEffect(() => {
+    if (editing || savedRef.current) return;
+    const current: MealDraft = {
+      v: 1,
+      savedAt: now,
+      date,
+      mode,
+      items,
+      name,
+      kcalText,
+      macrosOn,
+      proteinText,
+      carbsText,
+      fatText,
+      sugarText,
+      mealName,
+      ...(dateText !== defaultDate ? { dateText } : {}),
+      ...(timeText !== defaultTime ? { timeText } : {}),
+      slotChoice,
+      sourceHint,
+      favoriteId,
+    };
+    if (isMeaningful(current)) saveMealDraft(current);
+    else clearMealDraft();
+  }, [
+    editing,
+    now,
+    date,
+    mode,
+    items,
+    name,
+    kcalText,
+    macrosOn,
+    proteinText,
+    carbsText,
+    fatText,
+    sugarText,
+    mealName,
+    dateText,
+    timeText,
+    defaultDate,
+    defaultTime,
+    slotChoice,
+    sourceHint,
+    favoriteId,
+  ]);
 
   const eatenAt = ((): Instant | null => {
     if (!isValidLocalDate(dateText) || !/^\d{2}:\d{2}$/.test(timeText)) return null;
@@ -310,6 +395,8 @@ function MealForm({
         });
         if (favoriteId) void markUsed.mutateAsync(favoriteId);
       }
+      savedRef.current = true;
+      clearMealDraft();
       onSaved(saved, editing ? 'updated' : 'added');
       onClose();
     } catch (error) {
@@ -366,6 +453,16 @@ function MealForm({
 
   return (
     <div className="space-y-4">
+      {cameBack && (
+        <div className="flex flex-wrap items-center justify-between gap-x-3 rounded-2xl bg-surface-2 px-4 py-1">
+          <p role="status" className="py-2 text-base">
+            {he.addMeal.draftBack}
+          </p>
+          <Button variant="ghost" onClick={onRestart}>
+            {he.addMeal.draftRestart}
+          </Button>
+        </div>
+      )}
       <fieldset className="grid grid-flow-col gap-1 rounded-full bg-surface-2 p-1 ring-1 ring-inset ring-faint">
         <legend className="sr-only">{he.addMeal.modeLegend}</legend>
         {(

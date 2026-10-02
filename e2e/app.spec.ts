@@ -190,6 +190,62 @@ test('FLOUR-02: a food says whether it is white flour or whole grain, and what t
   await expect(sheet.getByText(he.flour.swapHint(he.flour.swap.bread))).toBeVisible();
 });
 
+test('DRAFT-01: a meal being typed survives a tap outside the sheet, and can be dropped', async ({
+  page,
+}) => {
+  await openApp(page, { seed: {} });
+  const open = () => page.getByRole('button', { name: he.today.addMeal }).first().click();
+  const sheet = page.getByRole('dialog', { name: he.addMeal.title });
+
+  await open();
+  await sheet.getByText(he.addMeal.tabManual, { exact: true }).click();
+  await sheet.getByLabel(he.addMeal.name).fill('עוגיות');
+  await sheet.getByLabel(he.addMeal.kcalField).fill('250');
+
+  await page.mouse.click(5, 5); // a tap outside the sheet closes it
+  await expect(sheet).toBeHidden();
+
+  await open();
+  await expect(sheet.getByText(he.addMeal.draftBack)).toBeVisible();
+  await expect(sheet.getByLabel(he.addMeal.name)).toHaveValue('עוגיות');
+  await expect(sheet.getByLabel(he.addMeal.kcalField)).toHaveValue('250');
+
+  await sheet.getByRole('button', { name: he.addMeal.draftRestart }).click();
+  await expect(sheet.getByText(he.addMeal.draftBack)).toHaveCount(0);
+  await expect(sheet.getByLabel(he.addMeal.searchLabel)).toBeVisible();
+});
+
+test('DRAFT-02: foods already added to a meal are still there after closing, until it is saved', async ({
+  page,
+}) => {
+  await openApp(page, { seed: {} });
+  const open = () => page.getByRole('button', { name: he.today.addMeal }).first().click();
+  const sheet = page.getByRole('dialog', { name: he.addMeal.title });
+
+  await open();
+  await sheet.getByLabel(he.addMeal.searchLabel).fill('בננה');
+  await sheet
+    .getByRole('button', { name: /^בננה, טריה/ })
+    .first()
+    .click();
+  await sheet.getByRole('button', { name: he.addMeal.addToMeal }).click();
+  await expect(sheet.getByRole('heading', { name: he.addMeal.items })).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(sheet).toBeHidden();
+
+  await open();
+  await expect(sheet.getByText(he.addMeal.draftBack)).toBeVisible();
+  await expect(sheet.getByRole('heading', { name: he.addMeal.items })).toBeVisible();
+  await sheet.getByRole('button', { name: he.addMeal.saveMeal }).click();
+  await expect(page.getByText(he.today.saved)).toBeVisible();
+
+  // Saved: nothing is left to come back to.
+  await open();
+  await expect(sheet.getByLabel(he.addMeal.searchLabel)).toBeVisible();
+  await expect(sheet.getByText(he.addMeal.draftBack)).toHaveCount(0);
+});
+
 test('E2E-05: delete a meal and undo', async ({ page }) => {
   await openApp(page, { seed: { withMealsToday: true } });
   await expect(remaining(page)).toHaveAttribute('aria-label', /1,110/); // 1,390 - 280
