@@ -126,7 +126,8 @@ function MealForm({
   const [proteinText, setProteinText] = useState(seedMacros ? String(seedMacros.proteinG) : '');
   const [carbsText, setCarbsText] = useState(seedMacros ? String(seedMacros.carbsG) : '');
   const [fatText, setFatText] = useState(seedMacros ? String(seedMacros.fatG) : '');
-  const [mealName, setMealName] = useState(editing && seedItems.length > 0 ? editing.name : '');
+  // A meal built from foods keeps the name it was given (an edited meal, or a suggestion such as "טוסט גבינה").
+  const [mealName, setMealName] = useState(seedItems.length > 0 && seed ? seed.name : '');
 
   const [dateText, setDateText] = useState<string>(editing?.localDate ?? date);
   const [timeText, setTimeText] = useState<string>(

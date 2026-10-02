@@ -12,6 +12,20 @@ export interface MealForRecommendation {
   fatG: number | null;
 }
 
+/** How much of one food an idea uses at its normal portion. */
+export type RecipeQuantity =
+  | { kind: 'grams'; grams: number }
+  /** A count of one of the food's household measures (e.g. 2 x "פרוסה בינונית"), scaled in `step`s. */
+  | { kind: 'unit'; unit: string; count: number; step: number };
+
+/** One ingredient of an idea: a database food and its amount (the "what exactly and how much" shown to the user). */
+export interface RecipeItem {
+  foodId: string;
+  quantity: RecipeQuantity;
+  /** Name to show instead of the database's (which can be long or say too little: "בשר עוף"). */
+  label?: string;
+}
+
 /** A meal idea the engine may suggest. The static library lives elsewhere; favorites can be added later. */
 export interface MealCandidate {
   id: string;
@@ -27,6 +41,8 @@ export interface MealCandidate {
   /** The portion can be scaled within this range so the idea fits the remaining budget. */
   minPortionFactor: number;
   maxPortionFactor: number;
+  /** The ingredients behind the totals, when the idea is built from real foods. */
+  recipe?: readonly RecipeItem[];
 }
 
 export type DayStatus = 'on_track' | 'behind' | 'ahead' | 'over_budget' | 'day_complete';

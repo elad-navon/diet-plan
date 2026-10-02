@@ -78,6 +78,7 @@ export const he = {
     colMeal: 'ארוחה',
     colKcal: 'קלוריות',
     colTotal: 'סה"כ',
+    ingredients: (meal: string) => `המרכיבים של ${meal}`,
     nextMeal: 'הארוחה הבאה',
     nextAround: (time: string) => `בערך ב-${time}`,
     nextUpTo: (kcal: string) => `עד כ-${kcal} קק"ל`,

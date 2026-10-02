@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   useDeleteMeal,
   useFoodDb,
@@ -8,6 +8,7 @@ import {
 } from '../../app/data-hooks';
 import { useNow } from '../../app/services';
 import { buildDayChart, buildDayView, resolvePlanForDate } from '../../core/dayview';
+import { portionParts, sumEntries, type PortionPart } from '../../core/food';
 import { type Recommendation, type Suggestion } from '../../core/recommend';
 import { DEFAULT_SCHEDULE } from '../../core/schedule';
 import { localDateOf } from '../../core/time';
@@ -56,7 +57,21 @@ function TodayContent() {
 
   const plans = usePlans().data ?? [];
   const meals = useMealsOfDay(date).data ?? [];
-  const ideas = useFoodDb().data?.ideas ?? [];
+  const foodDb = useFoodDb().data;
+  const ideas = useMemo(() => foodDb?.ideas ?? [], [foodDb]);
+  const foodsById = useMemo(
+    () => new Map((foodDb?.db.foods ?? []).map((food) => [food.id, food])),
+    [foodDb],
+  );
+  const recipes = useMemo(
+    () => new Map(ideas.map((idea) => [idea.id, idea.recipe ?? null])),
+    [ideas],
+  );
+  /** The ingredients of a suggestion at its portion size, in measurable amounts. */
+  const partsOf = (suggestion: Suggestion): PortionPart[] | null => {
+    const recipe = recipes.get(suggestion.candidateId);
+    return recipe ? portionParts(recipe, suggestion.portionFactor, foodsById) : null;
+  };
   const deleteMeal = useDeleteMeal();
   const restoreMeal = useRestoreMeal();
   const toast = useToast();
@@ -82,6 +97,22 @@ function TodayContent() {
   }
 
   function pickSuggestion(suggestion: Suggestion, next: Recommendation['next']): void {
+    const parts = partsOf(suggestion);
+    if (parts && foodDb) {
+      // Open the meal with the exact ingredients, so it is saved the way it was suggested.
+      const entries = parts.map((part) => part.entry);
+      const totals = sumEntries(entries);
+      openNew({
+        name: suggestion.name,
+        kcal: totals.kcal,
+        macros: { proteinG: totals.proteinG, carbsG: totals.carbsG, fatG: totals.fatG },
+        items: entries,
+        foodDbVersion: foodDb.db.version,
+        ...(next?.slot ? { slot: next.slot } : {}),
+        source: 'food_db',
+      });
+      return;
+    }
     openNew({
       name: suggestion.name,
       kcal: Math.round(suggestion.kcal),
@@ -154,6 +185,7 @@ function TodayContent() {
         <NextMealCard
           recommendation={recommendation}
           tz={tz}
+          partsOf={partsOf}
           onPick={pickSuggestion}
           onAddManual={() => openNew()}
         />

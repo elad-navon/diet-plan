@@ -178,12 +178,18 @@ test('E2E-06: a suggestion can be added with one confirmation', async ({ page })
   await openApp(page, { seed: {}, time: `${TODAY}T11:00:00+03:00` });
   const suggestions = page.getByRole('region', { name: he.today.nextMeal });
   await expect(suggestions.getByText(he.slotMeal.lunch)).toBeVisible();
-  await suggestions
-    .getByRole('button', { name: new RegExp(`^${he.add}:`) })
-    .first()
-    .click();
+  // Each suggestion says exactly what to put on the plate: which food and how much of it.
+  const firstIngredients = suggestions.getByRole('list', { name: /^המרכיבים של/ }).first();
+  await expect(firstIngredients.getByRole('listitem').first()).toContainText(/\d+(\.\d+)? ג'/);
+  expect(await firstIngredients.getByRole('listitem').count()).toBeGreaterThanOrEqual(1);
+  const button = suggestions.getByRole('button', { name: new RegExp(`^${he.add}:`) }).first();
+  const suggestionName = ((await button.getAttribute('aria-label')) ?? '').replace(
+    `${he.add}: `,
+    '',
+  );
+  await button.click();
   const sheet = page.getByRole('dialog', { name: he.addMeal.title });
-  await expect(sheet.getByLabel(he.addMeal.name)).not.toHaveValue('');
+  await expect(sheet.getByLabel(he.addMeal.name)).toHaveValue(suggestionName);
   await sheet.getByRole('button', { name: he.addMeal.saveMeal }).click();
   await expect(page.getByText(he.today.saved)).toBeVisible();
 });
