@@ -230,6 +230,7 @@ export const he = {
     } satisfies Record<AuthErrorCode, string>,
     storageBlocked:
       'הדפדפן חוסם שמירת נתונים באתר, ולכן צריך להתחבר מחדש בכל פעם. לתיקון: לכבות את Shields לאתר הזה (סמל האריה ב-Brave) או לפתוח אותו בדפדפן רגיל.',
+    storageDetails: 'בדיקת שמירת ההתחברות בדפדפן (לתמיכה)',
     technical: 'פרטים טכניים (אפשר לשלוח לבעל האפליקציה):',
     account: 'החשבון',
     signedInAs: (email: string) => `מחובר בתור ${email}`,

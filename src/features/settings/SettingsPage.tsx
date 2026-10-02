@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useResetAll, usePlans } from '../../app/data-hooks';
 import { isIos, isStandalone, useInstall } from '../../app/pwa';
+import { checkStorage, formatStorageReport } from '../../app/storage-check';
 import { useNow, useServices } from '../../app/services';
 import { applyTheme, getTheme, type ThemeChoice } from '../../app/theme';
 import { ageOn, localDateOf } from '../../core/time';
@@ -136,6 +137,12 @@ export function SettingsPage() {
           </p>
           <Button onClick={() => void signOut()}>{he.auth.signOut}</Button>
           <p className="text-sm text-muted">{he.auth.signOutNote}</p>
+          <details className="text-sm text-muted">
+            <summary className="min-h-11 cursor-pointer py-2">{he.auth.storageDetails}</summary>
+            <pre dir="ltr" className="whitespace-pre-wrap break-all text-start text-xs">
+              {formatStorageReport(checkStorage())}
+            </pre>
+          </details>
           <Button variant="danger" onClick={() => setDeleteAccountOpen(true)}>
             {he.auth.deleteAccount}
           </Button>
