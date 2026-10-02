@@ -50,7 +50,28 @@ function meal(
 
 export interface SeedOptions {
   withMealsToday?: boolean;
+  /** A meal from the food database, saved before sugar was tracked: its items carry no sugar fields. */
+  withOldFoodMealToday?: boolean;
 }
+
+/** A glass (240 g) of apple juice, saved the way the app did before added sugar existed. */
+const oldJuiceMeal = (): StoredMeal => ({
+  ...meal('o1', TODAY, '09:00', 'מיץ תפוחים', 115, [0.2, 28.8, 0]),
+  source: 'food_db',
+  items: [
+    {
+      foodId: '3371',
+      name: 'מיץ תפוחים, משקה סיידר הגליל',
+      grams: 240,
+      unit: 'כוס',
+      count: 1,
+      kcal: 115,
+      proteinG: 0.2,
+      carbsG: 28.8,
+      fatG: 0,
+    },
+  ],
+});
 
 /** A user who finished onboarding a week ago: a plan, a few weigh-ins and some meals. */
 export function seedDocument(options: SeedOptions = {}): string {
@@ -88,6 +109,7 @@ export function seedDocument(options: SeedOptions = {}): string {
     ...(options.withMealsToday
       ? [meal('t1', TODAY, '08:30', 'חביתה וסלט', 280, [18, 12, 18])]
       : []),
+    ...(options.withOldFoodMealToday ? [oldJuiceMeal()] : []),
   ];
   return JSON.stringify({
     version: 1,

@@ -8,7 +8,7 @@ import {
 } from '../../app/data-hooks';
 import { useNow } from '../../app/services';
 import { buildDayChart, buildDayView, resolvePlanForDate } from '../../core/dayview';
-import { portionParts, sumEntries, type PortionPart } from '../../core/food';
+import { fillMissingSugar, portionParts, sumEntries, type PortionPart } from '../../core/food';
 import { type Recommendation, type Suggestion } from '../../core/recommend';
 import { DEFAULT_SCHEDULE } from '../../core/schedule';
 import { localDateOf, localTimeOf } from '../../core/time';
@@ -66,12 +66,17 @@ function TodayContent() {
   const date = localDateOf(now, tz);
 
   const plans = usePlans().data ?? [];
-  const meals = useMealsOfDay(date).data ?? [];
+  const storedMeals = useMealsOfDay(date).data;
   const foodDb = useFoodDb().data;
   const ideas = useMemo(() => foodDb?.ideas ?? [], [foodDb]);
   const foodsById = useMemo(
     () => new Map((foodDb?.db.foods ?? []).map((food) => [food.id, food])),
     [foodDb],
+  );
+  // Meals saved before sugar was tracked count too: their sugar is looked up from the foods they hold.
+  const meals = useMemo(
+    () => (storedMeals ?? []).map((meal) => fillMissingSugar(meal, foodsById)),
+    [storedMeals, foodsById],
   );
   const recipes = useMemo(
     () => new Map(ideas.map((idea) => [idea.id, idea.recipe ?? null])),

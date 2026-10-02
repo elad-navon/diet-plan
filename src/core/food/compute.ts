@@ -144,6 +144,41 @@ export function sumEntries(entries: readonly FoodEntry[]): EntryTotals {
   };
 }
 
+/**
+ * A meal saved before sugar was tracked has its foods (id and amount) but no sugar. Look the sugar up
+ * again from the database, so the meal counts like a new one. A total the person typed is kept, a food the
+ * database no longer knows stays unknown, and a manual meal (no foods) is left as it is.
+ * Returns the same object when there is nothing to add.
+ */
+export function fillMissingSugar<M extends { items: FoodEntry[]; addedSugarG: number | null }>(
+  meal: M,
+  foods: ReadonlyMap<string, FoodRecord>,
+): M {
+  if (meal.items.length === 0) return meal;
+  let changed = false;
+  const items = meal.items.map((item) => {
+    const food = foods.get(item.foodId);
+    if (!food) return item;
+    const scale = item.grams / 100;
+    const missing = {
+      ...(item.sugarG === undefined && food.sugar100 !== undefined
+        ? { sugarG: round1(food.sugar100 * scale) }
+        : {}),
+      ...(item.addedSugarG === undefined && food.addedSugar100 !== undefined
+        ? { addedSugarG: round1(food.addedSugar100 * scale) }
+        : {}),
+      ...(item.fiberG === undefined && food.fiber100 !== undefined
+        ? { fiberG: round1(food.fiber100 * scale) }
+        : {}),
+    };
+    if (Object.keys(missing).length === 0) return item;
+    changed = true;
+    return { ...item, ...missing };
+  });
+  if (!changed) return meal;
+  return { ...meal, items, addedSugarG: meal.addedSugarG ?? sumEntries(items).addedSugarG };
+}
+
 /** The part of a database name before the first comma: "ביצה קשה שלמה, ללא קליפה" -> "ביצה קשה שלמה". */
 export function shortFoodName(name: string): string {
   const head = name.split(',')[0]?.trim() ?? '';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeEntry, sumEntries } from './compute';
+import { computeEntry, fillMissingSugar, sumEntries, type FoodEntry } from './compute';
 import { ADDED_SUGAR_BANDS, estimateAddedSugar, sugarBand } from './sugar';
 import { type FoodRecord } from './types';
 
@@ -87,6 +87,61 @@ describe('the daily bands (the own guidance of the person)', () => {
 
   it('uses other edges when given', () => {
     expect(sugarBand(15, { veryLowMaxG: 5, okMaxG: 12 })).toBe('review');
+  });
+});
+
+describe('meals saved before sugar was tracked', () => {
+  const juice: FoodRecord = {
+    id: '3371',
+    name: 'מיץ תפוחים',
+    kcal100: 48,
+    protein100: 0.1,
+    carbs100: 12,
+    fat100: 0,
+    sugar100: 12,
+    addedSugar100: 12,
+    fiber100: 0.1,
+    units: [{ name: 'כוס', grams: 240 }],
+  };
+  const foods = new Map([[juice.id, juice]]);
+  const oldItem: FoodEntry = {
+    foodId: '3371',
+    name: 'מיץ תפוחים',
+    grams: 240,
+    kcal: 115,
+    proteinG: 0.2,
+    carbsG: 28.8,
+    fatG: 0,
+  };
+  const oldMeal = (addedSugarG: number | null, items = [oldItem]) => ({ addedSugarG, items });
+
+  it('gets its sugar from the foods it holds, by food and amount', () => {
+    const filled = fillMissingSugar(oldMeal(null), foods);
+    expect(filled.addedSugarG).toBe(28.8);
+    expect(filled.items[0]).toMatchObject({ sugarG: 28.8, addedSugarG: 28.8, fiberG: 0.2 });
+  });
+
+  it('keeps a total the person typed, but still fills the items', () => {
+    const filled = fillMissingSugar(oldMeal(5), foods);
+    expect(filled.addedSugarG).toBe(5);
+    expect(filled.items[0]?.addedSugarG).toBe(28.8);
+  });
+
+  it('leaves a food the database no longer knows, and a manual meal, as they are', () => {
+    const unknown = oldMeal(null, [{ ...oldItem, foodId: 'gone' }]);
+    expect(fillMissingSugar(unknown, foods)).toBe(unknown);
+    const manual = oldMeal(null, []);
+    expect(fillMissingSugar(manual, foods)).toBe(manual);
+  });
+
+  it('counts only the foods it can find, like a new meal does', () => {
+    const mixed = oldMeal(null, [oldItem, { ...oldItem, foodId: 'gone', name: 'לא ידוע' }]);
+    expect(fillMissingSugar(mixed, foods).addedSugarG).toBe(28.8);
+  });
+
+  it('returns the same object when everything is already there', () => {
+    const filled = fillMissingSugar(oldMeal(null), foods);
+    expect(fillMissingSugar(filled, foods)).toBe(filled);
   });
 });
 

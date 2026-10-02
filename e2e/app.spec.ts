@@ -155,6 +155,16 @@ test('SUGAR-03: whole fruit does not count as added sugar', async ({ page }) => 
   await expect(page.getByRole('img', { name: /סוכר מוסף היום: 0 גרם/ })).toBeVisible();
 });
 
+test('SUGAR-04: a meal saved before sugar was tracked still counts, from the foods it holds', async ({
+  page,
+}) => {
+  await openApp(page, { seed: { withOldFoodMealToday: true } });
+  // 240 g of apple juice has 12 g of added sugar per 100 g: 28.8 g, past the 25 g line.
+  await expect(page.getByRole('img', { name: /סוכר מוסף היום: 28.8 גרם/ })).toBeVisible();
+  await expect(page.getByText(he.sugar.band.review).first()).toBeVisible();
+  await expect(page.getByText(he.sugar.mealTotal('28.8'))).toBeVisible();
+});
+
 test('E2E-05: delete a meal and undo', async ({ page }) => {
   await openApp(page, { seed: { withMealsToday: true } });
   await expect(remaining(page)).toHaveAttribute('aria-label', /1,110/); // 1,390 - 280
