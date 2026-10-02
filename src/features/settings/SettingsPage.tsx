@@ -87,7 +87,7 @@ export function SettingsPage() {
 
       {!persistent && (
         <p role="alert" className="rounded-2xl border border-warning p-3 text-base">
-          {he.settings.notPersistent}
+          {account ? he.auth.storageBlocked : he.settings.notPersistent}
         </p>
       )}
 

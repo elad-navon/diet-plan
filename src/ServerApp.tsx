@@ -52,7 +52,7 @@ function SignedInOrLogin({ backend }: { backend: ServerBackend }) {
         : {
             repos: createSupabaseRepositories({ gateway: backend.gateway, clock: systemClock }),
             clock: systemClock,
-            persistent: true,
+            persistent: backend.storageIsPersistent(),
             account: {
               email,
               signOut: () => backend.auth.signOut(),

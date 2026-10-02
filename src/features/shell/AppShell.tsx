@@ -15,7 +15,7 @@ const TABS: { to: string; label: string; icon: IconName }[] = [
 export function AppShell() {
   const { updateReady, applyUpdate } = usePwaUpdate();
   const online = useOnline();
-  const { account } = useServices();
+  const { account, persistent } = useServices();
   return (
     <div className="mx-auto flex min-h-dvh max-w-xl flex-col">
       <a
@@ -34,6 +34,14 @@ export function AppShell() {
             {he.pwa.updateAction}
           </Button>
         </div>
+      )}
+      {account && !persistent && (
+        <p
+          role="status"
+          className="mx-4 mt-3 rounded-2xl border-s-4 border-warning bg-surface px-4 py-2 text-base [box-shadow:var(--card-shadow)]"
+        >
+          {he.auth.storageBlocked}
+        </p>
       )}
       {account && !online && (
         <p

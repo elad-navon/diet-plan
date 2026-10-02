@@ -244,6 +244,25 @@ test.describe('signing in', () => {
     await expect(page.getByText(he.auth.technical)).toContainText('500');
   });
 
+  test('a browser that refuses to store data still signs in for this visit, and says so', async ({
+    page,
+  }) => {
+    // Like Brave with Shields up or a private window: every write to localStorage fails.
+    await page.addInitScript(() => {
+      Storage.prototype.setItem = () => {
+        throw new DOMException('Setting the value exceeded the quota.', 'QuotaExceededError');
+      };
+    });
+    await fakeServer(page, { data: 'with-data' });
+    await page.goto('/');
+    await page.getByLabel(he.auth.email).fill(EMAIL);
+    await page.getByRole('button', { name: he.auth.sendCode }).click();
+    await page.getByLabel(he.auth.code).fill('12345678');
+    await page.getByRole('button', { name: he.auth.verify }).click();
+    await expect(page.getByText(he.auth.storageBlocked)).toBeVisible();
+    await expect(page.locator('p').filter({ hasText: 'חביתה מהשרת' })).toBeVisible();
+  });
+
   test('too many requests are explained', async ({ page }) => {
     await fakeServer(page, {
       otp: {
