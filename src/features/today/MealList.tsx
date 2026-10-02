@@ -4,15 +4,7 @@ import { formatClock } from '../../i18n/format';
 import { formatInt, he } from '../../i18n/he';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
-
-/** A friendly picture per meal (decorative: the slot name is always written next to it). */
-const SLOT_EMOJI: Record<StoredMeal['slot'], string> = {
-  breakfast: '🍳',
-  lunch: '🥗',
-  snack: '🍎',
-  dinner: '🍽️',
-  other: '🥤',
-};
+import { mealIcon } from './meal-icon';
 
 interface MealListProps {
   meals: readonly StoredMeal[];
@@ -37,7 +29,7 @@ export function MealList({ meals, tz, onEdit, onDelete, onAgain }: MealListProps
                 aria-hidden="true"
                 className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-surface-2 text-2xl"
               >
-                {SLOT_EMOJI[meal.slot]}
+                {mealIcon(meal)}
               </span>
               <div className="min-w-0">
                 <p className="text-sm text-muted">
