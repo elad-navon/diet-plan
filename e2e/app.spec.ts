@@ -190,7 +190,7 @@ test('FLOUR-02: a food says whether it is white flour or whole grain, and what t
   await expect(sheet.getByText(he.flour.swapHint(he.flour.swap.bread))).toBeVisible();
 });
 
-test('DRAFT-01: a meal being typed survives a tap outside the sheet, and can be dropped', async ({
+test('DRAFT-01: a click beside the sheet does not hide a meal being typed; closing keeps it, and it can be dropped', async ({
   page,
 }) => {
   await openApp(page, { seed: {} });
@@ -202,7 +202,11 @@ test('DRAFT-01: a meal being typed survives a tap outside the sheet, and can be 
   await sheet.getByLabel(he.addMeal.name).fill('עוגיות');
   await sheet.getByLabel(he.addMeal.kcalField).fill('250');
 
-  await page.mouse.click(5, 5); // a tap outside the sheet closes it
+  await page.mouse.click(5, 5); // a click beside the sheet does not hide it
+  await expect(sheet).toBeVisible();
+  await expect(sheet.getByLabel(he.addMeal.name)).toHaveValue('עוגיות');
+
+  await sheet.getByRole('button', { name: he.close }).click(); // closing on purpose keeps the draft
   await expect(sheet).toBeHidden();
 
   await open();

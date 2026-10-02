@@ -84,6 +84,8 @@ export function AddMealSheet(props: AddMealSheetProps) {
       open={props.open}
       onClose={props.onClose}
       title={props.editing ? he.addMeal.editTitle : he.addMeal.title}
+      // A stray click beside the sheet must not hide a meal being typed: it closes with the X or Esc.
+      dismissOnBackdrop={false}
     >
       <MealForm
         key={generation}

@@ -12,13 +12,22 @@ interface SheetProps {
   title: string;
   children: ReactNode;
   footer?: ReactNode;
+  /** A tap outside the sheet closes it (default). Turn off for a form, where a stray click would hide the work. */
+  dismissOnBackdrop?: boolean;
 }
 
 /**
  * A modal bottom sheet on the native <dialog>: the browser traps focus, closes on Esc, marks the rest
  * of the page inert and returns focus to the control that opened it (docs/TEST_PLAN.md A11Y-02).
  */
-export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
+export function Sheet({
+  open,
+  onClose,
+  title,
+  children,
+  footer,
+  dismissOnBackdrop = true,
+}: SheetProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const [shielded, setShielded] = useState(false);
@@ -53,7 +62,7 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
         aria-labelledby={titleId}
         onClose={onClose}
         onClick={(event) => {
-          if (event.target === ref.current) onClose();
+          if (dismissOnBackdrop && event.target === ref.current) onClose();
         }}
         className="m-0 mt-auto max-h-[92dvh] w-full max-w-xl overflow-hidden rounded-t-[2rem] bg-surface p-0 text-ink shadow-2xl open:flex open:flex-col sm:m-auto sm:rounded-[2rem]"
       >
