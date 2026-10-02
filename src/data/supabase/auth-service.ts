@@ -30,7 +30,11 @@ function toAuthError(error: SupabaseAuthError, whenVerifying: boolean): AuthErro
   ) {
     // New accounts are switched off in the project: only people who were added can sign in.
     mapped = 'signups_closed';
-  } else if (error.status === 0 || /fetch/i.test(error.name + error.message)) {
+  } else if (
+    error.status === 0 ||
+    (error.status === undefined && /fetch|load failed|network/i.test(error.message))
+  ) {
+    // Never reached the server (offline, blocked, DNS). A 5xx answer is NOT this: the server did answer.
     mapped = 'network';
   } else if (
     whenVerifying &&
