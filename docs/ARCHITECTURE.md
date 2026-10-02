@@ -84,7 +84,7 @@ evals/                  dataset.jsonl · runner · baselines/ · reports/
 > **Invariant:** אין מצב שבו המשתמש לא יכול להזין ארוחה בגלל כשל ב-AI. נאכף בבדיקת E2E ובבדיקת רכיב לכל קוד שגיאה.
 
 ## D.6 PWA
-`vite-plugin-pwa` (`registerType:'prompt'`): Precache של Shell עם Revision; `navigateFallback` ל-`index.html` (denylist ל-API); **`*.supabase.co` = NetworkOnly**; ללא Runtime-cache של נתונים. Manifest (`lang:he`, `dir:rtl`, `display:standalone`, אייקונים maskable). iOS: אין `beforeinstallprompt` ⇒ הוראות "הוסף למסך הבית"; Session ב-PWA מותקן נפרד מ-Safari ⇒ OTP בקוד (לא Link). Cache מתמיד של Query בעל `buster` = `schema_version`.
+`vite-plugin-pwa` (`registerType:'prompt'`): Precache של Shell עם Revision; `navigateFallback` ל-`index.html` (denylist ל-API); **`*.supabase.co` = NetworkOnly**; ללא Runtime-cache של נתונים. Manifest (`lang:he`, `dir:rtl`, `display:standalone`, אייקונים שקופים, בלי maskable: ב-Android הוא היה מקבל רקע אטום). iOS: אין `beforeinstallprompt` ⇒ הוראות "הוסף למסך הבית"; Session ב-PWA מותקן נפרד מ-Safari ⇒ OTP בקוד (לא Link). Cache מתמיד של Query בעל `buster` = `schema_version`.
 
 ## D.7 Offline – ארכיטקטורה לעתיד (ללא שכתוב)
 ```

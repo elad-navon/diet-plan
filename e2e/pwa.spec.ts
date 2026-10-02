@@ -34,7 +34,8 @@ test.describe('manifest', () => {
     expect(manifest.icons.map((icon) => icon.sizes)).toEqual(
       expect.arrayContaining(['192x192', '512x512']),
     );
-    expect(manifest.icons.some((icon) => icon.purpose === 'maskable')).toBe(true);
+    // No maskable icon: Android would put it on an opaque tile, and the icons are meant to be transparent.
+    expect(manifest.icons.some((icon) => icon.purpose === 'maskable')).toBe(false);
     for (const icon of manifest.icons) {
       const image = await request.get(new URL(icon.src, new URL(href ?? '', page.url())).href);
       expect(image.ok(), icon.src).toBe(true);

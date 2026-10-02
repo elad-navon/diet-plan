@@ -1,11 +1,13 @@
 // Renders the app icons and the favicon with the browser that Playwright already installs.
-//  - The home-screen icons (192/512, maskable, iPhone) are the owner's illustration (scripts/icon-art.png: a
-//    clipboard, vegetables and a tape measure) on bright blue.
+//  - The home-screen icons (192/512) are the owner's illustration (scripts/icon-art.png: a clipboard,
+//    vegetables and a tape measure) on a TRANSPARENT background. There is no "maskable" icon on purpose: Android
+//    would put it on an opaque tile. The iPhone icon (apple-touch-icon) is on white, because iOS fills any
+//    transparent pixel with black.
 //  - The browser-tab icon (favicon.ico, icon.svg) is a simple plate with a fork and a knife, because the
 //    illustration has too much detail to read at 16-32 px.
 // Run once after changing a design: node scripts/make-icons.mjs
 //
-// Writes: public/icons/{icon.svg,icon-192.png,icon-512.png,maskable-512.png,apple-touch-icon.png}, public/favicon.ico
+// Writes: public/icons/{icon.svg,icon-192.png,icon-512.png,apple-touch-icon.png}, public/favicon.ico
 import { readFileSync, writeFileSync } from 'node:fs';
 import { chromium } from '@playwright/test';
 
@@ -42,29 +44,23 @@ const svg = ({
 
 const ART = `data:image/png;base64,${readFileSync(new URL('./icon-art.png', import.meta.url)).toString('base64')}`;
 
-/** The illustration centred on the blue; `scale` = how much of the width it fills. */
+/** The illustration centred; `scale` = how much of the width it fills; `background` null = transparent. */
 const artIcon = ({
-  rounded,
+  background,
   scale,
 }) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <rect width="512" height="512" ${rounded ? 'rx="112"' : ''} fill="${BLUE}"/>
+  ${background ? `<rect width="512" height="512" fill="${background}"/>` : ''}
   <image href="${ART}" x="${(512 * (1 - scale)) / 2}" y="${(512 * (1 - scale)) / 2}" width="${512 * scale}" height="${512 * scale}"/>
 </svg>`;
 
 const png = [
-  { file: 'public/icons/icon-192.png', size: 192, svg: artIcon({ rounded: true, scale: 0.82 }) },
-  { file: 'public/icons/icon-512.png', size: 512, svg: artIcon({ rounded: true, scale: 0.82 }) },
-  // Maskable: the OS crops it to a circle or squircle, so the picture stays well inside the middle.
-  {
-    file: 'public/icons/maskable-512.png',
-    size: 512,
-    svg: artIcon({ rounded: false, scale: 0.68 }),
-  },
-  // iOS rounds the corners itself.
+  { file: 'public/icons/icon-192.png', size: 192, svg: artIcon({ background: null, scale: 0.94 }) },
+  { file: 'public/icons/icon-512.png', size: 512, svg: artIcon({ background: null, scale: 0.94 }) },
+  // iOS rounds the corners itself and turns transparent pixels black, so this one sits on white.
   {
     file: 'public/icons/apple-touch-icon.png',
     size: 180,
-    svg: artIcon({ rounded: false, scale: 0.8 }),
+    svg: artIcon({ background: WHITE, scale: 0.8 }),
   },
 ];
 // The favicon: bold strokes, rendered separately at each size (no blurry downscaling).
