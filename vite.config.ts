@@ -60,6 +60,9 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
+    // On a developer machine two test workers keep the fan quiet (the default is one per core, or even more);
+    // CI machines use all they have.
+    maxWorkers: process.env['CI'] ? undefined : 2,
     include: ['src/**/*.test.{ts,tsx}', 'tests/**/*.test.ts'],
     // Pin the process timezone so any hidden dependence on the machine's zone fails loudly
     // (all real time logic takes an explicit IANA tz - see docs/ARCHITECTURE.md D.2).
