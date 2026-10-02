@@ -54,10 +54,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       <div
         role="status"
         aria-live="polite"
-        className="pointer-events-none fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-50 flex justify-center px-4"
+        className="pointer-events-none fixed inset-x-0 bottom-[calc(6.25rem+env(safe-area-inset-bottom))] z-50 flex justify-center px-4"
       >
         {toast && (
-          <div className="pointer-events-auto flex max-w-md items-center gap-3 rounded-2xl bg-ink px-4 py-2 text-canvas shadow-lg">
+          <div className="pointer-events-auto flex max-w-md items-center gap-3 rounded-full bg-ink px-5 py-2 text-canvas shadow-xl">
             <span className="text-base">{toast.message}</span>
             {toast.actionLabel && (
               <Button

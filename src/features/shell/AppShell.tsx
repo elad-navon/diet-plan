@@ -27,7 +27,7 @@ export function AppShell() {
       {updateReady && (
         <div
           role="status"
-          className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-faint bg-surface px-4 py-2"
+          className="sticky top-0 z-30 mx-4 mt-3 flex items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-2 [box-shadow:var(--card-shadow)]"
         >
           <p className="text-base">{he.pwa.updateReady}</p>
           <Button variant="primary" onClick={applyUpdate}>
@@ -36,25 +36,28 @@ export function AppShell() {
         </div>
       )}
       {account && !online && (
-        <p role="status" className="border-b border-warning bg-surface px-4 py-2 text-base">
+        <p
+          role="status"
+          className="mx-4 mt-3 rounded-2xl border-s-4 border-warning bg-surface px-4 py-2 text-base [box-shadow:var(--card-shadow)]"
+        >
           {he.pwa.offline}
         </p>
       )}
-      <main id="main" className="flex-1 px-4 pb-28 pt-4">
+      <main id="main" className="flex-1 px-4 pb-32 pt-5">
         <Outlet />
       </main>
       <nav
         aria-label={he.nav.label}
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-faint bg-surface pb-[env(safe-area-inset-bottom)]"
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
       >
-        <ul className="mx-auto flex max-w-xl">
+        <ul className="pointer-events-auto mx-auto flex max-w-sm gap-1 rounded-full bg-surface/90 p-1.5 ring-1 ring-faint backdrop-blur-xl [box-shadow:var(--nav-shadow)]">
           {TABS.map((tab) => (
             <li key={tab.to} className="flex-1">
               <NavLink
                 to={tab.to}
                 className={({ isActive }) =>
-                  `flex min-h-14 flex-col items-center justify-center gap-0.5 text-sm ${
-                    isActive ? 'font-bold text-accent' : 'text-muted'
+                  `flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-full text-sm transition ${
+                    isActive ? 'bg-accent/10 font-bold text-accent' : 'text-muted'
                   }`
                 }
               >

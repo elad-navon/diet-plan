@@ -16,7 +16,7 @@ function FieldFrame({ label, hint, error, children }: FieldFrameProps) {
     [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(' ') || undefined;
   return (
     <div className="space-y-1">
-      <label htmlFor={id} className="block text-base font-medium">
+      <label htmlFor={id} className="block text-base font-medium text-ink">
         {label}
       </label>
       {children({ id, describedBy, invalid: Boolean(error) })}
@@ -33,7 +33,7 @@ function FieldFrame({ label, hint, error, children }: FieldFrameProps) {
 }
 
 const CONTROL =
-  'min-h-11 w-full rounded-xl border bg-surface px-3 text-base text-ink placeholder:text-muted';
+  'min-h-12 w-full rounded-2xl border bg-surface-2 px-4 text-base text-ink placeholder:text-muted';
 
 interface TextFieldProps extends Omit<
   InputHTMLAttributes<HTMLInputElement>,

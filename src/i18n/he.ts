@@ -53,11 +53,18 @@ export const he = {
   } satisfies Record<RecommendationNote, string>,
 
   today: {
+    greeting: {
+      morning: 'בוקר טוב',
+      noon: 'צהריים טובים',
+      evening: 'ערב טוב',
+      night: 'לילה טוב',
+    },
     ringRemaining: 'נותרו',
     ringOver: 'חריגה',
     ringEaten: (eaten: string, target: string) => `נאכלו ${eaten} מתוך ${target}`,
     noTarget: 'אין עדיין יעד ליום הזה',
     macros: 'מאקרו',
+    macroGoal: (goal: string) => `מתוך ${goal}\u00A0ג'`,
     protein: 'חלבון',
     carbs: 'פחמימות',
     fat: 'שומן',

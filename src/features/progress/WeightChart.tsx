@@ -56,7 +56,7 @@ export function WeightChart({ model, tz, summary, showWeighIns = true }: WeightC
   const hasTrend = showWeighIns && model.trend.length > 0;
 
   return (
-    <figure className="rounded-2xl border border-faint bg-surface p-4">
+    <figure className="card p-5">
       <figcaption id={titleId} className="mb-2 text-lg font-bold">
         {he.progress.weightTitle}
       </figcaption>

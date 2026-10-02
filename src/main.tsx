@@ -1,4 +1,4 @@
-import '@fontsource-variable/heebo';
+import '@fontsource-variable/rubik';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';

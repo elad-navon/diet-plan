@@ -305,7 +305,7 @@ function Wizard({
             <p role="alert">{he.genericError}</p>
           )}
           {mode === 'new' && outcome?.kind === 'plan' && (
-            <label className="flex items-start gap-3 rounded-xl border border-faint bg-surface p-3 text-base">
+            <label className="flex items-start gap-3 rounded-2xl bg-surface-2 p-3 text-base">
               <input
                 type="checkbox"
                 checked={acknowledged}

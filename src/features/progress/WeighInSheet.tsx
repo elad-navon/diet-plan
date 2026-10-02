@@ -69,7 +69,7 @@ function WeighInForm({ now, previousKg, onClose, onSaved }: Omit<WeighInSheetPro
         error={error}
       />
       {needsConfirm && (
-        <label className="flex items-start gap-3 rounded-xl border border-warning p-3 text-base">
+        <label className="flex items-start gap-3 rounded-2xl border border-warning p-3 text-base">
           <input
             type="checkbox"
             checked={confirmed}

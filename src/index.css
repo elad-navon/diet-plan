@@ -1,21 +1,24 @@
 @import 'tailwindcss';
 
 /*
- * Design tokens. The neutral and chart colors are the validated reference palette (colorblind-safe
- * and contrast-checked in light and dark); tests/contrast.test.ts guards the text pairs below.
+ * Design tokens. The data colors (--series-*, status colors) are the validated reference palette
+ * (colorblind-safe and contrast-checked in light and dark); tests/contrast.test.ts guards every text pair
+ * below, including the gradient ends.
  *
  * Meaning is never carried by color alone: status colors always come with an icon and a label
  * (docs/TEST_PLAN.md A11Y-03), and a color is used for text only through the ink tokens.
  */
 :root {
   color-scheme: light dark;
-  --canvas: #f9f9f7;
-  --surface: #fcfcfb;
-  --ink: #0b0b0b;
-  --muted: #52514e; /* secondary ink - also used for chart axis text */
-  --faint: #e1e0d9; /* hairlines: grid, card borders */
-  --axis: #c3c2b7;
-  --accent: #256abf;
+  --canvas: #f3f4f8;
+  --surface: #ffffff;
+  --surface-2: #f4f5fa; /* inset areas: inputs, tiles, inactive chips */
+  --ink: #10131c;
+  --muted: #565b6c; /* secondary ink - also used for chart axis text */
+  --faint: #e3e6ef; /* hairlines: grid, dividers */
+  --axis: #c7cbd9;
+  --accent: #3358dc;
+  --accent-2: #6a45d8; /* the other end of the brand gradient */
   --on-accent: #ffffff;
   --series-1: #2a78d6;
   --series-2: #eb6834;
@@ -23,45 +26,60 @@
   --warning: #fab219;
   --serious: #ec835a;
   --critical: #d03b3b;
+  --hero-over: #ffc2b4; /* the ring when over the target, on the gradient */
+  --card-shadow: 0 1px 2px rgb(16 19 28 / 0.04), 0 14px 32px -18px rgb(16 19 28 / 0.22);
+  --nav-shadow: 0 12px 40px -12px rgb(16 19 28 / 0.4);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:where(:not([data-theme='light'])) {
-    --canvas: #0d0d0d;
-    --surface: #1a1a19;
-    --ink: #ffffff;
-    --muted: #c3c2b7;
-    --faint: #2c2c2a;
-    --axis: #383835;
-    --accent: #3987e5;
-    --on-accent: #0b0b0b;
+    --canvas: #0c0e14;
+    --surface: #171a23;
+    --surface-2: #1f2330;
+    --ink: #f5f6fa;
+    --muted: #aeb4c4;
+    --faint: #272b39;
+    --axis: #383d50;
+    --accent: #8aa4ff;
+    --accent-2: #b49bff;
+    --on-accent: #0b0d14;
     --series-1: #3987e5;
     --series-2: #d95926;
+    --hero-over: #7a1f12;
+    --card-shadow: 0 0 0 1px rgb(255 255 255 / 0.06);
+    --nav-shadow: 0 12px 40px -12px rgb(0 0 0 / 0.7);
   }
 }
 
 :root[data-theme='dark'] {
-  --canvas: #0d0d0d;
-  --surface: #1a1a19;
-  --ink: #ffffff;
-  --muted: #c3c2b7;
-  --faint: #2c2c2a;
-  --axis: #383835;
-  --accent: #3987e5;
-  --on-accent: #0b0b0b;
+  --canvas: #0c0e14;
+  --surface: #171a23;
+  --surface-2: #1f2330;
+  --ink: #f5f6fa;
+  --muted: #aeb4c4;
+  --faint: #272b39;
+  --axis: #383d50;
+  --accent: #8aa4ff;
+  --accent-2: #b49bff;
+  --on-accent: #0b0d14;
   --series-1: #3987e5;
   --series-2: #d95926;
+  --hero-over: #7a1f12;
+  --card-shadow: 0 0 0 1px rgb(255 255 255 / 0.06);
+  --nav-shadow: 0 12px 40px -12px rgb(0 0 0 / 0.7);
 }
 
 @theme inline {
-  --font-sans: 'Heebo Variable', system-ui, sans-serif;
+  --font-sans: 'Rubik Variable', system-ui, sans-serif;
   --color-canvas: var(--canvas);
   --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
   --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-faint: var(--faint);
   --color-axis: var(--axis);
   --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
   --color-on-accent: var(--on-accent);
   --color-series-1: var(--series-1);
   --color-series-2: var(--series-2);
@@ -71,25 +89,69 @@
   --color-critical: var(--critical);
 }
 
+/* Cards ease in; reduced motion turns it off (see the end of this file). Never on an element that can contain a
+   position:fixed child: a running transform would make it their containing block. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* A raised white (or dark) card: no outline, a soft shadow. */
+@utility card {
+  border-radius: 1.5rem;
+  background: var(--surface);
+  box-shadow: var(--card-shadow);
+  animation: rise 320ms ease-out both;
+}
+
+/* The brand gradient, for the one hero element of a screen. Text on it is --on-accent. */
+@utility hero {
+  border-radius: 2rem;
+  color: var(--on-accent);
+  background: linear-gradient(140deg, var(--accent) 0%, var(--accent-2) 100%);
+  box-shadow: 0 20px 40px -22px color-mix(in srgb, var(--accent) 80%, transparent);
+  animation: rise 320ms ease-out both;
+}
+
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
   }
 
   body {
-    @apply bg-canvas font-sans text-ink antialiased;
+    @apply font-sans text-ink antialiased;
+    min-height: 100dvh;
+    /* A soft glow at the top of every screen, then the canvas. */
+    background:
+      radial-gradient(
+        60rem 24rem at 50% -14rem,
+        color-mix(in srgb, var(--accent) 16%, transparent),
+        transparent 70%
+      ),
+      var(--canvas);
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.01em;
   }
 
   /* One consistent, visible keyboard focus ring (WCAG 2.2 AA). */
   :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
-    border-radius: 6px;
   }
 
-  /* Dialogs animate in unless the user asks for reduced motion. */
   dialog::backdrop {
-    background: rgb(0 0 0 / 0.45);
+    background: rgb(8 10 18 / 0.5);
+    backdrop-filter: blur(3px);
   }
 
   @media (prefers-reduced-motion: reduce) {

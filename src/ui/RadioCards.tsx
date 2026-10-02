@@ -34,10 +34,10 @@ export function RadioCards<T extends string>({
       {options.map((option) => (
         <label
           key={option.value}
-          className={`flex min-h-14 cursor-pointer items-center justify-between gap-3 rounded-xl border-2 px-4 py-2 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent ${
+          className={`flex min-h-14 cursor-pointer items-center justify-between gap-3 rounded-2xl border-2 px-4 py-2 transition has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent ${
             value === option.value
-              ? 'border-accent bg-surface font-semibold'
-              : 'border-faint bg-surface'
+              ? 'border-accent bg-accent/10 font-semibold'
+              : 'border-transparent bg-surface [box-shadow:var(--card-shadow)]'
           }`}
         >
           <span>

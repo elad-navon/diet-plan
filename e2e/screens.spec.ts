@@ -46,6 +46,12 @@ for (const scheme of ['light', 'dark'] as const) {
         .screenshot({ path: `${OUT}/chart-week-${scheme}.png` });
     });
 
+    test('settings', async ({ page }) => {
+      await openApp(page, { seed: {}, path: '/settings' });
+      await page.getByRole('heading', { level: 1 }).waitFor();
+      await shot(page, `settings-${scheme}`);
+    });
+
     test('welcome and result', async ({ page }) => {
       await openApp(page, { seed: false, path: '/welcome' });
       await shot(page, `welcome-1-${scheme}`);

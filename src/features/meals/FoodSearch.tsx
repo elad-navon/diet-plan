@@ -73,13 +73,13 @@ export function FoodSearch({ onPick, onManual }: FoodSearchProps) {
       )}
 
       {list.length > 0 && (
-        <ul className="divide-y divide-faint overflow-hidden rounded-xl border border-faint">
+        <ul className="divide-y divide-faint overflow-hidden rounded-2xl bg-surface-2">
           {list.map((food) => (
             <li key={food.id}>
               <button
                 type="button"
                 onClick={() => onPick(food)}
-                className="flex min-h-14 w-full items-center justify-between gap-3 px-3 py-2 text-start"
+                className="flex min-h-14 w-full items-center justify-between gap-3 px-4 py-2 text-start transition hover:bg-faint/60"
               >
                 <span className="min-w-0">
                   <span className="block break-words text-base font-medium">{food.name}</span>

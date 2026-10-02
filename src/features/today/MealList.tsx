@@ -5,6 +5,15 @@ import { formatInt, he } from '../../i18n/he';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 
+/** A friendly picture per meal (decorative: the slot name is always written next to it). */
+const SLOT_EMOJI: Record<StoredMeal['slot'], string> = {
+  breakfast: '🍳',
+  lunch: '🥗',
+  snack: '🍎',
+  dinner: '🍽️',
+  other: '🥤',
+};
+
 interface MealListProps {
   meals: readonly StoredMeal[];
   tz: Tz;
@@ -16,31 +25,35 @@ interface MealListProps {
 /** The day's meals, newest last, each with the three things you do to a meal: edit, delete, eat again. */
 export function MealList({ meals, tz, onEdit, onDelete, onAgain }: MealListProps) {
   if (meals.length === 0) {
-    return (
-      <p className="rounded-2xl border border-faint bg-surface p-4 text-muted">
-        {he.today.noMealsYet}
-      </p>
-    );
+    return <p className="card p-5 text-muted">{he.today.noMealsYet}</p>;
   }
   return (
     <ul className="space-y-2">
       {meals.map((meal) => (
-        <li key={meal.id} className="rounded-2xl border border-faint bg-surface p-3">
+        <li key={meal.id} className="card p-4">
           <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-sm text-muted">
-                <bdi>{formatClock(meal.eatenAt, tz)}</bdi> · {he.slots[meal.slot]}
-              </p>
-              <p className="break-words text-lg font-semibold">{meal.name}</p>
-              {meal.proteinG !== null && (
+            <div className="flex min-w-0 gap-3">
+              <span
+                aria-hidden="true"
+                className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-surface-2 text-2xl"
+              >
+                {SLOT_EMOJI[meal.slot]}
+              </span>
+              <div className="min-w-0">
                 <p className="text-sm text-muted">
-                  {he.today.protein} <bdi>{formatInt(meal.proteinG)}</bdi> · {he.today.carbs}{' '}
-                  <bdi>{formatInt(meal.carbsG ?? 0)}</bdi> · {he.today.fat}{' '}
-                  <bdi>{formatInt(meal.fatG ?? 0)}</bdi>
+                  <bdi>{formatClock(meal.eatenAt, tz)}</bdi> · {he.slots[meal.slot]}
                 </p>
-              )}
+                <p className="break-words text-lg font-semibold">{meal.name}</p>
+                {meal.proteinG !== null && (
+                  <p className="text-sm text-muted">
+                    {he.today.protein} <bdi>{formatInt(meal.proteinG)}</bdi> · {he.today.carbs}{' '}
+                    <bdi>{formatInt(meal.carbsG ?? 0)}</bdi> · {he.today.fat}{' '}
+                    <bdi>{formatInt(meal.fatG ?? 0)}</bdi>
+                  </p>
+                )}
+              </div>
             </div>
-            <p className="shrink-0 text-xl font-bold">
+            <p className="shrink-0 text-2xl font-bold tabular-nums">
               <bdi>{formatInt(meal.kcal)}</bdi>{' '}
               <span className="text-sm font-normal text-muted">{he.kcal}</span>
             </p>

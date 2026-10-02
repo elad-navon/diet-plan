@@ -1,7 +1,7 @@
 import { formatInt, he } from '../../i18n/he';
 
-const SIZE = 168;
-const STROKE = 14;
+const SIZE = 184;
+const STROKE = 16;
 const RADIUS = (SIZE - STROKE) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
@@ -40,7 +40,7 @@ export function CalorieRing({ consumed, target }: CalorieRingProps) {
             cy={SIZE / 2}
             r={RADIUS}
             fill="none"
-            stroke="var(--faint)"
+            stroke="rgb(255 255 255 / 0.25)"
             strokeWidth={STROKE}
           />
           <circle
@@ -48,7 +48,7 @@ export function CalorieRing({ consumed, target }: CalorieRingProps) {
             cy={SIZE / 2}
             r={RADIUS}
             fill="none"
-            stroke={over ? 'var(--critical)' : 'var(--series-1)'}
+            stroke={over ? 'var(--hero-over)' : 'var(--on-accent)'}
             strokeWidth={STROKE}
             strokeLinecap="round"
             strokeDasharray={CIRCUMFERENCE}
@@ -60,16 +60,16 @@ export function CalorieRing({ consumed, target }: CalorieRingProps) {
           aria-hidden="true"
           className="absolute inset-0 flex flex-col items-center justify-center"
         >
-          <span className="text-5xl font-bold leading-none">
+          <span className="text-5xl font-bold leading-none tracking-tight tabular-nums">
             <bdi>{target === null ? formatInt(consumed) : formatInt(Math.abs(remaining ?? 0))}</bdi>
           </span>
-          <span className="mt-1 text-base text-muted">
+          <span className="mt-1 text-base opacity-90">
             {target === null ? he.kcal : over ? he.today.ringOver : he.today.ringRemaining}
           </span>
         </div>
       </div>
       {target !== null && (
-        <p className="text-base text-muted">
+        <p className="text-base opacity-90">
           {he.today.ringEaten(formatInt(consumed), formatInt(target))}
         </p>
       )}

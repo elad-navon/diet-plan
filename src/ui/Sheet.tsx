@@ -55,10 +55,11 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
         onClick={(event) => {
           if (event.target === ref.current) onClose();
         }}
-        className="m-0 mt-auto max-h-[92dvh] w-full max-w-xl overflow-hidden rounded-t-3xl bg-surface p-0 text-ink shadow-2xl backdrop:bg-black/50 open:flex open:flex-col sm:m-auto sm:rounded-3xl"
+        className="m-0 mt-auto max-h-[92dvh] w-full max-w-xl overflow-hidden rounded-t-[2rem] bg-surface p-0 text-ink shadow-2xl open:flex open:flex-col sm:m-auto sm:rounded-[2rem]"
       >
-        <div className="flex items-center justify-between gap-3 border-b border-faint px-5 py-3">
-          <h2 id={titleId} className="text-xl font-bold">
+        <div aria-hidden="true" className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-faint" />
+        <div className="flex items-center justify-between gap-3 px-5 pb-1 pt-2">
+          <h2 id={titleId} className="text-2xl font-bold">
             {title}
           </h2>
           <Button icon variant="ghost" onClick={onClose} aria-label={he.close}>
@@ -69,7 +70,7 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
           {open && children}
         </div>
         {footer && (
-          <div className="border-t border-faint px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="border-t border-faint bg-surface px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             {footer}
           </div>
         )}

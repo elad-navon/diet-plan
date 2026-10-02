@@ -83,19 +83,16 @@ export function SettingsPage() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-bold">{he.settings.title}</h1>
+      <h1 className="text-3xl font-bold tracking-tight">{he.settings.title}</h1>
 
       {!persistent && (
-        <p role="alert" className="rounded-xl border border-warning p-3 text-base">
+        <p role="alert" className="rounded-2xl border border-warning p-3 text-base">
           {he.settings.notPersistent}
         </p>
       )}
 
-      <section
-        aria-labelledby="profile-title"
-        className="space-y-2 rounded-2xl border border-faint bg-surface p-4"
-      >
-        <h2 id="profile-title" className="text-lg font-bold">
+      <section aria-labelledby="profile-title" className="space-y-2 card p-5">
+        <h2 id="profile-title" className="text-xl font-bold">
           {he.settings.profile}
         </h2>
         <p className="text-base">
@@ -107,18 +104,15 @@ export function SettingsPage() {
         </p>
         <Link
           to="/settings/goal"
-          className="inline-flex min-h-11 items-center rounded-xl border border-axis bg-surface px-4 text-base"
+          className="inline-flex min-h-12 items-center rounded-full bg-surface-2 px-5 text-base font-medium ring-1 ring-inset ring-faint"
         >
           {he.settings.editGoal}
         </Link>
       </section>
 
       {!isStandalone() && (install.canPrompt || isIos()) && (
-        <section
-          aria-labelledby="install-title"
-          className="space-y-2 rounded-2xl border border-faint bg-surface p-4"
-        >
-          <h2 id="install-title" className="text-lg font-bold">
+        <section aria-labelledby="install-title" className="space-y-2 card p-5">
+          <h2 id="install-title" className="text-xl font-bold">
             {he.pwa.installTitle}
           </h2>
           <p className="text-base">{he.pwa.installBody}</p>
@@ -133,11 +127,8 @@ export function SettingsPage() {
       )}
 
       {account && (
-        <section
-          aria-labelledby="account-title"
-          className="space-y-2 rounded-2xl border border-faint bg-surface p-4"
-        >
-          <h2 id="account-title" className="text-lg font-bold">
+        <section aria-labelledby="account-title" className="space-y-2 card p-5">
+          <h2 id="account-title" className="text-xl font-bold">
             {he.auth.account}
           </h2>
           <p className="text-base">
@@ -151,11 +142,8 @@ export function SettingsPage() {
         </section>
       )}
 
-      <section
-        aria-labelledby="look-title"
-        className="rounded-2xl border border-faint bg-surface p-4"
-      >
-        <h2 id="look-title" className="mb-2 text-lg font-bold">
+      <section aria-labelledby="look-title" className="card p-5">
+        <h2 id="look-title" className="mb-2 text-xl font-bold">
           {he.settings.theme}
         </h2>
         <SelectField
@@ -174,11 +162,8 @@ export function SettingsPage() {
         />
       </section>
 
-      <section
-        aria-labelledby="data-title"
-        className="space-y-3 rounded-2xl border border-faint bg-surface p-4"
-      >
-        <h2 id="data-title" className="text-lg font-bold">
+      <section aria-labelledby="data-title" className="space-y-3 card p-5">
+        <h2 id="data-title" className="text-xl font-bold">
           {he.settings.data}
         </h2>
         <p className="text-sm text-muted">{account ? he.settings.synced : he.settings.localOnly}</p>
@@ -191,11 +176,8 @@ export function SettingsPage() {
         </Button>
       </section>
 
-      <section
-        aria-labelledby="sources-title"
-        className="space-y-1 rounded-2xl border border-faint bg-surface p-4"
-      >
-        <h2 id="sources-title" className="text-lg font-bold">
+      <section aria-labelledby="sources-title" className="space-y-1 card p-5">
+        <h2 id="sources-title" className="text-xl font-bold">
           {he.settings.sources}
         </h2>
         <p className="text-base">

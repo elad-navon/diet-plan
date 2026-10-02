@@ -21,33 +21,24 @@ export function MacroBars({ target, macroState, summary }: MacroBarsProps) {
   const partial = meals > 0 && mealsWithMacros < meals;
 
   return (
-    <section
-      aria-labelledby="macros-title"
-      className="rounded-2xl border border-faint bg-surface p-4"
-    >
-      <h2 id="macros-title" className="mb-3 text-lg font-bold">
+    <section aria-labelledby="macros-title" className="card p-5">
+      <h2 id="macros-title" className="mb-3 text-xl font-bold">
         {he.today.macros}
       </h2>
-      <ul className="space-y-3">
+      <ul className="grid grid-cols-3 gap-2.5">
         {ROWS.map(({ key, label }) => {
           const eaten = summary.macros[key];
           const goal = target?.[key] ?? null;
           const percent = goal ? Math.min(100, Math.round((eaten / goal) * 100)) : 0;
           return (
-            <li key={key}>
-              <div className="mb-1 flex items-baseline justify-between text-base">
-                <span>{label}</span>
-                <span className="text-muted">
-                  <bdi>{formatInt(eaten)}</bdi>
-                  {goal !== null && (
-                    <>
-                      {' / '}
-                      <bdi>{formatInt(goal)}</bdi>
-                    </>
-                  )}{' '}
-                  {he.gramsShort}
-                </span>
-              </div>
+            <li key={key} className="rounded-2xl bg-surface-2 p-3">
+              <p className="text-sm text-muted">{label}</p>
+              <p className="mt-0.5 text-3xl font-bold leading-tight tabular-nums">
+                <bdi>{formatInt(eaten)}</bdi>
+              </p>
+              <p className="text-sm text-muted">
+                {goal !== null ? he.today.macroGoal(formatInt(goal)) : he.gramsShort}
+              </p>
               {goal !== null && (
                 <div
                   role="progressbar"
@@ -56,7 +47,7 @@ export function MacroBars({ target, macroState, summary }: MacroBarsProps) {
                   aria-valuemax={goal}
                   aria-valuenow={Math.min(eaten, goal)}
                   aria-valuetext={`${formatInt(eaten)} / ${formatInt(goal)} ${he.gramsShort}`}
-                  className="h-2 overflow-hidden rounded-full bg-faint"
+                  className="mt-2 h-1.5 overflow-hidden rounded-full bg-faint"
                 >
                   <div
                     className="h-full rounded-full bg-series-1"

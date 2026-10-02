@@ -58,9 +58,14 @@ describe.each(themes)('contrast in the %s theme', (_name, t) => {
     ['ink', 'surface'],
     ['muted', 'canvas'],
     ['muted', 'surface'],
+    ['ink', 'surface-2'],
+    ['muted', 'surface-2'],
     ['accent', 'canvas'],
     ['accent', 'surface'],
+    ['accent', 'surface-2'],
+    // The brand gradient runs from --accent to --accent-2: text on it must be readable at both ends.
     ['on-accent', 'accent'],
+    ['on-accent', 'accent-2'],
   ])('text --%s on --%s is at least 4.5:1', (foreground, background) => {
     expect(contrast(get(foreground), get(background))).toBeGreaterThanOrEqual(4.5);
   });

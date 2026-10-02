@@ -336,7 +336,7 @@ function MealForm({
 
   return (
     <div className="space-y-4">
-      <fieldset className="grid grid-flow-col gap-1 rounded-xl bg-canvas p-1">
+      <fieldset className="grid grid-flow-col gap-1 rounded-full bg-surface-2 p-1 ring-1 ring-inset ring-faint">
         <legend className="sr-only">{he.addMeal.modeLegend}</legend>
         {(
           [
@@ -349,8 +349,8 @@ function MealForm({
           return (
             <label
               key={value}
-              className={`flex min-h-11 cursor-pointer items-center justify-center rounded-lg px-2 text-center text-base has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent ${
-                mode === value ? 'bg-surface font-bold shadow-sm' : 'text-muted'
+              className={`flex min-h-11 cursor-pointer items-center justify-center rounded-full px-2 text-center text-base transition has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent ${
+                mode === value ? 'bg-surface font-bold shadow-md' : 'text-muted'
               } ${disabled ? 'opacity-50' : ''}`}
             >
               <input
@@ -440,7 +440,7 @@ function MealForm({
           {favorites.map((favorite) => (
             <li
               key={favorite.id}
-              className="flex items-center justify-between gap-3 rounded-xl border border-faint p-3"
+              className="flex items-center justify-between gap-3 rounded-2xl bg-surface-2 p-3"
             >
               <span className="min-w-0">
                 <span className="block break-words font-medium">{favorite.name}</span>
@@ -459,7 +459,7 @@ function MealForm({
           <h3 id="items-title" className="text-lg font-bold">
             {he.addMeal.items}
           </h3>
-          <ul className="divide-y divide-faint rounded-xl border border-faint">
+          <ul className="divide-y divide-faint overflow-hidden rounded-2xl bg-surface-2">
             {items.map((item, index) => {
               const food = database.data?.db.foods.find((f) => f.id === item.foodId);
               return (
@@ -537,7 +537,7 @@ function MealForm({
       </details>
 
       {needsConfirm && (
-        <label className="flex items-start gap-3 rounded-xl border border-warning p-3 text-base">
+        <label className="flex items-start gap-3 rounded-2xl border border-warning p-3 text-base">
           <input
             type="checkbox"
             checked={confirmLarge}

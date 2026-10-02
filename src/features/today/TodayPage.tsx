@@ -11,7 +11,7 @@ import { buildDayChart, buildDayView, resolvePlanForDate } from '../../core/dayv
 import { portionParts, sumEntries, type PortionPart } from '../../core/food';
 import { type Recommendation, type Suggestion } from '../../core/recommend';
 import { DEFAULT_SCHEDULE } from '../../core/schedule';
-import { localDateOf } from '../../core/time';
+import { localDateOf, localTimeOf } from '../../core/time';
 import { DataError, type StoredMeal } from '../../data';
 import { dataErrorMessage } from '../../i18n/data-errors';
 import { formatDayTitle } from '../../i18n/format';
@@ -33,6 +33,15 @@ interface SheetState {
   open: boolean;
   editing: StoredMeal | null;
   prefill: MealPrefill | null;
+}
+
+/** "בוקר טוב" … by the local hour of the person's own time zone. */
+function greeting(now: number, tz: string): string {
+  const hour = Number(localTimeOf(now, tz).slice(0, 2));
+  if (hour < 5 || hour >= 22) return he.today.greeting.night;
+  if (hour < 12) return he.today.greeting.morning;
+  if (hour < 17) return he.today.greeting.noon;
+  return he.today.greeting.evening;
 }
 
 const CLOSED: SheetState = { open: false, editing: null, prefill: null };
@@ -155,16 +164,18 @@ function TodayContent() {
 
   return (
     <div className="space-y-4">
-      <header className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold">{formatDayTitle(date, tz)}</h1>
-        {recommendation && <StatusChip status={recommendation.status} />}
+      <header>
+        <p className="text-base text-muted">{greeting(now, tz)}</p>
+        <h1 className="text-3xl font-bold tracking-tight">{formatDayTitle(date, tz)}</h1>
       </header>
 
-      <section
-        aria-label={he.today.ringRemaining}
-        className="rounded-2xl border border-faint bg-surface p-4"
-      >
+      <section aria-label={he.today.ringRemaining} className="hero space-y-4 px-5 py-6">
         <CalorieRing consumed={view.summary.kcal} target={view.target?.kcalTarget ?? null} />
+        {recommendation && (
+          <div className="flex justify-center">
+            <StatusChip status={recommendation.status} />
+          </div>
+        )}
       </section>
 
       {chart && (
@@ -192,7 +203,7 @@ function TodayContent() {
       )}
 
       <section aria-labelledby="meals-title" className="space-y-2">
-        <h2 id="meals-title" className="text-lg font-bold">
+        <h2 id="meals-title" className="text-xl font-bold">
           {he.today.mealsTitle}
         </h2>
         <MealList
@@ -213,7 +224,7 @@ function TodayContent() {
         type="button"
         aria-label={he.today.addMeal}
         onClick={() => openNew()}
-        className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] end-4 z-30 flex size-14 items-center justify-center rounded-full bg-accent text-on-accent shadow-lg"
+        className="fixed bottom-[calc(6.25rem+env(safe-area-inset-bottom))] end-4 z-30 flex size-14 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent-2 text-on-accent shadow-[0_12px_28px_-8px_color-mix(in_srgb,var(--accent)_80%,transparent)] transition active:scale-95"
       >
         <Icon name="plus" size={28} />
       </button>

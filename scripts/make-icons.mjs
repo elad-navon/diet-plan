@@ -3,14 +3,16 @@
 import { writeFileSync } from 'node:fs';
 import { chromium } from '@playwright/test';
 
-const ACCENT = '#256abf';
+const ACCENT = '#3358dc';
+const ACCENT_2 = '#6a45d8';
 
-/** A calorie ring (three quarters filled) on the accent colour. `full` = no rounded corners (maskable / OS-masked). */
+/** A calorie ring (three quarters filled) on the brand gradient. `full` = no rounded corners (maskable / OS-masked). */
 const svg = ({
   rounded,
   scale,
 }) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <rect width="512" height="512" ${rounded ? 'rx="112"' : ''} fill="${ACCENT}"/>
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${ACCENT}"/><stop offset="1" stop-color="${ACCENT_2}"/></linearGradient></defs>
+  <rect width="512" height="512" ${rounded ? 'rx="112"' : ''} fill="url(#g)"/>
   <g transform="translate(256 256) scale(${scale}) rotate(-90)">
     <circle r="150" fill="none" stroke="#fff" stroke-opacity="0.28" stroke-width="46"/>
     <circle r="150" fill="none" stroke="#fff" stroke-width="46" stroke-linecap="round"

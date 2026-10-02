@@ -87,8 +87,8 @@ export function DayChart({ model, tz, corridorNow }: DayChartProps) {
   );
 
   return (
-    <figure className="rounded-2xl border border-faint bg-surface p-4">
-      <figcaption id={titleId} className="mb-2 text-lg font-bold">
+    <figure className="card p-5">
+      <figcaption id={titleId} className="mb-2 text-xl font-bold">
         {he.today.chartTitle}
       </figcaption>
 

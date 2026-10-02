@@ -82,7 +82,7 @@ function ProgressContent() {
   return (
     <div className="space-y-4">
       <header className="flex items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold">{he.progress.title}</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{he.progress.title}</h1>
         <Button variant="primary" onClick={() => setWeighInOpen(true)}>
           <Icon name="plus" size={18} /> {he.progress.addWeight}
         </Button>
@@ -93,7 +93,7 @@ function ProgressContent() {
           aria-labelledby="recalc-title"
           className="rounded-2xl border border-warning bg-surface p-4"
         >
-          <h2 id="recalc-title" className="text-lg font-bold">
+          <h2 id="recalc-title" className="text-xl font-bold">
             {he.progress.recalcTitle}
           </h2>
           <p className="text-base">{he.progress.recalcBody}</p>
@@ -117,7 +117,7 @@ function ProgressContent() {
       <WeightChart model={model} tz={tz} summary={weightSummary} />
 
       {weights.length > 0 && (
-        <details className="rounded-2xl border border-faint bg-surface p-4">
+        <details className="card p-5">
           <summary className="min-h-11 cursor-pointer text-base font-semibold">
             {he.progress.weighIns}
           </summary>

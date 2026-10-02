@@ -28,7 +28,7 @@ function Macros({ plan }: { plan: Plan }) {
       {rows.map(([label, grams]) => (
         <div key={label} className="rounded-xl bg-canvas p-2">
           <dt className="text-sm text-muted">{label}</dt>
-          <dd className="text-lg font-bold">
+          <dd className="text-xl font-bold">
             <bdi>{formatInt(grams)}</bdi> {he.gramsShort}
           </dd>
         </div>
@@ -49,7 +49,7 @@ export function PlanResult({
     return (
       <ul className="space-y-2" aria-live="polite">
         {outcome.errors.map((error) => (
-          <li key={error.code} className="rounded-xl border border-critical p-3 text-base">
+          <li key={error.code} className="rounded-2xl border border-critical p-3 text-base">
             ⚠ {he.validation[error.code]}
             {error.code === 'target_below_bmi_18_5' && error.min !== undefined && (
               <span className="block text-sm text-muted">
@@ -65,7 +65,7 @@ export function PlanResult({
   if (outcome.kind === 'not_feasible') {
     return (
       <div className="space-y-3" role="status">
-        <p className="rounded-xl border border-warning p-3 text-base">
+        <p className="rounded-2xl border border-warning p-3 text-base">
           {he.onboarding.notFeasible}
         </p>
         <Button variant="primary" onClick={onSwitchToMaintain}>
@@ -98,7 +98,7 @@ export function PlanResult({
   return (
     <div className="space-y-4">
       {outcome.kind === 'needs_confirmation' && plan.projectedDate && (
-        <div className="space-y-2 rounded-xl border border-warning p-3" role="status">
+        <div className="space-y-2 rounded-2xl border border-warning p-3" role="status">
           <p className="text-base">
             {he.onboarding.dateAdjusted(formatMonthYear(plan.projectedDate, tz))}
           </p>
@@ -108,10 +108,7 @@ export function PlanResult({
         </div>
       )}
 
-      <section
-        aria-labelledby="target-title"
-        className="rounded-2xl border border-faint bg-surface p-4 text-center"
-      >
+      <section aria-labelledby="target-title" className="card p-5 text-center">
         <h3 id="target-title" className="text-base text-muted">
           {he.onboarding.dailyTarget}
         </h3>
@@ -129,17 +126,17 @@ export function PlanResult({
       </section>
 
       {plan.warnings.includes('rate_adjusted') && plan.planState === 'adjusted_rate' && (
-        <p className="rounded-xl border border-warning p-3 text-base">
+        <p className="rounded-2xl border border-warning p-3 text-base">
           {he.onboarding.rateAdjusted}
         </p>
       )}
       {plan.warnings.includes('large_total_loss') && (
-        <p className="rounded-xl border border-warning p-3 text-base">{he.onboarding.largeLoss}</p>
+        <p className="rounded-2xl border border-warning p-3 text-base">{he.onboarding.largeLoss}</p>
       )}
 
       {chart && (
         <section aria-labelledby="projection-title" className="space-y-2">
-          <h3 id="projection-title" className="text-lg font-bold">
+          <h3 id="projection-title" className="text-xl font-bold">
             {he.onboarding.projection}
           </h3>
           <WeightChart
