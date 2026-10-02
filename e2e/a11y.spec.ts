@@ -45,6 +45,11 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(sheet).toBeVisible();
       expect(await scan(page)).toEqual([]);
       await sheet.getByText(he.addMeal.tabManual, { exact: true }).click();
+      // The manual form is longer than the window and ends with a sticky save bar. Scroll to its
+      // end, as a person (or the keyboard) would, and check that the last control clears the bar.
+      await sheet
+        .getByText(he.addMeal.moreOptions, { exact: true })
+        .evaluate((element) => element.scrollIntoView({ block: 'nearest' }));
       expect(await scan(page)).toEqual([]);
     });
 
