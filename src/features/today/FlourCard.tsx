@@ -5,7 +5,33 @@ interface FlourCardProps {
   grain: GrainDay;
 }
 
-/** White flour against whole grain today, by the carbohydrate of each; with what to try instead of the white. */
+interface AmountProps {
+  label: string;
+  grams: number;
+  /** The colour of this part in the bar; the label says which part it is, so colour is never the only cue. */
+  swatch: string;
+}
+
+/** One of the two figures: what it is, and its grams in a large size. */
+function Amount({ label, grams, swatch }: AmountProps) {
+  return (
+    <div>
+      <p className="flex items-start gap-1.5 text-sm text-muted">
+        <span aria-hidden="true" className={`mt-1 size-3 shrink-0 rounded-full ${swatch}`} />
+        {label}
+      </p>
+      <p className="mt-1 text-4xl font-bold leading-none tabular-nums">
+        <bdi>{formatDecimal(grams)}</bdi>
+        <span className="ms-1 text-base font-normal text-muted">{he.flour.unit}</span>
+      </p>
+    </div>
+  );
+}
+
+const REFINED_SWATCH = 'bg-warning/50';
+const WHOLE_SWATCH = 'bg-good/40';
+
+/** White flour and whole grain today, side by side by the carbohydrate of each; with what to try instead of the white. */
 export function FlourCard({ grain }: FlourCardProps) {
   const { refinedCarbsG, wholeCarbsG, swaps } = grain;
   const total = refinedCarbsG + wholeCarbsG;
@@ -22,32 +48,17 @@ export function FlourCard({ grain }: FlourCardProps) {
         <p className="mt-2 text-muted">{he.flour.empty}</p>
       ) : (
         <>
-          <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <p className="text-4xl font-bold leading-none tabular-nums">
-              <bdi>{formatDecimal(refinedCarbsG)}</bdi>
-              <span className="ms-1 text-base font-normal text-muted">{he.flour.carbsUnit}</span>
-            </p>
-            <p className="text-base text-muted">
-              {he.flour.wholeLabel}: <bdi>{formatDecimal(wholeCarbsG)}</bdi> {he.gramsShort}
-            </p>
+          <div className="mt-3 grid grid-cols-2 gap-4">
+            <Amount label={he.flour.refinedLabel} grams={refinedCarbsG} swatch={REFINED_SWATCH} />
+            <Amount label={he.flour.wholeLabel} grams={wholeCarbsG} swatch={WHOLE_SWATCH} />
           </div>
 
           <div role="img" aria-label={label} className="mt-4">
             <div className="flex h-3 overflow-hidden rounded-full">
-              <div className="bg-warning/50" style={{ width: `${refinedPercent}%` }} />
-              <div className="bg-good/40" style={{ width: `${100 - refinedPercent}%` }} />
+              <div className={REFINED_SWATCH} style={{ width: `${refinedPercent}%` }} />
+              <div className={WHOLE_SWATCH} style={{ width: `${100 - refinedPercent}%` }} />
             </div>
           </div>
-          <p className="mt-2 flex flex-wrap gap-x-4 text-sm text-muted">
-            <span className="inline-flex items-center gap-1.5">
-              <span aria-hidden="true" className="size-3 rounded-full bg-warning/50" />
-              {he.flour.refined}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span aria-hidden="true" className="size-3 rounded-full bg-good/40" />
-              {he.flour.whole}
-            </span>
-          </p>
         </>
       )}
 

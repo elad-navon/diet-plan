@@ -82,11 +82,9 @@ export const he = {
   },
 
   flour: {
-    title: 'קמח לבן',
+    title: 'קמח לבן ודגנים מלאים',
     note: 'לחם, פיתה, פסטה, אורז לבן ומאפים מקמח לבן. אין כאן יעד קבוע: הכיוון הוא להעדיף דגנים מלאים.',
-    refined: 'קמח לבן',
-    whole: 'דגנים מלאים',
-    carbsUnit: "ג' פחמימות",
+    unit: 'גרם',
     refinedLabel: 'פחמימות מקמח לבן',
     wholeLabel: 'פחמימות מדגנים מלאים',
     summary: (refined: string, whole: string) =>
