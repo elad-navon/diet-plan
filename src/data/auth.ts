@@ -6,7 +6,7 @@ export interface AuthUser {
 }
 
 export type AuthErrorCode =
-  'invalid_email' | 'invalid_code' | 'rate_limited' | 'network' | 'unknown';
+  'invalid_email' | 'invalid_code' | 'rate_limited' | 'signups_closed' | 'network' | 'unknown';
 
 export class AuthError extends Error {
   constructor(

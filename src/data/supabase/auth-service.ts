@@ -6,6 +6,12 @@ function toAuthError(error: SupabaseAuthError, whenVerifying: boolean): AuthErro
   let mapped: AuthErrorCode = 'unknown';
   if (error.status === 429 || /rate_limit/.test(code)) {
     mapped = 'rate_limited';
+  } else if (
+    /signup_disabled|otp_disabled/.test(code) ||
+    /signups? not allowed/i.test(error.message)
+  ) {
+    // New accounts are switched off in the project: only people who were added can sign in.
+    mapped = 'signups_closed';
   } else if (error.status === 0 || /fetch/i.test(error.name + error.message)) {
     mapped = 'network';
   } else if (

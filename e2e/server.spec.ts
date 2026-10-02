@@ -239,6 +239,26 @@ test.describe('signing in', () => {
     await expect(page.getByRole('alert')).toContainText(he.auth.errors.rate_limited);
   });
 
+  test('when new accounts are closed, a stranger is told entry is by invitation only', async ({
+    page,
+  }) => {
+    await fakeServer(page, {
+      otp: {
+        status: 422,
+        body: {
+          code: 422,
+          error_code: 'signup_disabled',
+          msg: 'Signups not allowed for this instance',
+        },
+      },
+    });
+    await page.goto('/');
+    await page.getByLabel(he.auth.email).fill('stranger@example.com');
+    await page.getByRole('button', { name: he.auth.sendCode }).click();
+    await expect(page.getByRole('alert')).toContainText(he.auth.errors.signups_closed);
+    await expect(page.getByLabel(he.auth.code)).toHaveCount(0);
+  });
+
   test('a new code cannot be requested straight away, and the address can be changed', async ({
     page,
   }) => {
