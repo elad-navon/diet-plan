@@ -629,3 +629,64 @@ describe('mark_favorite_used', () => {
     expect(row?.last_used_at).not.toBeNull();
   });
 });
+
+describe('added sugar of a meal', () => {
+  it('is stored with one decimal, may be absent, and comes back with the meal', async () => {
+    const user = await db.newUserWithProfile();
+    const withSugar = await db
+      .as(user)
+      .query<{ added_sugar_g: string | null }>(
+        'select added_sugar_g::text from public.add_meal($1::jsonb)',
+        [JSON.stringify(mealPayload(await hoursAgo(2), { added_sugar_g: 12.34 }))],
+      );
+    expect(withSugar[0]?.added_sugar_g).toBe('12.3');
+    const without = await db
+      .as(user)
+      .query<{ added_sugar_g: string | null }>(
+        'select added_sugar_g::text from public.add_meal($1::jsonb)',
+        [JSON.stringify(mealPayload(await hoursAgo(2)))],
+      );
+    expect(without[0]?.added_sugar_g).toBeNull();
+  });
+
+  it('accepts 0 and the same upper bound as the macros, and refuses anything else', async () => {
+    const user = await db.newUserWithProfile();
+    const add = async (value: unknown) =>
+      failureOf(
+        db
+          .as(user)
+          .query('select * from public.add_meal($1::jsonb)', [
+            JSON.stringify(mealPayload(await hoursAgo(2), { added_sugar_g: value })),
+          ]),
+      );
+    expect(await add(0)).toBe('');
+    expect(await add(MEAL_LIMITS.macroMaxG)).toBe('');
+    expect(await add(MEAL_LIMITS.macroMaxG + 0.1)).toMatch(/violates check constraint/);
+    expect(await add(-1)).toMatch(/violates check constraint/);
+  });
+
+  it('is part of what makes a retry "the same request"', async () => {
+    const user = await db.newUserWithProfile();
+    const payload = mealPayload(await hoursAgo(2), { added_sugar_g: 5 });
+    await addMeal(user, payload);
+    expect(await failureOf(addMeal(user, { ...payload, added_sugar_g: 9 }))).toMatch(/id_conflict/);
+    await expect(addMeal(user, payload)).resolves.toBeDefined();
+  });
+
+  it('can be changed, cleared and left alone by an edit', async () => {
+    const user = await db.newUserWithProfile();
+    const meal = await addMeal(user, mealPayload(await hoursAgo(2), { added_sugar_g: 5 }));
+    const read = async (patch: object, version: number) =>
+      (
+        await db
+          .as(user)
+          .query<{ added_sugar_g: string | null }>(
+            'select added_sugar_g::text from public.update_meal($1, $2, $3::jsonb)',
+            [meal.id, version, JSON.stringify(patch)],
+          )
+      )[0]?.added_sugar_g;
+    expect(await read({ kcal: 400 }, 1)).toBe('5.0'); // untouched
+    expect(await read({ added_sugar_g: 8.5 }, 2)).toBe('8.5');
+    expect(await read({ added_sugar_g: null }, 3)).toBeNull();
+  });
+});

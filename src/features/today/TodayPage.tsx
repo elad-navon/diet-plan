@@ -28,6 +28,7 @@ import { MacroBars } from './MacroBars';
 import { MealList } from './MealList';
 import { NextMealCard } from './NextMealCard';
 import { StatusChip } from './StatusChip';
+import { SugarCard } from './SugarCard';
 
 interface SheetState {
   open: boolean;
@@ -144,6 +145,7 @@ function TodayContent() {
           ? { proteinG: meal.proteinG, carbsG: meal.carbsG, fatG: meal.fatG }
           : null,
       items: meal.items,
+      addedSugarG: meal.addedSugarG,
       slot: meal.slot,
       source: 'copy',
     });
@@ -191,6 +193,8 @@ function TodayContent() {
         macroState={view.target?.macroState ?? null}
         summary={view.summary}
       />
+
+      <SugarCard summary={view.summary} />
 
       {recommendation && (
         <NextMealCard

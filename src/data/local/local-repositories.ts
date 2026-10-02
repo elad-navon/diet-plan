@@ -1,6 +1,7 @@
 import {
   MEAL_LIMITS,
   validateFavoriteInput,
+  validateAddedSugarInput,
   validateMealInput,
   validateWeightInput,
   type InputError,
@@ -72,7 +73,13 @@ class Store {
     if (raw === null) return emptyDoc();
     try {
       const parsed: unknown = JSON.parse(raw);
-      if (isDoc(parsed)) return parsed;
+      if (isDoc(parsed)) {
+        // Meals saved before added sugar existed have no value for it: "not known".
+        parsed.meals = parsed.meals.map((meal) =>
+          meal.addedSugarG === undefined ? { ...meal, addedSugarG: null } : meal,
+        );
+        return parsed;
+      }
     } catch {
       // fall through to recovery
     }
@@ -110,6 +117,7 @@ const sameContent = (a: StoredMeal, b: StoredMeal): boolean =>
   a.source === b.source &&
   JSON.stringify([a.proteinG, a.carbsG, a.fatG]) ===
     JSON.stringify([b.proteinG, b.carbsG, b.fatG]) &&
+  a.addedSugarG === b.addedSugarG &&
   JSON.stringify(a.items) === JSON.stringify(b.items);
 
 export function createLocalRepositories(options: {
@@ -192,6 +200,8 @@ export function createLocalRepositories(options: {
           if (input.items.length > MEAL_LIMITS.itemsMax) {
             throw new DataError('invalid', 'items:too_many');
           }
+          const sugar = validateAddedSugarInput(input.addedSugarG);
+          if (!sugar.ok) throw invalid(sugar.errors);
 
           const meal: StoredMeal = {
             id: input.id,
@@ -205,6 +215,7 @@ export function createLocalRepositories(options: {
             carbsG: checked.value.macros?.carbsG ?? null,
             fatG: checked.value.macros?.fatG ?? null,
             items: input.items,
+            addedSugarG: sugar.value.addedSugarG,
             source: input.source,
             ...(input.foodDbVersion !== undefined ? { foodDbVersion: input.foodDbVersion } : {}),
             version: 1,
@@ -253,6 +264,10 @@ export function createLocalRepositories(options: {
             now,
           );
           if (!checked.ok) throw invalid(checked.errors);
+          const sugar = validateAddedSugarInput(
+            patch.addedSugarG !== undefined ? patch.addedSugarG : existing.addedSugarG,
+          );
+          if (!sugar.ok) throw invalid(sugar.errors);
           const items = patch.items ?? existing.items;
           if (items.length > MEAL_LIMITS.itemsMax) throw new DataError('invalid', 'items:too_many');
 
@@ -277,6 +292,7 @@ export function createLocalRepositories(options: {
             localDate,
             tz: timeChanged ? profile.timezone : existing.tz,
             items,
+            addedSugarG: sugar.value.addedSugarG,
             version: existing.version + 1,
           };
           replaceMeal(doc, updated);

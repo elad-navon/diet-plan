@@ -205,6 +205,26 @@ describe('meals', () => {
     }
   });
 
+  it('keeps the added sugar of a meal, and says unknown (null) when there is none', async () => {
+    const { repos } = await newUserRepos();
+    const withSugar = await repos.meals.add(newMeal({ addedSugarG: 12.3 }));
+    const without = await repos.meals.add(newMeal());
+    expect(withSugar.addedSugarG).toBe(12.3);
+    expect(without.addedSugarG).toBeNull();
+    const edited = await repos.meals.update(withSugar.id, 1, { addedSugarG: 4.5 });
+    expect(edited.addedSugarG).toBe(4.5);
+    const kept = await repos.meals.update(withSugar.id, 2, { kcal: 300 });
+    expect(kept.addedSugarG).toBe(4.5);
+    const cleared = await repos.meals.update(withSugar.id, 3, { addedSugarG: null });
+    expect(cleared.addedSugarG).toBeNull();
+  });
+
+  it('refuses an impossible added sugar before sending it', async () => {
+    const { repos } = await newUserRepos();
+    expect(await codeOf(repos.meals.add(newMeal({ addedSugarG: -1 })))).toBe('invalid');
+    expect(await codeOf(repos.meals.add(newMeal({ addedSugarG: 501 })))).toBe('invalid');
+  });
+
   it('lists a day, including deleted meals, and a range', async () => {
     const { repos } = await newUserRepos();
     // Two times on the same past day, whatever the time of day is now.

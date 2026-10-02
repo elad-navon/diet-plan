@@ -617,6 +617,7 @@ export function buildMealIdeas(foods: readonly FoodRecord[]): MealCandidate[] {
       minPortionFactor,
       maxPortionFactor: idea.portion?.[1] ?? 1.5,
       recipe,
+      ...(totals.addedSugarG !== null ? { addedSugarG: totals.addedSugarG } : {}),
     });
   }
   return candidates;

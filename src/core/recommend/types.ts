@@ -43,6 +43,8 @@ export interface MealCandidate {
   maxPortionFactor: number;
   /** The ingredients behind the totals, when the idea is built from real foods. */
   recipe?: readonly RecipeItem[];
+  /** Estimated added sugar of the idea at its normal portion, in grams; absent when not known. */
+  addedSugarG?: number;
 }
 
 export type DayStatus = 'on_track' | 'behind' | 'ahead' | 'over_budget' | 'day_complete';

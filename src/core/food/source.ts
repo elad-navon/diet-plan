@@ -1,3 +1,4 @@
+import { estimateAddedSugar } from './sugar';
 import { type FoodRecord, type FoodUnit } from './types';
 
 /**
@@ -15,6 +16,10 @@ export interface RawFoodRow {
   total_fat: number | string | null;
   carbohydrates: number | string | null;
   alcohol?: number | string | null;
+  /** The 8-digit item code; its first two digits are the food group. */
+  smlmitzrach?: number | string | null;
+  total_sugars?: number | string | null;
+  total_dietary_fiber?: number | string | null;
 }
 
 export interface RawUnitRow {
@@ -202,6 +207,10 @@ export function buildFoodRecords(tables: RawFoodTables): {
     const defaultUnit = DEFAULT_UNIT_PREFERENCE.find((preferred) =>
       foodUnits.some((unit) => unit.name === preferred),
     );
+    const sugars = toNumber(row.total_sugars);
+    const fiber = toNumber(row.total_dietary_fiber);
+    const group = String(row.smlmitzrach ?? '').slice(0, 2);
+    const added = estimateAddedSugar({ group, name, sugarsPer100: sugars });
     const record: FoodRecord = {
       id,
       name,
@@ -210,6 +219,9 @@ export function buildFoodRecords(tables: RawFoodTables): {
       carbs100: round1(carbs ?? 0),
       fat100: round1(fat ?? 0),
       units: foodUnits,
+      ...(sugars !== null && sugars >= 0 ? { sugar100: round1(sugars) } : {}),
+      ...(added !== null ? { addedSugar100: added } : {}),
+      ...(fiber !== null && fiber >= 0 ? { fiber100: round1(fiber) } : {}),
       ...(defaultUnit !== undefined ? { defaultUnit } : {}),
     };
     seen.add(id);

@@ -8,7 +8,12 @@ import {
   useMarkFavoriteUsed,
   useUpdateMeal,
 } from '../../app/data-hooks';
-import { parseDecimalInput, validateMealInput, type InputError } from '../../core/contracts';
+import {
+  parseDecimalInput,
+  validateAddedSugarInput,
+  validateMealInput,
+  type InputError,
+} from '../../core/contracts';
 import {
   mealNameFromEntries,
   shortFoodName,
@@ -45,6 +50,8 @@ export interface MealPrefill {
   slot?: MealSlot;
   source?: MealSource;
   items?: FoodEntry[];
+  /** Added sugar in grams; for a meal built from foods it is recomputed from the foods. */
+  addedSugarG?: number | null;
   foodDbVersion?: string;
   favoriteId?: string;
 }
@@ -127,6 +134,8 @@ function MealForm({
   const [carbsText, setCarbsText] = useState(seedMacros ? String(seedMacros.carbsG) : '');
   const [fatText, setFatText] = useState(seedMacros ? String(seedMacros.fatG) : '');
   // A meal built from foods keeps the name it was given (an edited meal, or a suggestion such as "טוסט גבינה").
+  const seedSugar = editing?.addedSugarG ?? prefill?.addedSugarG ?? null;
+  const [sugarText, setSugarText] = useState(seedSugar === null ? '' : String(seedSugar));
   const [mealName, setMealName] = useState(seedItems.length > 0 && seed ? seed.name : '');
 
   const [dateText, setDateText] = useState<string>(editing?.localDate ?? date);
@@ -192,7 +201,14 @@ function MealForm({
 
   /** The values the meal would be saved with, or the problems with them. */
   function collect():
-    | { ok: true; name: string; kcal: number; macros: Macros | null; warnings: string[] }
+    | {
+        ok: true;
+        name: string;
+        kcal: number;
+        macros: Macros | null;
+        addedSugarG: number | null;
+        warnings: string[];
+      }
     | { ok: false; errors: FieldErrors } {
     const nameValue = kind === 'food' ? mealName.trim() || mealNameFromEntries(items) : name;
     const kcalValue = kind === 'food' ? totals.kcal : (parseDecimalInput(kcalText) ?? Number.NaN);
@@ -218,13 +234,25 @@ function MealForm({
     if (!checked.ok) {
       for (const error of checked.errors) found[error.field] = he.errors[error.code];
     }
+    // Added sugar: summed from the foods, or typed for a manual meal (optional).
+    const sugarAsked =
+      kind === 'food'
+        ? totals.addedSugarG
+        : sugarText.trim() === ''
+          ? null
+          : (parseDecimalInput(sugarText) ?? Number.NaN);
+    const sugarChecked = validateAddedSugarInput(sugarAsked);
+    if (!sugarChecked.ok) {
+      for (const error of sugarChecked.errors) found[error.field] = he.errors[error.code];
+    }
     if (eatenAt === null) found.eatenAt = he.addMeal.timeInvalid;
-    if (!checked.ok || eatenAt === null) return { ok: false, errors: found };
+    if (!checked.ok || !sugarChecked.ok || eatenAt === null) return { ok: false, errors: found };
     return {
       ok: true,
       name: checked.value.name,
       kcal: checked.value.kcal,
       macros: checked.value.macros,
+      addedSugarG: sugarChecked.value.addedSugarG,
       warnings: checked.warnings,
     };
   }
@@ -257,6 +285,7 @@ function MealForm({
             kcal: result.kcal,
             macros: result.macros,
             items,
+            addedSugarG: result.addedSugarG,
             eatenAt,
             slot,
           },
@@ -270,6 +299,7 @@ function MealForm({
           kcal: result.kcal,
           macros: result.macros,
           items,
+          addedSugarG: result.addedSugarG,
           source:
             sourceHint === 'favorite' || sourceHint === 'copy'
               ? sourceHint
@@ -430,6 +460,14 @@ function MealForm({
                 </div>
               )}
               {shown('macros') && <p className="text-sm font-medium">⚠ {shown('macros')}</p>}
+              <TextField
+                label={he.sugar.field}
+                hint={he.sugar.fieldHint}
+                value={sugarText}
+                onChange={setSugarText}
+                inputMode="decimal"
+                error={shown('sugar')}
+              />
             </>
           )}
         </div>
@@ -471,6 +509,9 @@ function MealForm({
                     <span className="block break-words text-base">{shortFoodName(item.name)}</span>
                     <span className="block text-sm text-muted">
                       {quantityLabel(item)} · <bdi>{formatInt(item.kcal)}</bdi> {he.kcal}
+                      {item.addedSugarG !== undefined &&
+                        item.addedSugarG > 0 &&
+                        ` · ${he.sugar.item(formatDecimal(item.addedSugarG))}`}
                     </span>
                   </span>
                   <span className="flex shrink-0">
@@ -565,6 +606,14 @@ function MealForm({
                 <bdi>{formatInt(totals.kcal)}</bdi> {he.kcal}
               </strong>{' '}
               · {he.today.protein} <bdi>{formatDecimal(totals.proteinG)}</bdi>
+              {totals.addedSugarG !== null && (
+                <> · {he.sugar.mealTotal(formatDecimal(totals.addedSugarG))}</>
+              )}
+              {totals.itemsWithoutSugar > 0 && totals.addedSugarG !== null && (
+                <span className="block text-sm text-muted">
+                  {he.sugar.missing(totals.itemsWithoutSugar)}
+                </span>
+              )}
             </p>
           )}
           <div className="flex gap-2">

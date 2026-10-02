@@ -94,6 +94,67 @@ test('E2E-04: add a manual meal and see validation', async ({ page }) => {
   await expect(remaining(page)).toHaveAttribute('aria-label', /1,140/);
 });
 
+test('SUGAR-01: the day shows added sugar in its bands, and a typed value moves it', async ({
+  page,
+}) => {
+  await openApp(page, { seed: {} });
+  const meter = (grams: string) =>
+    page.getByRole('img', { name: new RegExp(`סוכר מוסף היום: ${grams} גרם`) });
+  await expect(meter('0')).toBeVisible();
+  await expect(page.getByText(he.sugar.band.very_low).first()).toBeVisible();
+
+  await page.getByRole('button', { name: he.today.addMeal }).first().click();
+  const sheet = page.getByRole('dialog', { name: he.addMeal.title });
+  await sheet.getByText(he.addMeal.tabManual, { exact: true }).click();
+  await sheet.getByLabel(he.addMeal.name).fill('עוגיות');
+  await sheet.getByLabel(he.addMeal.kcalField).fill('250');
+  await sheet.getByLabel(he.sugar.field).fill('12,5');
+  await sheet.getByRole('button', { name: he.addMeal.saveMeal }).click();
+
+  await expect(meter('12.5')).toBeVisible();
+  await expect(page.getByText(he.sugar.band.ok).first()).toBeVisible();
+  await expect(page.getByText(he.sugar.mealTotal('12.5'))).toBeVisible(); // on the meal itself
+});
+
+test('SUGAR-02: a food from the database brings its added sugar into the meal and the day', async ({
+  page,
+}) => {
+  await openApp(page, { seed: {} });
+  await page.getByRole('button', { name: he.today.addMeal }).first().click();
+  const sheet = page.getByRole('dialog', { name: he.addMeal.title });
+  await sheet.getByLabel(he.addMeal.searchLabel).fill('מיץ תפוחים');
+  // The list says how much added sugar there is in 100 g before the food is even chosen.
+  await expect(sheet.getByText(/סוכר מוסף [\d.]+ ג' ל-100 ג'/).first()).toBeVisible();
+  await sheet
+    .getByRole('button', { name: /^מיץ תפוחים/ })
+    .first()
+    .click();
+  await sheet.getByLabel(he.addMeal.unit).selectOption({ label: he.addMeal.grams });
+  await sheet.getByLabel(he.addMeal.quantity).fill('200');
+  await expect(sheet.getByText(/סוכר מוסף [\d.]+ ג'/).first()).toBeVisible();
+  await sheet.getByRole('button', { name: he.addMeal.addToMeal }).click();
+  await sheet.getByRole('button', { name: he.addMeal.saveMeal }).click();
+  await expect(page.getByText(he.today.saved)).toBeVisible();
+  // A glass of apple juice is added sugar: the day moves out of the "very low" band.
+  await expect(page.getByText(he.sugar.band.very_low)).toHaveCount(0);
+});
+
+test('SUGAR-03: whole fruit does not count as added sugar', async ({ page }) => {
+  await openApp(page, { seed: {} });
+  await page.getByRole('button', { name: he.today.addMeal }).first().click();
+  const sheet = page.getByRole('dialog', { name: he.addMeal.title });
+  await sheet.getByLabel(he.addMeal.searchLabel).fill('בננה');
+  await expect(sheet.getByText(he.sugar.none100).first()).toBeVisible();
+  await sheet
+    .getByRole('button', { name: /^בננה, טריה/ })
+    .first()
+    .click();
+  await sheet.getByRole('button', { name: he.addMeal.addToMeal }).click();
+  await sheet.getByRole('button', { name: he.addMeal.saveMeal }).click();
+  await expect(page.getByText(he.today.saved)).toBeVisible();
+  await expect(page.getByRole('img', { name: /סוכר מוסף היום: 0 גרם/ })).toBeVisible();
+});
+
 test('E2E-05: delete a meal and undo', async ({ page }) => {
   await openApp(page, { seed: { withMealsToday: true } });
   await expect(remaining(page)).toHaveAttribute('aria-label', /1,110/); // 1,390 - 280

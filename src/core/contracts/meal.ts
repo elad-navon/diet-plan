@@ -24,7 +24,7 @@ export const MEAL_LIMITS = {
 
 export const WEIGHT_LIMITS = { minKg: 30, maxKg: 350, jumpConfirmKg: 3 } as const;
 
-export type InputField = 'name' | 'kcal' | 'macros' | 'eatenAt' | 'weight';
+export type InputField = 'name' | 'kcal' | 'macros' | 'sugar' | 'eatenAt' | 'weight';
 
 export type InputErrorCode =
   | 'name_required'
@@ -35,6 +35,8 @@ export type InputErrorCode =
   | 'macros_incomplete'
   | 'macro_invalid'
   | 'macro_out_of_range'
+  | 'sugar_invalid'
+  | 'sugar_out_of_range'
   | 'time_in_future'
   | 'time_too_old'
   | 'weight_invalid'
@@ -155,6 +157,21 @@ function validateCore(input: NameKcalMacros): Validation<ValidNameKcalMacros> {
   if (kcal > MEAL_LIMITS.kcalConfirmAbove) warnings.push('kcal_large');
   if (macros && macroKcalMismatch(kcal, macros)) warnings.push('macro_kcal_mismatch');
   return { ok: true, value: { name: nameSchema.parse(input.name), kcal, macros }, warnings };
+}
+
+/** Added sugar of a meal (grams): optional, 0 to 500 g, one decimal. Null/undefined = not known. */
+export function validateAddedSugarInput(
+  value: number | null | undefined,
+): Validation<{ addedSugarG: number | null }> {
+  if (value === null || value === undefined) {
+    return { ok: true, value: { addedSugarG: null }, warnings: [] };
+  }
+  if (!Number.isFinite(value))
+    return { ok: false, errors: [{ field: 'sugar', code: 'sugar_invalid' }] };
+  if (value < 0 || value > MEAL_LIMITS.macroMaxG) {
+    return { ok: false, errors: [{ field: 'sugar', code: 'sugar_out_of_range' }] };
+  }
+  return { ok: true, value: { addedSugarG: round1(value) }, warnings: [] };
 }
 
 /** Validates a favorite (a meal without a time). */

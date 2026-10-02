@@ -322,3 +322,64 @@ describe('storage problems', () => {
     expect(fallback.getItem('k')).toBe('v');
   });
 });
+
+describe('added sugar of a meal', () => {
+  it('is kept, can be edited and cleared, and is "not known" (null) when absent', async () => {
+    const withSugar = await repos.meals.add(newMeal({ id: 'a', addedSugarG: 12.34 }));
+    const without = await repos.meals.add(newMeal({ id: 'b' }));
+    expect(withSugar.addedSugarG).toBe(12.3);
+    expect(without.addedSugarG).toBeNull();
+    const edited = await repos.meals.update('a', 1, { addedSugarG: 4 });
+    expect(edited.addedSugarG).toBe(4);
+    expect((await repos.meals.update('a', 2, { kcal: 300 })).addedSugarG).toBe(4);
+    expect((await repos.meals.update('a', 3, { addedSugarG: null })).addedSugarG).toBeNull();
+  });
+
+  it('is refused when it is impossible', async () => {
+    await expect(repos.meals.add(newMeal({ addedSugarG: -1 }))).rejects.toMatchObject({
+      code: 'invalid',
+    });
+    await expect(repos.meals.add(newMeal({ addedSugarG: 501 }))).rejects.toMatchObject({
+      code: 'invalid',
+    });
+  });
+
+  it('a retry with a different sugar value under the same id is a conflict', async () => {
+    await repos.meals.add(newMeal({ id: 'a', addedSugarG: 5 }));
+    await expect(repos.meals.add(newMeal({ id: 'a', addedSugarG: 9 }))).rejects.toMatchObject({
+      code: 'id_conflict',
+    });
+  });
+
+  it('meals saved before this field existed read back as "not known"', async () => {
+    const old = {
+      version: 1,
+      profile,
+      plans: [],
+      weights: [],
+      favorites: [],
+      meals: [
+        {
+          id: 'old',
+          name: 'ישן',
+          localDate: TODAY,
+          eatenAt: at('08:00'),
+          tz: TZ,
+          slot: 'breakfast',
+          kcal: 100,
+          proteinG: null,
+          carbsG: null,
+          fatG: null,
+          items: [],
+          source: 'manual',
+          version: 1,
+          enteredAt: at('08:00'),
+          deletedAt: null,
+        },
+      ],
+    };
+    storage.setItem('diet-plan.v1', JSON.stringify(old));
+    const [meal] = await repos.meals.listByDate(TODAY);
+    expect(meal?.addedSugarG).toBeNull();
+  });
+});

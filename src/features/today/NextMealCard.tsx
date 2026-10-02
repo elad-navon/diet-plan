@@ -2,7 +2,7 @@ import { sumEntries, type PortionPart } from '../../core/food';
 import { type Recommendation, type Suggestion } from '../../core/recommend';
 import { type Tz } from '../../core/time';
 import { formatClock, ingredientLine } from '../../i18n/format';
-import { formatInt, he } from '../../i18n/he';
+import { formatDecimal, formatInt, he } from '../../i18n/he';
 import { Button } from '../../ui/Button';
 
 interface NextMealCardProps {
@@ -54,7 +54,7 @@ export function NextMealCard({
                 // With a recipe, show the numbers of the amounts listed (they are rounded to measures).
                 const shown = parts
                   ? sumEntries(parts.map((part) => part.entry))
-                  : { kcal: suggestion.kcal, proteinG: suggestion.proteinG };
+                  : { kcal: suggestion.kcal, proteinG: suggestion.proteinG, addedSugarG: null };
                 return (
                   <li key={suggestion.candidateId} className="rounded-2xl bg-surface-2 px-4 py-3">
                     <div className="flex items-center justify-between gap-3">
@@ -63,6 +63,9 @@ export function NextMealCard({
                         <p className="text-sm text-muted">
                           <bdi>{formatInt(shown.kcal)}</bdi> {he.kcal} ·{' '}
                           {he.today.suggestionProtein(formatInt(shown.proteinG))}
+                          {shown.addedSugarG !== null &&
+                            shown.addedSugarG > 0 &&
+                            ` · ${he.sugar.mealTotal(formatDecimal(shown.addedSugarG))}`}
                         </p>
                       </div>
                       <Button

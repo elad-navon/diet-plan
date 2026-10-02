@@ -209,8 +209,13 @@ describe('quantity to calories (FOOD-01)', () => {
   it('sums rounded items instead of rounding a total', () => {
     const a = entry(computeEntry(egg, { kind: 'grams', grams: 150 }));
     const b = entry(computeEntry(egg, { kind: 'grams', grams: 150 }));
-    expect(sumEntries([a, b])).toEqual({ kcal: 430, proteinG: 37.8, carbsG: 2.2, fatG: 28.6 });
-    expect(sumEntries([])).toEqual({ kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 });
+    expect(sumEntries([a, b])).toMatchObject({
+      kcal: 430,
+      proteinG: 37.8,
+      carbsG: 2.2,
+      fatG: 28.6,
+    });
+    expect(sumEntries([])).toMatchObject({ kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 });
   });
 
   it('names a meal after its foods, within 80 characters', () => {

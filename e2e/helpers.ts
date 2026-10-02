@@ -40,6 +40,7 @@ function meal(
     carbsG: macros?.[1] ?? null,
     fatG: macros?.[2] ?? null,
     items: [],
+    addedSugarG: null,
     source: 'manual',
     version: 1,
     enteredAt: eatenAt,

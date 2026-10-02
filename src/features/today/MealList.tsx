@@ -1,7 +1,7 @@
 import { type StoredMeal } from '../../data';
 import { type Tz } from '../../core/time';
 import { formatClock } from '../../i18n/format';
-import { formatInt, he } from '../../i18n/he';
+import { formatDecimal, formatInt, he } from '../../i18n/he';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { mealIcon } from './meal-icon';
@@ -36,6 +36,11 @@ export function MealList({ meals, tz, onEdit, onDelete, onAgain }: MealListProps
                   <bdi>{formatClock(meal.eatenAt, tz)}</bdi> · {he.slots[meal.slot]}
                 </p>
                 <p className="break-words text-lg font-semibold">{meal.name}</p>
+                {meal.addedSugarG !== null && meal.addedSugarG > 0 && (
+                  <p className="text-sm text-muted">
+                    {he.sugar.mealTotal(formatDecimal(meal.addedSugarG))}
+                  </p>
+                )}
                 {meal.proteinG !== null && (
                   <p className="text-sm text-muted">
                     {he.today.protein} <bdi>{formatInt(meal.proteinG)}</bdi> · {he.today.carbs}{' '}

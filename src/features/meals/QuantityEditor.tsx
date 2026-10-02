@@ -125,6 +125,11 @@ export function QuantityEditor({ food, initial, onConfirm, onCancel }: QuantityE
             {he.today.protein} <bdi>{formatDecimal(result.entry.proteinG)}</bdi> · {he.today.carbs}{' '}
             <bdi>{formatDecimal(result.entry.carbsG)}</bdi> · {he.today.fat}{' '}
             <bdi>{formatDecimal(result.entry.fatG)}</bdi>
+            {result.entry.addedSugarG !== undefined && (
+              <span className="block text-sm">
+                {he.sugar.mealTotal(formatDecimal(result.entry.addedSugarG))}
+              </span>
+            )}
             {isUnit && (
               <span className="block text-sm text-muted">
                 = <bdi>{formatDecimal(result.entry.grams)}</bdi> {he.gramsShort}

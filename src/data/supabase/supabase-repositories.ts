@@ -1,5 +1,6 @@
 import {
   MEAL_LIMITS,
+  validateAddedSugarInput,
   validateFavoriteInput,
   validateMealInput,
   validateWeightInput,
@@ -121,6 +122,8 @@ export function createSupabaseRepositories(options: {
           if (input.items.length > MEAL_LIMITS.itemsMax) {
             throw new DataError('invalid', 'items:too_many');
           }
+          const sugar = validateAddedSugarInput(input.addedSugarG);
+          if (!sugar.ok) throw invalid(sugar.errors);
           return mealFromRow(
             await rpcRow('add_meal', {
               p: {
@@ -131,6 +134,7 @@ export function createSupabaseRepositories(options: {
                 kcal: checked.value.kcal,
                 ...macroColumns(checked.value.macros),
                 items: input.items,
+                added_sugar_g: sugar.value.addedSugarG,
                 source: input.source,
                 food_db_version: input.foodDbVersion ?? null,
               },
@@ -162,6 +166,11 @@ export function createSupabaseRepositories(options: {
           if (patch.macros !== undefined) Object.assign(body, macroColumns(checked.value.macros));
           if (patch.slot !== undefined) body['slot'] = patch.slot;
           if (patch.items !== undefined) body['items'] = patch.items;
+          if (patch.addedSugarG !== undefined) {
+            const sugar = validateAddedSugarInput(patch.addedSugarG);
+            if (!sugar.ok) throw invalid(sugar.errors);
+            body['added_sugar_g'] = sugar.value.addedSugarG;
+          }
           if (patch.eatenAt !== undefined) body['eaten_at'] = formatInstant(patch.eatenAt);
           return mealFromRow(
             await rpcRow('update_meal', { p_id: id, p_base_version: baseVersion, p_patch: body }),

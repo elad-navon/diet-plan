@@ -14,6 +14,15 @@ export interface FoodRecord {
   carbs100: number;
   fat100: number;
   units: FoodUnit[];
+  /** Total sugars in 100 g, when the database has a value. */
+  sugar100?: number;
+  /**
+   * Estimated ADDED sugar in 100 g (sugar that is not the food's own; whole fruit and lactose are not counted).
+   * An estimate from the food group and name - see core/food/sugar.ts.
+   */
+  addedSugar100?: number;
+  /** Dietary fiber in 100 g, when the database has a value. */
+  fiber100?: number;
   /** Name of the unit to preselect (one of `units`); absent when the food only has grams. */
   defaultUnit?: string;
 }

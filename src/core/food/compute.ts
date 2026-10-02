@@ -23,6 +23,10 @@ export interface FoodEntry {
   proteinG: number;
   carbsG: number;
   fatG: number;
+  /** Total sugars, estimated ADDED sugar and fiber of this amount; absent when the database has no value. */
+  sugarG?: number;
+  addedSugarG?: number;
+  fiberG?: number;
 }
 
 export type EntryError =
@@ -86,6 +90,11 @@ export function computeEntry(food: FoodRecord, quantity: Quantity): EntryResult 
       proteinG: round1(food.protein100 * scale),
       carbsG: round1(food.carbs100 * scale),
       fatG: round1(food.fat100 * scale),
+      ...(food.sugar100 !== undefined ? { sugarG: round1(food.sugar100 * scale) } : {}),
+      ...(food.addedSugar100 !== undefined
+        ? { addedSugarG: round1(food.addedSugar100 * scale) }
+        : {}),
+      ...(food.fiber100 !== undefined ? { fiberG: round1(food.fiber100 * scale) } : {}),
     },
   };
 }
@@ -95,6 +104,12 @@ export interface EntryTotals {
   proteinG: number;
   carbsG: number;
   fatG: number;
+  /** Sums over the items that have the value; null when none does. */
+  sugarG: number | null;
+  addedSugarG: number | null;
+  fiberG: number | null;
+  /** How many items had no sugar value (the added-sugar total then covers only the others). */
+  itemsWithoutSugar: number;
 }
 
 /** Meal totals: the sum of the already-rounded items (no second rounding of calories). */
@@ -103,13 +118,30 @@ export function sumEntries(entries: readonly FoodEntry[]): EntryTotals {
   let proteinG = 0;
   let carbsG = 0;
   let fatG = 0;
+  let sugarG: number | null = null;
+  let addedSugarG: number | null = null;
+  let fiberG: number | null = null;
+  let itemsWithoutSugar = 0;
   for (const entry of entries) {
     kcal += entry.kcal;
     proteinG += entry.proteinG;
     carbsG += entry.carbsG;
     fatG += entry.fatG;
+    if (entry.sugarG !== undefined) sugarG = (sugarG ?? 0) + entry.sugarG;
+    if (entry.addedSugarG !== undefined) addedSugarG = (addedSugarG ?? 0) + entry.addedSugarG;
+    else itemsWithoutSugar += 1;
+    if (entry.fiberG !== undefined) fiberG = (fiberG ?? 0) + entry.fiberG;
   }
-  return { kcal, proteinG: round1(proteinG), carbsG: round1(carbsG), fatG: round1(fatG) };
+  return {
+    kcal,
+    proteinG: round1(proteinG),
+    carbsG: round1(carbsG),
+    fatG: round1(fatG),
+    sugarG: sugarG === null ? null : round1(sugarG),
+    addedSugarG: addedSugarG === null ? null : round1(addedSugarG),
+    fiberG: fiberG === null ? null : round1(fiberG),
+    itemsWithoutSugar,
+  };
 }
 
 /** The part of a database name before the first comma: "ביצה קשה שלמה, ללא קליפה" -> "ביצה קשה שלמה". */

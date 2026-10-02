@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { searchFoods, type FoodRecord } from '../../core/food';
 import { useFoodDb, useFoodUsage } from '../../app/data-hooks';
-import { formatInt, he } from '../../i18n/he';
+import { formatDecimal, formatInt, he } from '../../i18n/he';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { TextField } from '../../ui/Field';
@@ -85,6 +85,12 @@ export function FoodSearch({ onPick, onManual }: FoodSearchProps) {
                   <span className="block break-words text-base font-medium">{food.name}</span>
                   <span className="block text-sm text-muted">
                     {he.addMeal.per100(formatInt(food.kcal100))}
+                    {' · '}
+                    {food.addedSugar100 === undefined
+                      ? he.sugar.unknown100
+                      : food.addedSugar100 === 0
+                        ? he.sugar.none100
+                        : he.sugar.per100(formatDecimal(food.addedSugar100))}
                   </span>
                 </span>
                 <Icon name="plus" />

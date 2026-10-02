@@ -168,6 +168,7 @@ export function mealFromRow(row: Row): StoredMeal {
     carbsG: numberOrNull(row, 'carbs_g'),
     fatG: numberOrNull(row, 'fat_g'),
     items: list(row, 'items') as FoodEntry[],
+    addedSugarG: numberOrNull(row, 'added_sugar_g'),
     source: oneOf(row, 'source', SOURCES),
     ...(foodDbVersion !== null ? { foodDbVersion } : {}),
     version: number(row, 'version'),

@@ -167,3 +167,56 @@ describe('FOOD-07: size and speed', () => {
     expect(times[Math.floor(times.length * 0.95)] ?? Infinity).toBeLessThan(50);
   });
 });
+
+describe('sugar and fiber in the generated database', () => {
+  const named = (prefix: string) => db.foods.find((food) => food.name.startsWith(prefix));
+
+  it('has sugar for most foods, and the numbers are consistent', () => {
+    const withSugar = db.foods.filter((food) => food.sugar100 !== undefined);
+    expect(withSugar.length / db.foods.length).toBeGreaterThan(0.85);
+    for (const food of db.foods) {
+      if (food.sugar100 !== undefined) {
+        expect(food.sugar100, food.name).toBeGreaterThanOrEqual(0);
+        expect(food.sugar100, food.name).toBeLessThanOrEqual(100);
+      }
+      if (food.addedSugar100 !== undefined) {
+        expect(food.sugar100, `${food.name}: added sugar without total`).toBeDefined();
+        expect(food.addedSugar100, food.name).toBeGreaterThanOrEqual(0);
+        expect(food.addedSugar100, food.name).toBeLessThanOrEqual(food.sugar100 ?? 0);
+      }
+      if (food.fiber100 !== undefined) expect(food.fiber100, food.name).toBeLessThanOrEqual(100);
+    }
+  });
+
+  it('does not count fresh whole fruit, milk or plain bread as added sugar', () => {
+    for (const prefix of [
+      'תפוח עץ, עם קליפה (ללא',
+      'בננה, טריה',
+      'אבטיח, טרי',
+      'אפרסק, טרי',
+      'לחם לבן, קלוי',
+    ]) {
+      expect(named(prefix)?.addedSugar100, prefix).toBe(0);
+    }
+    expect(named('חלב 3% שומן, תנובה')?.addedSugar100).toBe(0);
+  });
+
+  it('counts sugar, honey, chocolate and juice', () => {
+    expect(named('סוכר, לבן, רגיל')?.addedSugar100).toBeGreaterThan(90);
+    expect(named('דבש')?.addedSugar100).toBeGreaterThan(70);
+    expect(named('שוקולד עם ביסקויט')?.addedSugar100).toBeGreaterThan(30);
+    expect(named('מיץ תפוחים, משקה סיידר')?.addedSugar100).toBeGreaterThan(8);
+  });
+
+  it('no fresh fruit is flagged as having added sugar', () => {
+    const fresh = db.foods.filter((food) =>
+      /^(תפוח עץ|בננה|אגס|אפרסק|ענבים|תפוז|קיווי|מנגו|אבטיח|מלון|שזיף|נקטרינה|משמש), (טרי|טריה)/.test(
+        food.name,
+      ),
+    );
+    expect(fresh.length).toBeGreaterThan(8);
+    expect(fresh.filter((food) => (food.addedSugar100 ?? 0) > 0).map((food) => food.name)).toEqual(
+      [],
+    );
+  });
+});

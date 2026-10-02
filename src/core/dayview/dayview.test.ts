@@ -60,6 +60,33 @@ describe('daily target snapshot (DB-04, E2E-07)', () => {
   });
 });
 
+describe('added sugar in the day summary', () => {
+  it('adds up the meals that have a value and reports how many do', () => {
+    const summary = summarizeDay([
+      meal('2026-10-02', '08:00', 300, { addedSugarG: 4.5 }),
+      meal('2026-10-02', '13:00', 600, { addedSugarG: 0 }),
+      meal('2026-10-02', '16:00', 150),
+      meal('2026-10-02', '20:00', 400, { addedSugarG: null }),
+    ]);
+    expect(summary.addedSugarG).toBe(4.5);
+    expect(summary.sugarCoverage).toEqual({ mealsWithSugar: 2, meals: 4 });
+  });
+
+  it('ignores deleted meals and rounds away floating-point noise', () => {
+    const summary = summarizeDay([
+      meal('2026-10-02', '08:00', 300, { addedSugarG: 0.1 }),
+      meal('2026-10-02', '09:00', 300, { addedSugarG: 0.2 }),
+      meal('2026-10-02', '10:00', 300, { addedSugarG: 50, deletedAt: 1 }),
+    ]);
+    expect(summary.addedSugarG).toBe(0.3);
+    expect(summary.sugarCoverage.meals).toBe(2);
+  });
+
+  it('is zero for a day without meals', () => {
+    expect(summarizeDay([]).addedSugarG).toBe(0);
+  });
+});
+
 describe('summarizeDay', () => {
   it('totals calories, per-slot calories and macros, ignoring deleted meals', () => {
     const summary = summarizeDay([

@@ -1,6 +1,7 @@
 import { type MacroState, type Macros } from '../nutrition';
 import {
   recommendNext,
+  sugarScorer,
   type MealCandidate,
   type MealForRecommendation,
   type Recommendation,
@@ -15,6 +16,8 @@ export interface MealRecord extends MealForRecommendation {
   localDate: LocalDate;
   /** Soft-deleted meals are ignored everywhere. */
   deletedAt?: Instant | null;
+  /** Added sugar of the meal in grams; absent or null when not known. */
+  addedSugarG?: number | null;
 }
 
 /**
@@ -50,6 +53,9 @@ export interface DaySummary {
   /** Sums over meals that carry macro data only - see `macroCoverage`. */
   macros: Macros;
   macroCoverage: { mealsWithMacros: number; meals: number };
+  /** Added sugar over the meals that have a value - see `sugarCoverage`. */
+  addedSugarG: number;
+  sugarCoverage: { mealsWithSugar: number; meals: number };
   kcalBySlot: Record<MealSlot, number>;
 }
 
@@ -69,8 +75,14 @@ export function summarizeDay(meals: readonly MealRecord[]): DaySummary {
   const macros: Macros = { proteinG: 0, carbsG: 0, fatG: 0 };
   let kcal = 0;
   let mealsWithMacros = 0;
+  let addedSugarG = 0;
+  let mealsWithSugar = 0;
   for (const meal of active) {
     kcal += meal.kcal;
+    if (meal.addedSugarG !== undefined && meal.addedSugarG !== null) {
+      addedSugarG += meal.addedSugarG;
+      mealsWithSugar += 1;
+    }
     kcalBySlot[meal.slot] += meal.kcal;
     if (hasMacros(meal)) {
       mealsWithMacros += 1;
@@ -84,6 +96,8 @@ export function summarizeDay(meals: readonly MealRecord[]): DaySummary {
     kcal,
     macros,
     macroCoverage: { mealsWithMacros, meals: active.length },
+    addedSugarG: Math.round(addedSugarG * 10) / 10,
+    sugarCoverage: { mealsWithSugar, meals: active.length },
     kcalBySlot,
   };
 }
@@ -147,6 +161,7 @@ export function buildDayView(input: DayViewInput): DayView {
             macros: plan.macros,
             meals,
             candidates: input.candidates ?? [],
+            scorers: [sugarScorer(summary.addedSugarG)],
           })
         : null,
   };

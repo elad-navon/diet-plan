@@ -30,6 +30,8 @@ export interface StoredMeal extends MealRecord {
   source: MealSource;
   /** Snapshot of the foods the meal was built from; empty for manual meals. */
   items: FoodEntry[];
+  /** Added sugar of the whole meal in grams (an estimate for foods from the database); null = not known. */
+  addedSugarG: number | null;
   foodDbVersion?: string;
   /** Bumped on every change; used to detect edits from another device. */
   version: number;
@@ -46,6 +48,8 @@ export interface NewMeal {
   kcal: number;
   macros: Macros | null;
   items: FoodEntry[];
+  /** Added sugar of the whole meal in grams; leave out when not known. */
+  addedSugarG?: number | null;
   source: MealSource;
   foodDbVersion?: string;
 }
