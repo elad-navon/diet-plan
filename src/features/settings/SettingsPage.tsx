@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useResetAll, usePlans } from '../../app/data-hooks';
 import { isIos, isStandalone, useInstall } from '../../app/pwa';
@@ -28,6 +28,11 @@ export function SettingsPage() {
   const navigate = useNavigate();
   const toast = useToast();
   const install = useInstall();
+  const [storageReport, setStorageReport] = useState('…');
+  useEffect(() => {
+    if (account)
+      void checkStorage().then((report) => setStorageReport(formatStorageReport(report)));
+  }, [account]);
   const [theme, setTheme] = useState<ThemeChoice>(getTheme);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
@@ -140,7 +145,7 @@ export function SettingsPage() {
           <details className="text-sm text-muted">
             <summary className="min-h-11 cursor-pointer py-2">{he.auth.storageDetails}</summary>
             <pre dir="ltr" className="whitespace-pre-wrap break-all text-start text-xs">
-              {formatStorageReport(checkStorage())}
+              {storageReport}
             </pre>
           </details>
           <Button variant="danger" onClick={() => setDeleteAccountOpen(true)}>

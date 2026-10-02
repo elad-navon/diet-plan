@@ -244,10 +244,29 @@ test.describe('signing in', () => {
     await expect(page.getByText(he.auth.technical)).toContainText('500');
   });
 
-  test('a browser that refuses to store data still signs in for this visit, and says so', async ({
+  test('a browser that refuses all storage still signs in for this visit, and says so', async ({
     page,
   }) => {
-    // Like Brave with Shields up or a private window: every write to localStorage fails.
+    // Like a privacy mode that blocks everything: no localStorage writes, no IndexedDB.
+    await page.addInitScript(() => {
+      Storage.prototype.setItem = () => {
+        throw new DOMException('Setting the value exceeded the quota.', 'QuotaExceededError');
+      };
+      Object.defineProperty(window, 'indexedDB', { get: () => undefined });
+    });
+    await fakeServer(page, { data: 'with-data' });
+    await page.goto('/');
+    await page.getByLabel(he.auth.email).fill(EMAIL);
+    await page.getByRole('button', { name: he.auth.sendCode }).click();
+    await page.getByLabel(he.auth.code).fill('12345678');
+    await page.getByRole('button', { name: he.auth.verify }).click();
+    await expect(page.getByText(he.auth.storageBlocked)).toBeVisible();
+    await expect(page.locator('p').filter({ hasText: 'חביתה מהשרת' })).toBeVisible();
+  });
+
+  test('a full localStorage (another page on the same address filled it) does not stop sign-in from being kept', async ({
+    page,
+  }) => {
     await page.addInitScript(() => {
       Storage.prototype.setItem = () => {
         throw new DOMException('Setting the value exceeded the quota.', 'QuotaExceededError');
@@ -259,8 +278,13 @@ test.describe('signing in', () => {
     await page.getByRole('button', { name: he.auth.sendCode }).click();
     await page.getByLabel(he.auth.code).fill('12345678');
     await page.getByRole('button', { name: he.auth.verify }).click();
-    await expect(page.getByText(he.auth.storageBlocked)).toBeVisible();
     await expect(page.locator('p').filter({ hasText: 'חביתה מהשרת' })).toBeVisible();
+    await expect(page.getByText(he.auth.storageBlocked)).toHaveCount(0);
+
+    // Opening the app again: still signed in, no code needed.
+    await page.reload();
+    await expect(page.locator('p').filter({ hasText: 'חביתה מהשרת' })).toBeVisible();
+    await expect(page.getByLabel(he.auth.email)).toHaveCount(0);
   });
 
   test('too many requests are explained', async ({ page }) => {
