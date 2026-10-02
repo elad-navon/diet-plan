@@ -38,7 +38,7 @@
 `id` (UUID לקוח) · `user_id` · `eaten_at timestamptz` · `tz` · `local_date date` (Trigger) · `slot ∈ {breakfast,lunch,snack,dinner,other}` · `name 1..80` · `description ≤500` (טקסט חופשי מקורי) · `kcal int 0..3000` · `protein_g/carbs_g/fat_g numeric(5,1) null 0..500` (all-or-none) · **`added_sugar_g numeric(5,1) null 0..500`** (סוכר מוסף מוערך; null = לא ידוע; ראו [DIABETES](DIABETES.md); מיגרציה `20261003000000`) · `items jsonb` (≤30 פריטים, ≤16KB) · `source ∈ {ai,manual,favorite,copy}` · `ai_estimate_id → ai_estimates` · `favorite_id → favorites ON DELETE SET NULL` · **`ai_original jsonb`** (Snapshot בלתי-משתנה של סכומי ה-AI: kcal/macros/status/overall_confidence) · `corrected_at_save boolean` (Trigger בהוספה: האם הסכומים הסופיים ≠ המקור) · `entered_at default now()` (שרת, Immutable) · `deleted_at` · `version`.
 אינדקסים: `(user_id, local_date) WHERE deleted_at IS NULL`, `(user_id, eaten_at, id)`.
 
-**`favorites`**: `id`, `user_id`, `name 1..80`, `kcal`, מאקרו (null), `items`, `tags text[]` (הכנה להתאמה אישית), `use_count`, `last_used_at`, `created_from_meal_id`, `version`; תקרה 200.
+**`favorites`**: `id`, `user_id`, `name 1..80`, `kcal`, מאקרו (null), `added_sugar_g numeric(5,1) null` (מיגרציה `20261004000000`), `items`, `tags text[]` (הכנה להתאמה אישית), `use_count`, `last_used_at`, `created_from_meal_id`, `version`; תקרה 200.
 
 **`ai_estimates`** (כתיבה: שרת בלבד): `id = request_id`, `user_id`, `input_text`, `input_hash`, `language`, `context jsonb`, `contract_version`, `model`, `prompt_version`, `status ∈ {ok,needs_clarification,not_food,unsupported,failed}`, `error_code`, `response jsonb`, `tokens_in/out`, `latency_ms`, `created_at`.
 

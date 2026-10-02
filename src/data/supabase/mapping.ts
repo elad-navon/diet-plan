@@ -195,6 +195,7 @@ export function favoriteFromRow(row: Row): FavoriteRecord {
     kcal: number(row, 'kcal'),
     macros: macrosOf(row),
     items: list(row, 'items') as FoodEntry[],
+    addedSugarG: numberOrNull(row, 'added_sugar_g'),
     ...(foodDbVersion !== null ? { foodDbVersion } : {}),
     useCount: number(row, 'use_count'),
     lastUsedAt: instantOrNull(row, 'last_used_at'),

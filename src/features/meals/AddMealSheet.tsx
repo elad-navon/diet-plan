@@ -6,6 +6,7 @@ import {
   useFavorites,
   useFoodDb,
   useMarkFavoriteUsed,
+  useRemoveFavorite,
   useUpdateMeal,
 } from '../../app/data-hooks';
 import {
@@ -39,6 +40,7 @@ import { Button } from '../../ui/Button';
 import { SelectField, TextField } from '../../ui/Field';
 import { Icon } from '../../ui/Icon';
 import { Sheet } from '../../ui/Sheet';
+import { sameManualFavorites } from './favorites';
 import { FoodSearch } from './FoodSearch';
 import {
   clearMealDraft,
@@ -128,6 +130,7 @@ function MealForm({
   const addMeal = useAddMeal();
   const updateMeal = useUpdateMeal();
   const addFavorite = useAddFavorite();
+  const removeFavorite = useRemoveFavorite();
   const markUsed = useMarkFavoriteUsed();
 
   // One id per open sheet: pressing "save" twice, or retrying after a hiccup, can only ever create one meal.
@@ -190,6 +193,9 @@ function MealForm({
     draft ? draft.favoriteId : (prefill?.favoriteId ?? null),
   );
   const cameBack = draft !== null;
+  /** A meal typed by hand is remembered for next time unless this is switched off. */
+  const [remember, setRemember] = useState(true);
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
   /** Set once the meal is saved, so the draft is not written again behind the save. */
   const savedRef = useRef(false);
 
@@ -278,6 +284,7 @@ function MealForm({
     setKcalText(String(favorite.kcal));
     setMealName(favorite.items.length > 0 ? favorite.name : '');
     setMacrosOn(favorite.macros !== null);
+    setSugarText(favorite.addedSugarG === null ? '' : String(favorite.addedSugarG));
     setProteinText(favorite.macros ? String(favorite.macros.proteinG) : '');
     setCarbsText(favorite.macros ? String(favorite.macros.carbsG) : '');
     setFatText(favorite.macros ? String(favorite.macros.fatG) : '');
@@ -396,6 +403,8 @@ function MealForm({
           ...(database.data ? { foodDbVersion: database.data.db.version } : {}),
         });
         if (favoriteId) void markUsed.mutateAsync(favoriteId);
+        if (kind === 'manual' && remember && !favoriteId && !prefill)
+          await rememberManualMeal(result);
       }
       savedRef.current = true;
       clearMealDraft();
@@ -408,6 +417,40 @@ function MealForm({
     } finally {
       setSaving(false);
     }
+  }
+
+  /**
+   * Remembers a meal typed by hand, so it can be found by name next time. Typing the same name again replaces
+   * the earlier one (the latest numbers win). Never blocks the save: the meal itself is already stored.
+   */
+  async function rememberManualMeal(result: {
+    name: string;
+    kcal: number;
+    macros: Macros | null;
+    addedSugarG: number | null;
+  }): Promise<void> {
+    try {
+      // The new one first: if that fails, the earlier one is still there.
+      await addFavorite.mutateAsync({
+        id: newId(),
+        name: result.name,
+        kcal: result.kcal,
+        macros: result.macros,
+        items: [],
+        addedSugarG: result.addedSugarG,
+      });
+      for (const earlier of sameManualFavorites(favorites, result.name)) {
+        await removeFavorite.mutateAsync(earlier.id);
+      }
+    } catch {
+      // Remembering is a convenience; the meal was saved.
+    }
+  }
+
+  async function removeFavoriteAndReturn(id: string): Promise<void> {
+    setConfirmRemoveId(null);
+    await removeFavorite.mutateAsync(id);
+    if (favorites.length <= 1) setMode('search');
   }
 
   async function saveAsFavorite(): Promise<void> {
@@ -423,6 +466,7 @@ function MealForm({
       kcal: result.kcal,
       macros: result.macros,
       items,
+      addedSugarG: result.addedSugarG,
       ...(database.data ? { foodDbVersion: database.data.db.version } : {}),
     });
     setErrors({ form: he.addMeal.favoriteSaved });
@@ -498,6 +542,8 @@ function MealForm({
 
       {mode === 'search' && (
         <FoodSearch
+          favorites={favorites}
+          onPickFavorite={applyFavorite}
           onPick={(food) => startQuantity(food, null)}
           onManual={(typed) => {
             if (kind === 'manual') setName(typed);
@@ -567,6 +613,17 @@ function MealForm({
                 inputMode="decimal"
                 error={shown('sugar')}
               />
+              {!editing && (
+                <label className="flex min-h-11 items-center gap-3 text-base">
+                  <input
+                    type="checkbox"
+                    checked={remember}
+                    onChange={(event) => setRemember(event.target.checked)}
+                    className="size-6 accent-[var(--accent)]"
+                  />
+                  {he.addMeal.rememberManual}
+                </label>
+              )}
             </>
           )}
         </div>
@@ -583,9 +640,36 @@ function MealForm({
                 <span className="block break-words font-medium">{favorite.name}</span>
                 <span className="block text-sm text-muted">
                   <bdi>{formatInt(favorite.kcal)}</bdi> {he.kcal}
+                  {favorite.addedSugarG !== null &&
+                    favorite.addedSugarG > 0 &&
+                    ` · ${he.sugar.mealTotal(formatDecimal(favorite.addedSugarG))}`}
                 </span>
               </span>
-              <Button onClick={() => applyFavorite(favorite.id)}>{he.addMeal.useFavorite}</Button>
+              {confirmRemoveId === favorite.id ? (
+                <span className="flex shrink-0 flex-wrap items-center justify-end gap-1">
+                  <span className="text-sm">{he.addMeal.removeFavoriteAsk}</span>
+                  <Button onClick={() => void removeFavoriteAndReturn(favorite.id)}>
+                    {he.addMeal.removeFavoriteYes}
+                  </Button>
+                  <Button variant="ghost" onClick={() => setConfirmRemoveId(null)}>
+                    {he.cancel}
+                  </Button>
+                </span>
+              ) : (
+                <span className="flex shrink-0 items-center gap-1">
+                  <Button onClick={() => applyFavorite(favorite.id)}>
+                    {he.addMeal.useFavorite}
+                  </Button>
+                  <Button
+                    icon
+                    variant="ghost"
+                    aria-label={he.addMeal.removeFavorite(favorite.name)}
+                    onClick={() => setConfirmRemoveId(favorite.id)}
+                  >
+                    <Icon name="trash" />
+                  </Button>
+                </span>
+              )}
             </li>
           ))}
         </ul>

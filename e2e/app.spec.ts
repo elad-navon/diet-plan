@@ -250,6 +250,70 @@ test('DRAFT-02: foods already added to a meal are still there after closing, unt
   await expect(sheet.getByText(he.addMeal.draftBack)).toHaveCount(0);
 });
 
+test('REMEMBER-01: a meal typed by hand is found by name next time, with its numbers', async ({
+  page,
+}) => {
+  await openApp(page, { seed: {} });
+  const open = () => page.getByRole('button', { name: he.today.addMeal }).first().click();
+  const sheet = page.getByRole('dialog', { name: he.addMeal.title });
+
+  await open();
+  await sheet.getByText(he.addMeal.tabManual, { exact: true }).click();
+  await sheet.getByLabel(he.addMeal.name).fill('יוגורט פרו של דנונה');
+  await sheet.getByLabel(he.addMeal.kcalField).fill('120');
+  await sheet.getByLabel(he.sugar.field).fill('7');
+  await expect(sheet.getByLabel(he.addMeal.rememberManual)).toBeChecked(); // on by default
+  await sheet.getByRole('button', { name: he.addMeal.saveMeal }).click();
+  await expect(page.getByText(he.today.saved)).toBeVisible();
+
+  // Next time: typing a piece of the name offers it, with its calories and sugar.
+  await open();
+  await sheet.getByLabel(he.addMeal.searchLabel).fill('פרו');
+  await expect(sheet.getByText(he.addMeal.myFoods)).toBeVisible();
+  const row = sheet.getByRole('button', { name: /יוגורט פרו של דנונה/ });
+  await expect(row).toContainText(he.sugar.mealTotal('7'));
+  await row.click();
+  await expect(sheet.getByLabel(he.addMeal.name)).toHaveValue('יוגורט פרו של דנונה');
+  await expect(sheet.getByLabel(he.addMeal.kcalField)).toHaveValue('120');
+  await expect(sheet.getByLabel(he.sugar.field)).toHaveValue('7');
+});
+
+test('REMEMBER-02: it can be switched off, a same-name entry replaces the old one, and one can be removed', async ({
+  page,
+}) => {
+  await openApp(page, { seed: {} });
+  const open = () => page.getByRole('button', { name: he.today.addMeal }).first().click();
+  const sheet = page.getByRole('dialog', { name: he.addMeal.title });
+  const typeManual = async (name: string, kcal: string, remember: boolean) => {
+    await open();
+    await sheet.getByText(he.addMeal.tabManual, { exact: true }).click();
+    await sheet.getByLabel(he.addMeal.name).fill(name);
+    await sheet.getByLabel(he.addMeal.kcalField).fill(kcal);
+    if (!remember) await sheet.getByLabel(he.addMeal.rememberManual).uncheck();
+    await sheet.getByRole('button', { name: he.addMeal.saveMeal }).click();
+    await expect(sheet).toBeHidden();
+  };
+
+  await typeManual('חטיף חד פעמי', '90', false);
+  await typeManual('עוגיות בית', '200', true);
+  await typeManual('עוגיות בית', '260', true); // the same name again: the latest numbers win
+
+  await open();
+  await sheet.getByLabel(he.addMeal.searchLabel).fill('חטיף חד');
+  await expect(sheet.getByText(he.addMeal.myFoods)).toHaveCount(0); // switched off: not remembered
+  await sheet.getByLabel(he.addMeal.searchLabel).fill('עוגיות בית');
+  const remembered = sheet.getByRole('button', { name: /^עוגיות בית/ });
+  await expect(remembered).toHaveCount(1);
+  await expect(remembered).toContainText('260');
+
+  // The favorites tab lists it, and asks before removing it.
+  await sheet.getByText(he.addMeal.tabFavorites, { exact: true }).click();
+  await sheet.getByRole('button', { name: he.addMeal.removeFavorite('עוגיות בית') }).click();
+  await sheet.getByRole('button', { name: he.addMeal.removeFavoriteYes }).click();
+  await expect(sheet.getByText(he.addMeal.tabFavorites, { exact: true })).toHaveCount(0);
+  await expect(sheet.getByLabel(he.addMeal.searchLabel)).toBeVisible();
+});
+
 test('E2E-05: delete a meal and undo', async ({ page }) => {
   await openApp(page, { seed: { withMealsToday: true } });
   await expect(remaining(page)).toHaveAttribute('aria-label', /1,110/); // 1,390 - 280

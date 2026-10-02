@@ -78,6 +78,9 @@ class Store {
         parsed.meals = parsed.meals.map((meal) =>
           meal.addedSugarG === undefined ? { ...meal, addedSugarG: null } : meal,
         );
+        parsed.favorites = parsed.favorites.map((favorite) =>
+          favorite.addedSugarG === undefined ? { ...favorite, addedSugarG: null } : favorite,
+        );
         return parsed;
       }
     } catch {
@@ -403,6 +406,8 @@ export function createLocalRepositories(options: {
             macros: input.macros,
           });
           if (!checked.ok) throw invalid(checked.errors);
+          const sugar = validateAddedSugarInput(input.addedSugarG);
+          if (!sugar.ok) throw invalid(sugar.errors);
           if (doc.favorites.length >= MEAL_LIMITS.favoritesMax) {
             throw new DataError('limit_reached');
           }
@@ -412,6 +417,7 @@ export function createLocalRepositories(options: {
             kcal: checked.value.kcal,
             macros: checked.value.macros,
             items: input.items,
+            addedSugarG: sugar.value.addedSugarG,
             ...(input.foodDbVersion !== undefined ? { foodDbVersion: input.foodDbVersion } : {}),
             useCount: 0,
             lastUsedAt: null,

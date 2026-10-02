@@ -383,3 +383,39 @@ describe('added sugar of a meal', () => {
     expect(meal?.addedSugarG).toBeNull();
   });
 });
+
+describe('added sugar of a favorite (a meal typed by hand, remembered)', () => {
+  const typed = { id: 'f1', name: 'עוגיות', kcal: 250, macros: null, items: [] };
+
+  it('is kept when given, and is "not known" (null) when absent', async () => {
+    const withSugar = await repos.favorites.add({ ...typed, addedSugarG: 12.34 });
+    const without = await repos.favorites.add({ ...typed, id: 'f2', name: 'עוגה' });
+    expect(withSugar.addedSugarG).toBe(12.3);
+    expect(without.addedSugarG).toBeNull();
+    expect((await repos.favorites.list()).map((f) => f.addedSugarG)).toEqual([12.3, null]);
+  });
+
+  it('is refused when it is impossible', async () => {
+    await expect(repos.favorites.add({ ...typed, addedSugarG: -1 })).rejects.toMatchObject({
+      code: 'invalid',
+    });
+    await expect(repos.favorites.add({ ...typed, addedSugarG: 501 })).rejects.toMatchObject({
+      code: 'invalid',
+    });
+  });
+
+  it('favorites saved before this field existed read back as "not known"', async () => {
+    storage.setItem(
+      'diet-plan.v1',
+      JSON.stringify({
+        version: 1,
+        profile,
+        plans: [],
+        weights: [],
+        meals: [],
+        favorites: [{ ...typed, useCount: 0, lastUsedAt: null, version: 1 }],
+      }),
+    );
+    expect((await repos.favorites.list())[0]?.addedSugarG).toBeNull();
+  });
+});

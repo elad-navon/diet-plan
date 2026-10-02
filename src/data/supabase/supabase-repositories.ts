@@ -237,12 +237,16 @@ export function createSupabaseRepositories(options: {
             macros: input.macros,
           });
           if (!checked.ok) throw invalid(checked.errors);
+          const sugar = validateAddedSugarInput(input.addedSugarG);
+          if (!sugar.ok) throw invalid(sugar.errors);
           const row: Row = {
             id: input.id,
             name: checked.value.name,
             kcal: checked.value.kcal,
             ...macroColumns(checked.value.macros),
             items: input.items,
+            // Only when there is one, so a server that has not had the latest update still takes a favorite without sugar.
+            ...(sugar.value.addedSugarG !== null ? { added_sugar_g: sugar.value.addedSugarG } : {}),
             food_db_version: input.foodDbVersion ?? null,
           };
           try {

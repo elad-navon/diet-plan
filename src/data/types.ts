@@ -70,13 +70,18 @@ export interface FavoriteRecord {
   kcal: number;
   macros: Macros | null;
   items: FoodEntry[];
+  /** Added sugar in grams (typed for a meal entered by hand); null = not known. */
+  addedSugarG: number | null;
   foodDbVersion?: string;
   useCount: number;
   lastUsedAt: Instant | null;
   version: number;
 }
 
-export type NewFavorite = Omit<FavoriteRecord, 'useCount' | 'lastUsedAt' | 'version'>;
+export type NewFavorite = Omit<
+  FavoriteRecord,
+  'useCount' | 'lastUsedAt' | 'version' | 'addedSugarG'
+> & { addedSugarG?: number | null };
 
 /** What an export file contains (docs/PRODUCT_SPEC.md C.2 "יצוא"). */
 export interface ExportDocument {

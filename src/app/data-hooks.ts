@@ -192,6 +192,15 @@ export function useAddFavorite() {
   });
 }
 
+export function useRemoveFavorite() {
+  const { repos } = useServices();
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: (id: string) => repos.favorites.remove(id),
+    onSuccess: () => invalidate(keys.favorites),
+  });
+}
+
 export function useMarkFavoriteUsed() {
   const { repos } = useServices();
   const invalidate = useInvalidate();

@@ -381,6 +381,18 @@ describe('favorites', () => {
     expect(await repos.favorites.list()).toEqual([]);
   });
 
+  it('keeps the added sugar of a favorite, and "not known" when there is none', async () => {
+    const { repos } = await newUserRepos();
+    const typed = { ...favorite(), addedSugarG: 12.34 };
+    const added = await repos.favorites.add(typed);
+    expect(added.addedSugarG).toBe(12.3);
+    expect((await repos.favorites.list())[0]?.addedSugarG).toBe(12.3);
+    expect((await repos.favorites.add(favorite())).addedSugarG).toBeNull();
+    await expect(repos.favorites.add({ ...favorite(), addedSugarG: 501 })).rejects.toMatchObject({
+      code: 'invalid',
+    });
+  });
+
   it("someone else's id cannot be taken over", async () => {
     const { repos: owner } = await newUserRepos();
     const { repos: other } = await newUserRepos();
