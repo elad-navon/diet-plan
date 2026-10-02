@@ -4,6 +4,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import {
   SOURCE_LIMITS,
   buildFoodIndex,
+  buildMealIdeas,
   searchFoods,
   type FoodDb,
   type FoodIndex,
@@ -218,5 +219,40 @@ describe('sugar and fiber in the generated database', () => {
     expect(fresh.filter((food) => (food.addedSugar100 ?? 0) > 0).map((food) => food.name)).toEqual(
       [],
     );
+  });
+});
+
+describe('white flour and whole grain in the generated database', () => {
+  const named = (prefix: string) => db.foods.find((food) => food.name.startsWith(prefix));
+
+  it('marks the staples', () => {
+    expect(named('לחם לבן, קלוי')?.grain).toBe('refined');
+    expect(named('פיתה, דוידוביץ')?.grain).toBe('refined');
+    expect(named('אורז לבן, מבושל')?.grain).toBe('refined');
+    expect(named('לחם מחיטה מלאה, אנגל')?.grain).toBe('whole');
+    expect(named('אורז מלא, מבושל')?.grain).toBe('whole');
+    expect(named('שיבולת שועל, מבושל')?.grain).toBe('whole');
+    expect(named('ביצה קשה')?.grain).toBeUndefined();
+    expect(named('חזה עוף')?.grain).toBeUndefined();
+  });
+
+  it('marks a sensible share of the database, and gives a swap only to refined foods', () => {
+    const marked = db.foods.filter((food) => food.grain !== undefined);
+    expect(marked.length).toBeGreaterThan(600);
+    expect(marked.length / db.foods.length).toBeLessThan(0.25);
+    for (const food of db.foods) {
+      if (food.swap !== undefined) expect(food.grain, food.name).toBe('refined');
+    }
+  });
+
+  it('keeps the suggested meals on whole grain, with the amount known for each', () => {
+    const ideas = buildMealIdeas(db.foods);
+    const withGrain = ideas.filter(
+      (idea) => (idea.wholeCarbsG ?? 0) + (idea.refinedCarbsG ?? 0) > 0,
+    );
+    expect(withGrain.length).toBeGreaterThan(10);
+    expect(
+      withGrain.filter((idea) => (idea.refinedCarbsG ?? 0) > 0).map((idea) => idea.name),
+    ).toEqual([]);
   });
 });

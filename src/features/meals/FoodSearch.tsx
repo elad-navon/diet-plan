@@ -91,6 +91,7 @@ export function FoodSearch({ onPick, onManual }: FoodSearchProps) {
                       : food.addedSugar100 === 0
                         ? he.sugar.none100
                         : he.sugar.per100(formatDecimal(food.addedSugar100))}
+                    {food.grain && ` · ${he.flour.tag[food.grain]}`}
                   </span>
                 </span>
                 <Icon name="plus" />

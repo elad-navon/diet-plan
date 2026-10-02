@@ -165,6 +165,31 @@ test('SUGAR-04: a meal saved before sugar was tracked still counts, from the foo
   await expect(page.getByText(he.sugar.mealTotal('28.8'))).toBeVisible();
 });
 
+test('FLOUR-01: the day tells white flour from whole grain and suggests what to try instead', async ({
+  page,
+}) => {
+  await openApp(page, { seed: { withBreadMealsToday: true } });
+  const card = page.getByRole('region', { name: he.flour.title });
+  await expect(card.getByRole('img', { name: he.flour.summary('44.7', '30') })).toBeVisible();
+  await expect(card.getByText(he.flour.swap.bread)).toBeVisible();
+});
+
+test('FLOUR-02: a food says whether it is white flour or whole grain, and what to try instead', async ({
+  page,
+}) => {
+  await openApp(page, { seed: {} });
+  await expect(page.getByText(he.flour.empty)).toBeVisible();
+  await page.getByRole('button', { name: he.today.addMeal }).first().click();
+  const sheet = page.getByRole('dialog', { name: he.addMeal.title });
+  await sheet.getByLabel(he.addMeal.searchLabel).fill('לחם לבן');
+  await expect(sheet.getByText(new RegExp(he.flour.tag.refined)).first()).toBeVisible();
+  await sheet
+    .getByRole('button', { name: /^לחם לבן, קלוי/ })
+    .first()
+    .click();
+  await expect(sheet.getByText(he.flour.swapHint(he.flour.swap.bread))).toBeVisible();
+});
+
 test('E2E-05: delete a meal and undo', async ({ page }) => {
   await openApp(page, { seed: { withMealsToday: true } });
   await expect(remaining(page)).toHaveAttribute('aria-label', /1,110/); // 1,390 - 280

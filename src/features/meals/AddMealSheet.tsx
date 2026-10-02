@@ -512,6 +512,7 @@ function MealForm({
                       {item.addedSugarG !== undefined &&
                         item.addedSugarG > 0 &&
                         ` · ${he.sugar.item(formatDecimal(item.addedSugarG))}`}
+                      {food?.grain && ` · ${he.flour.tag[food.grain]}`}
                     </span>
                   </span>
                   <span className="flex shrink-0">

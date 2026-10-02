@@ -71,7 +71,15 @@ export function QuantityEditor({ food, initial, onConfirm, onCancel }: QuantityE
   return (
     <div className="space-y-3">
       <h3 className="text-lg font-bold">{shortFoodName(food.name)}</h3>
-      <p className="text-sm text-muted">{food.name}</p>
+      <p className="text-sm text-muted">
+        {food.name}
+        {food.grain && ` · ${he.flour.tag[food.grain]}`}
+      </p>
+      {food.swap && (
+        <p className="rounded-xl bg-surface-2 p-3 text-sm">
+          {he.flour.swapHint(he.flour.swap[food.swap])}
+        </p>
+      )}
 
       <SelectField
         label={he.addMeal.unit}

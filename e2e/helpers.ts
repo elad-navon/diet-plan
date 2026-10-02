@@ -52,7 +52,47 @@ export interface SeedOptions {
   withMealsToday?: boolean;
   /** A meal from the food database, saved before sugar was tracked: its items carry no sugar fields. */
   withOldFoodMealToday?: boolean;
+  /** Breakfast with white bread and lunch with whole-wheat bread, both built from database foods. */
+  withBreadMealsToday?: boolean;
 }
+
+/** Two slices of white bread (about 61 g) and two of whole-wheat bread (about 68 g). */
+const breadMeals = (): StoredMeal[] => [
+  {
+    ...meal('b1', TODAY, '08:00', 'לחם לבן', 220, [7.2, 44.5, 1.5]),
+    source: 'food_db',
+    items: [
+      {
+        foodId: '1921',
+        name: 'לחם לבן, קלוי',
+        grams: 61.2,
+        unit: 'פרוסה בינונית',
+        count: 2,
+        kcal: 220,
+        proteinG: 7.2,
+        carbsG: 44.7,
+        fatG: 1.5,
+      },
+    ],
+  },
+  {
+    ...meal('b2', TODAY, '13:00', 'לחם מלא', 170, [7, 30, 2]),
+    source: 'food_db',
+    items: [
+      {
+        foodId: '1995',
+        name: 'לחם מחיטה מלאה, אנגל, לחם חי',
+        grams: 68,
+        unit: 'פרוסה בינונית',
+        count: 2,
+        kcal: 170,
+        proteinG: 7,
+        carbsG: 30,
+        fatG: 2,
+      },
+    ],
+  },
+];
 
 /** A glass (240 g) of apple juice, saved the way the app did before added sugar existed. */
 const oldJuiceMeal = (): StoredMeal => ({
@@ -110,6 +150,7 @@ export function seedDocument(options: SeedOptions = {}): string {
       ? [meal('t1', TODAY, '08:30', 'חביתה וסלט', 280, [18, 12, 18])]
       : []),
     ...(options.withOldFoodMealToday ? [oldJuiceMeal()] : []),
+    ...(options.withBreadMealsToday ? breadMeals() : []),
   ];
   return JSON.stringify({
     version: 1,

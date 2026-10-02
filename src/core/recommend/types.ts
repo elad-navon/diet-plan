@@ -45,6 +45,9 @@ export interface MealCandidate {
   recipe?: readonly RecipeItem[];
   /** Estimated added sugar of the idea at its normal portion, in grams; absent when not known. */
   addedSugarG?: number;
+  /** Carbohydrate (g) of the idea's white-flour and whole-grain foods at its normal portion; absent when not known. */
+  refinedCarbsG?: number;
+  wholeCarbsG?: number;
 }
 
 export type DayStatus = 'on_track' | 'behind' | 'ahead' | 'over_budget' | 'day_complete';

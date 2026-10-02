@@ -1,6 +1,7 @@
 import { type MealCandidate, type RecipeItem } from '../recommend';
 import { type SlotId } from '../schedule';
 import { computeEntry, sumEntries, type FoodEntry, type Quantity } from './compute';
+import { mealGrainCarbs } from './grain';
 import { type FoodRecord } from './types';
 
 /**
@@ -92,12 +93,12 @@ export const MEAL_IDEAS: readonly IdeaDefinition[] = [
   },
   {
     id: 'shakshuka-pita',
-    name: 'שקשוקה ופיתה',
+    name: 'שקשוקה ופיתה מלאה',
     slots: ['breakfast', 'dinner'],
     tags: ['vegetarian'],
     items: [
       ['1591', measure('מנה בינונית', 1), 'שקשוקה'],
-      ['1955', measure('יחידה', 0.5), 'פיתה'],
+      ['9666', measure('יחידה', 0.5), 'פיתה מקמח מלא'],
     ],
   },
   {
@@ -171,23 +172,23 @@ export const MEAL_IDEAS: readonly IdeaDefinition[] = [
   // --- צהריים וערב
   {
     id: 'chicken-rice-salad',
-    name: 'חזה עוף אפוי, אורז וסלט',
+    name: 'חזה עוף אפוי, אורז מלא וסלט',
     slots: MAIN,
     tags: ['meat'],
     items: [
       ['811', 120, 'חזה עוף אפוי'],
-      ['2721', measure('כוס', 1), 'אורז מבושל'],
+      ['2727', measure('כוס', 1), 'אורז מלא מבושל'],
       ['3895', measure('מנה גדולה', 1), 'סלט ירקות'],
     ],
   },
   {
     id: 'chicken-rice-salad-apple',
-    name: 'חזה עוף אפוי, אורז, סלט ותפוח',
+    name: 'חזה עוף אפוי, אורז מלא, סלט ותפוח',
     slots: MAIN,
     tags: ['meat', 'fruit'],
     items: [
       ['811', 120, 'חזה עוף אפוי'],
-      ['2721', measure('כוס', 1), 'אורז מבושל'],
+      ['2727', measure('כוס', 1), 'אורז מלא מבושל'],
       ['3895', measure('מנה גדולה', 1), 'סלט ירקות'],
       ['3201', half('יחידה בינונית', 1), 'תפוח עץ'],
     ],
@@ -205,11 +206,11 @@ export const MEAL_IDEAS: readonly IdeaDefinition[] = [
   },
   {
     id: 'pasta-tuna-salad',
-    name: 'פסטה עם טונה וסלט',
+    name: 'פסטה מלאה עם טונה וסלט',
     slots: MAIN,
     tags: ['fish'],
     items: [
-      ['8552', measure('מנה בינונית', 1), 'פסטה מבושלת'],
+      ['2659', measure('כוס', 1), 'פסטה מלאה מבושלת'],
       ['1360', whole('כף', 3), 'טונה במים'],
       ['9704', measure('מנה גדולה', 1), 'סלט ירקות'],
     ],
@@ -239,23 +240,23 @@ export const MEAL_IDEAS: readonly IdeaDefinition[] = [
   },
   {
     id: 'hummus-pita-cucumber',
-    name: 'חומוס עם פיתה ומלפפון',
+    name: 'חומוס עם פיתה מלאה ומלפפון',
     slots: MAIN,
     tags: ['vegetarian'],
     items: [
       ['1640', whole('כף', 3), 'סלט חומוס'],
-      ['1955', half('יחידה', 1), 'פיתה'],
+      ['9666', half('יחידה', 1), 'פיתה מקמח מלא'],
       ['3793', measure('יחידה קטנה', 1), 'מלפפון'],
     ],
   },
   {
     id: 'hummus-pita-pear',
-    name: 'חומוס עם פיתה, מלפפון ואגס',
+    name: 'חומוס עם פיתה מלאה, מלפפון ואגס',
     slots: MAIN,
     tags: ['vegetarian', 'fruit'],
     items: [
       ['1640', whole('כף', 3), 'סלט חומוס'],
-      ['1955', half('יחידה', 1), 'פיתה'],
+      ['9666', half('יחידה', 1), 'פיתה מקמח מלא'],
       ['3793', measure('יחידה קטנה', 1), 'מלפפון'],
       ['3283', half('יחידה בינונית', 1), 'אגס'],
     ],
@@ -273,12 +274,12 @@ export const MEAL_IDEAS: readonly IdeaDefinition[] = [
   },
   {
     id: 'kebab-rice-salad',
-    name: 'קבב בקר, אורז וסלט',
+    name: 'קבב בקר, אורז מלא וסלט',
     slots: MAIN,
     tags: ['meat'],
     items: [
       ['667', half('יחידה גדולה', 1), 'קבב בקר'],
-      ['2721', measure('כוס', 1), 'אורז מבושל'],
+      ['2727', measure('כוס', 1), 'אורז מלא מבושל'],
       ['3895', measure('מנה בינונית', 1), 'סלט ירקות'],
     ],
   },
@@ -298,23 +299,23 @@ export const MEAL_IDEAS: readonly IdeaDefinition[] = [
   },
   {
     id: 'salmon-veg-rice',
-    name: 'סלמון, ברוקולי ואורז',
+    name: 'סלמון, ברוקולי ואורז מלא',
     slots: MAIN,
     tags: ['fish'],
     items: [
       ['1202', measure('מנה בינונית', 1), 'סלמון'],
       ['3612', measure('כוס', 1.5), 'ברוקולי'],
-      ['2721', measure('כוס', 0.75), 'אורז מבושל'],
+      ['2727', measure('כוס', 0.75), 'אורז מלא מבושל'],
     ],
   },
   {
     id: 'tofu-rice-veg',
-    name: 'טופו, אורז וברוקולי',
+    name: 'טופו, אורז מלא וברוקולי',
     slots: MAIN,
     tags: ['vegetarian'],
     items: [
       ['10141', whole('פרוסה בינונית', 4), 'טופו'],
-      ['2721', measure('כוס', 1), 'אורז מבושל'],
+      ['2727', measure('כוס', 1), 'אורז מלא מבושל'],
       ['3612', measure('כוס', 1), 'ברוקולי'],
     ],
   },
@@ -330,11 +331,11 @@ export const MEAL_IDEAS: readonly IdeaDefinition[] = [
   },
   {
     id: 'couscous-chicken-salad',
-    name: 'קוסקוס עם עוף וסלט',
+    name: 'קוסקוס מלא עם עוף וסלט',
     slots: MAIN,
     tags: ['meat'],
     items: [
-      ['10127', measure('מנה בינונית', 1.5), 'קוסקוס מבושל'],
+      ['9648', measure('מנה בינונית', 1.5), 'קוסקוס מלא מבושל'],
       ['811', 100, 'חזה עוף אפוי'],
       ['3895', measure('מנה בינונית', 1), 'סלט ירקות'],
     ],
@@ -618,6 +619,10 @@ export function buildMealIdeas(foods: readonly FoodRecord[]): MealCandidate[] {
       maxPortionFactor: idea.portion?.[1] ?? 1.5,
       recipe,
       ...(totals.addedSugarG !== null ? { addedSugarG: totals.addedSugarG } : {}),
+      ...mealGrainCarbs(
+        parts.map((part) => part.entry),
+        byId,
+      ),
     });
   }
   return candidates;

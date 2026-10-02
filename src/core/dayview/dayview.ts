@@ -1,6 +1,7 @@
 import { type MacroState, type Macros } from '../nutrition';
 import {
   recommendNext,
+  grainScorer,
   sugarScorer,
   type MealCandidate,
   type MealForRecommendation,
@@ -161,7 +162,7 @@ export function buildDayView(input: DayViewInput): DayView {
             macros: plan.macros,
             meals,
             candidates: input.candidates ?? [],
-            scorers: [sugarScorer(summary.addedSugarG)],
+            scorers: [sugarScorer(summary.addedSugarG), grainScorer()],
           })
         : null,
   };

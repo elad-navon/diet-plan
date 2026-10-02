@@ -23,6 +23,10 @@ export interface FoodRecord {
   addedSugar100?: number;
   /** Dietary fiber in 100 g, when the database has a value. */
   fiber100?: number;
+  /** White flour or whole grain, for bread, pasta, rice, cereals and bakery - see core/food/grain.ts. Absent otherwise. */
+  grain?: 'refined' | 'whole';
+  /** For a refined food: which whole-grain alternative to suggest, when one is obvious. */
+  swap?: 'bread' | 'pasta' | 'rice' | 'cereal' | 'cracker';
   /** Name of the unit to preselect (one of `units`); absent when the food only has grams. */
   defaultUnit?: string;
 }

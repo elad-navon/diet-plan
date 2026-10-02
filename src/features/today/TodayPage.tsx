@@ -8,7 +8,13 @@ import {
 } from '../../app/data-hooks';
 import { useNow } from '../../app/services';
 import { buildDayChart, buildDayView, resolvePlanForDate } from '../../core/dayview';
-import { fillMissingSugar, portionParts, sumEntries, type PortionPart } from '../../core/food';
+import {
+  fillMissingSugar,
+  portionParts,
+  summarizeGrain,
+  sumEntries,
+  type PortionPart,
+} from '../../core/food';
 import { type Recommendation, type Suggestion } from '../../core/recommend';
 import { DEFAULT_SCHEDULE } from '../../core/schedule';
 import { localDateOf, localTimeOf } from '../../core/time';
@@ -24,6 +30,7 @@ import { LoadGate } from '../shell/LoadGate';
 import { useRequiredProfile } from '../shell/ProfileGate';
 import { CalorieRing } from './CalorieRing';
 import { DayChart } from './DayChart';
+import { FlourCard } from './FlourCard';
 import { MacroBars } from './MacroBars';
 import { MealList } from './MealList';
 import { NextMealCard } from './NextMealCard';
@@ -95,6 +102,7 @@ function TodayContent() {
   const plan = resolvePlanForDate(plans, date);
   const view = buildDayView({ date, now, tz, plans, meals, candidates: ideas });
   const activeMeals = meals.filter((meal) => !meal.deletedAt);
+  const grain = summarizeGrain(activeMeals, foodsById);
   const recommendation = view.recommendation;
   const chart = plan
     ? buildDayChart({
@@ -200,6 +208,7 @@ function TodayContent() {
       />
 
       <SugarCard summary={view.summary} />
+      <FlourCard grain={grain} />
 
       {recommendation && (
         <NextMealCard

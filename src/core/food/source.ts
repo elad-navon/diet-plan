@@ -1,3 +1,4 @@
+import { grainKind, wholeGrainSwap } from './grain';
 import { estimateAddedSugar } from './sugar';
 import { type FoodRecord, type FoodUnit } from './types';
 
@@ -211,6 +212,8 @@ export function buildFoodRecords(tables: RawFoodTables): {
     const fiber = toNumber(row.total_dietary_fiber);
     const group = String(row.smlmitzrach ?? '').slice(0, 2);
     const added = estimateAddedSugar({ group, name, sugarsPer100: sugars });
+    const grain = grainKind({ group, name, fiberPer100: fiber });
+    const swap = grain === 'refined' ? wholeGrainSwap(name, group) : null;
     const record: FoodRecord = {
       id,
       name,
@@ -222,6 +225,8 @@ export function buildFoodRecords(tables: RawFoodTables): {
       ...(sugars !== null && sugars >= 0 ? { sugar100: round1(sugars) } : {}),
       ...(added !== null ? { addedSugar100: added } : {}),
       ...(fiber !== null && fiber >= 0 ? { fiber100: round1(fiber) } : {}),
+      ...(grain !== null ? { grain } : {}),
+      ...(swap !== null ? { swap } : {}),
       ...(defaultUnit !== undefined ? { defaultUnit } : {}),
     };
     seen.add(id);

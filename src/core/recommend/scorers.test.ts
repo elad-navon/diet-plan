@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sugarScorer } from './scorers';
+import { grainScorer, sugarScorer } from './scorers';
 import { type MealCandidate } from './types';
 
 const idea = (addedSugarG: number | undefined, kcal = 400): MealCandidate => ({
@@ -52,5 +52,37 @@ describe('the sugar nudge on meal suggestions', () => {
 
   it('uses another limit when given', () => {
     expect(sugarScorer(8, 12)(idea(6), scaled(400), context)).toBe(-0.6);
+  });
+});
+
+describe('the whole-grain nudge on meal suggestions', () => {
+  const grain = (refinedCarbsG: number | undefined, wholeCarbsG = 0): MealCandidate => ({
+    ...idea(undefined),
+    ...(refinedCarbsG !== undefined ? { refinedCarbsG, wholeCarbsG } : {}),
+  });
+
+  it('leaves an idea alone when it has no grain information', () => {
+    expect(grainScorer()(grain(undefined), scaled(400), context)).toBe(0);
+  });
+
+  it('slightly prefers whole grain with no white flour, and is neutral without any grain', () => {
+    expect(grainScorer()(grain(0, 30), scaled(400), context)).toBeGreaterThan(0);
+    expect(grainScorer()(grain(0, 0), scaled(400), context)).toBe(0);
+  });
+
+  it('penalises white flour in proportion, up to a small cap', () => {
+    const score = grainScorer();
+    expect(score(grain(10), scaled(400), context)).toBeLessThan(0);
+    expect(score(grain(10), scaled(400), context)).toBeGreaterThan(
+      score(grain(30), scaled(400), context),
+    );
+    expect(score(grain(500), scaled(400), context)).toBe(-0.2);
+  });
+
+  it('scales with the portion', () => {
+    const score = grainScorer();
+    expect(score(grain(30), scaled(200), context)).toBeGreaterThan(
+      score(grain(30), scaled(600), context),
+    );
   });
 });

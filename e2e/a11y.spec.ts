@@ -27,7 +27,7 @@ for (const scheme of ['light', 'dark'] as const) {
     });
 
     test('today', async ({ page }) => {
-      await openApp(page, { seed: { withMealsToday: true } });
+      await openApp(page, { seed: { withMealsToday: true, withBreadMealsToday: true } });
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
       expect(await scan(page)).toEqual([]);
     });
