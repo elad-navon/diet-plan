@@ -354,6 +354,57 @@ test('REMEMBER-02: it can be switched off, a same-name entry replaces the old on
   await expect(sheet.getByLabel(he.addMeal.searchLabel)).toBeVisible();
 });
 
+test('REMEMBER-03: a food typed by hand into a meal of foods can be remembered, and joins the next meal', async ({
+  page,
+}) => {
+  await openApp(page, { seed: {} });
+  const open = () => page.getByRole('button', { name: he.today.addMeal }).first().click();
+  const sheet = page.getByRole('dialog', { name: he.addMeal.title });
+  const addEgg = async () => {
+    await sheet.getByLabel(he.addMeal.searchLabel).fill('ביצה');
+    await sheet
+      .getByRole('button', { name: /ביצה שלמה בלי קליפה/ })
+      .first()
+      .click();
+    await sheet.getByLabel(he.addMeal.count).fill('2'); // 142 kcal
+    await sheet.getByRole('button', { name: he.addMeal.addToMeal }).click();
+  };
+
+  await open();
+  await addEgg();
+  await sheet.getByText(he.addMeal.tabManual, { exact: true }).click();
+  await expect(sheet.getByLabel(he.addMeal.rememberManual)).toBeChecked(); // on by default
+  await sheet.getByLabel(he.addMeal.itemName).fill('עוגיות בית');
+  await sheet.getByLabel(he.addMeal.kcalField).fill('200');
+  await sheet.getByRole('button', { name: he.addMeal.addToMeal }).click();
+  await sheet.getByLabel(he.addMeal.rememberManual).uncheck();
+  await sheet.getByLabel(he.addMeal.itemName).fill('חטיף חד פעמי');
+  await sheet.getByLabel(he.addMeal.kcalField).fill('90');
+  await sheet.getByRole('button', { name: he.addMeal.addToMeal }).click();
+  await sheet.getByRole('button', { name: he.addMeal.saveMeal }).click();
+  await expect(page.getByText(he.today.saved)).toBeVisible();
+
+  // Only the one left switched on is remembered.
+  await open();
+  await sheet.getByLabel(he.addMeal.searchLabel).fill('חטיף חד');
+  await expect(sheet.getByText(he.addMeal.myFoods)).toHaveCount(0);
+  await sheet.getByLabel(he.addMeal.searchLabel).fill('עוגיות בית');
+  const remembered = sheet.getByRole('button', { name: /^עוגיות בית/ });
+  await expect(remembered).toHaveCount(1);
+
+  // Picked into a meal that already has foods, it joins them instead of replacing them.
+  await sheet.getByLabel(he.addMeal.searchLabel).fill('');
+  await addEgg();
+  await sheet.getByLabel(he.addMeal.searchLabel).fill('עוגיות בית');
+  await remembered.click();
+  await expect(sheet.getByText(he.addMeal.byHand)).toBeVisible();
+  await expect(sheet.getByText(/ביצה שלמה בלי קליפה/)).toBeVisible();
+  await sheet.getByRole('button', { name: he.addMeal.saveMeal }).click();
+  await expect(page.getByText(he.today.saved)).toBeVisible();
+  // 1,390 - (142 + 200 + 90) - (142 + 200)
+  await expect(remaining(page)).toHaveAttribute('aria-label', /616/);
+});
+
 test('E2E-05: delete a meal and undo', async ({ page }) => {
   await openApp(page, { seed: { withMealsToday: true } });
   await expect(remaining(page)).toHaveAttribute('aria-label', /1,110/); // 1,390 - 280

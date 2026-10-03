@@ -43,7 +43,7 @@ import { Button } from '../../ui/Button';
 import { SelectField, TextField } from '../../ui/Field';
 import { Icon } from '../../ui/Icon';
 import { Sheet } from '../../ui/Sheet';
-import { sameManualFavorites } from './favorites';
+import { favoriteKey, sameManualFavorites } from './favorites';
 import { FoodSearch } from './FoodSearch';
 import {
   clearMealDraft,
@@ -200,6 +200,8 @@ function MealForm({
   const cameBack = draft !== null;
   /** A meal typed by hand is remembered for next time unless this is switched off. */
   const [remember, setRemember] = useState(true);
+  /** Which foods typed by hand into a meal of foods were added with "remember" on. */
+  const [rememberIds, setRememberIds] = useState<string[]>(draft?.rememberIds ?? []);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
   /** Set once the meal is saved, so the draft is not written again behind the save. */
   const savedRef = useRef(false);
@@ -243,6 +245,7 @@ function MealForm({
       slotChoice,
       sourceHint,
       favoriteId,
+      ...(rememberIds.length > 0 ? { rememberIds } : {}),
     };
     if (isMeaningful(current)) saveMealDraft(current);
     else clearMealDraft();
@@ -267,6 +270,7 @@ function MealForm({
     slotChoice,
     sourceHint,
     favoriteId,
+    rememberIds,
   ]);
 
   const eatenAt = ((): Instant | null => {
@@ -291,6 +295,20 @@ function MealForm({
   function applyFavorite(id: string): void {
     const favorite = favorites.find((f) => f.id === id);
     if (!favorite) return;
+    // A remembered food typed by hand joins the foods already in the meal instead of replacing them.
+    if (favorite.items.length === 0 && items.length > 0) {
+      setItems((current) => [
+        ...current,
+        manualEntry({
+          id: newId(),
+          name: favorite.name,
+          kcal: favorite.kcal,
+          macros: favorite.macros,
+          addedSugarG: favorite.addedSugarG,
+        }),
+      ]);
+      return;
+    }
     setItems(favorite.items);
     setName(favorite.name);
     setKcalText(String(favorite.kcal));
@@ -391,16 +409,15 @@ function MealForm({
       return;
     }
     setItemErrors({});
-    setItems((current) => [
-      ...current,
-      manualEntry({
-        id: newId(),
-        name: checked.value.name,
-        kcal: checked.value.kcal,
-        macros: checked.value.macros,
-        addedSugarG: sugarChecked.value.addedSugarG,
-      }),
-    ]);
+    const entry = manualEntry({
+      id: newId(),
+      name: checked.value.name,
+      kcal: checked.value.kcal,
+      macros: checked.value.macros,
+      addedSugarG: sugarChecked.value.addedSugarG,
+    });
+    setItems((current) => [...current, entry]);
+    if (remember && !editing) setRememberIds((current) => [...current, entry.foodId]);
     setName('');
     setKcalText('');
     setMacrosOn(false);
@@ -468,6 +485,22 @@ function MealForm({
         if (favoriteId) void markUsed.mutateAsync(favoriteId);
         if (kind === 'manual' && remember && !favoriteId && !prefill)
           await rememberManualMeal(result);
+        // Foods typed by hand into a meal of foods: each one marked "remember" is kept on its own.
+        // The same name twice keeps the later one only (the earlier favorites are replaced once).
+        const byName = new Map<string, FoodEntry>();
+        for (const item of items) {
+          if (rememberIds.includes(item.foodId)) byName.set(favoriteKey(item.name), item);
+        }
+        for (const item of byName.values()) {
+          await rememberManualMeal({
+            name: item.name,
+            kcal: item.kcal,
+            macros: item.noMacros
+              ? null
+              : { proteinG: item.proteinG, carbsG: item.carbsG, fatG: item.fatG },
+            addedSugarG: item.addedSugarG ?? null,
+          });
+        }
       }
       savedRef.current = true;
       clearMealDraft();
@@ -673,7 +706,18 @@ function MealForm({
             inputMode="decimal"
             error={manualError('sugar')}
           />
-          {kind === 'food' ? (
+          {!editing && (
+            <label className="flex min-h-11 items-center gap-3 text-base">
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={(event) => setRemember(event.target.checked)}
+                className="size-6 accent-[var(--accent)]"
+              />
+              {he.addMeal.rememberManual}
+            </label>
+          )}
+          {kind === 'food' && (
             <>
               <Button onClick={addManualItem}>
                 <Icon name="plus" /> {he.addMeal.addToMeal}
@@ -684,18 +728,6 @@ function MealForm({
                 </p>
               )}
             </>
-          ) : (
-            !editing && (
-              <label className="flex min-h-11 items-center gap-3 text-base">
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  onChange={(event) => setRemember(event.target.checked)}
-                  className="size-6 accent-[var(--accent)]"
-                />
-                {he.addMeal.rememberManual}
-              </label>
-            )
           )}
         </div>
       )}

@@ -52,6 +52,8 @@ const draftSchema = z.object({
   slotChoice: z.enum(['breakfast', 'lunch', 'snack', 'dinner', 'other']).nullable(),
   sourceHint: z.enum(['food_db', 'manual', 'favorite', 'copy']),
   favoriteId: z.string().nullable(),
+  /** Foods typed by hand into the meal that are to be remembered for next time. */
+  rememberIds: z.array(z.string()).optional(),
 });
 
 export type MealDraft = z.infer<typeof draftSchema>;
