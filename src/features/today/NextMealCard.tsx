@@ -132,9 +132,9 @@ export function NextMealCard({
       {/* Closed by default: the suggestions are there when asked for, not in the way of the day. */}
       <details className="group">
         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
-          <h2 id="next-title" className="text-xl font-bold">
+          <CardTitle id="next-title" icon="clock" tone="mint" className="text-xl font-bold">
             {title}
-          </h2>
+          </CardTitle>
           <span className="shrink-0 text-muted transition group-open:rotate-180">
             <Icon name="chevron-down" />
           </span>

@@ -10,125 +10,227 @@
  */
 :root {
   color-scheme: light dark;
-  --canvas: #f3f4f8;
+  --canvas: #e6f0f6;
   --surface: #ffffff;
-  --surface-2: #f4f5fa; /* inset areas: inputs, tiles, inactive chips */
-  --ink: #10131c;
-  --muted: #565b6c; /* secondary ink - also used for chart axis text */
-  --faint: #e3e6ef; /* hairlines: grid, dividers */
-  --axis: #c7cbd9;
+  --surface-2: #eaf3f8;
+  --ink: #0a1a26;
+  --muted: #46606f;
+  --faint: rgb(8 90 130 / 0.14);
+  --axis: #b4c9d6;
   --accent: #3358dc;
-  --accent-2: #6a45d8; /* the other end of the brand gradient */
+  --accent-2: #6a45d8;
   --on-accent: #ffffff;
-  --series-1: #2a78d6;
-  --series-2: #eb6834;
+  --series-1: #0b7fc0;
+  --series-2: #d9660d;
   --good: #0ca30c;
   --warning: #fab219;
   --serious: #ec835a;
   --critical: #d03b3b;
-  --hero-over: #ffc2b4; /* the ring when over the target, on the gradient */
-  --card-shadow: 0 1px 2px rgb(16 19 28 / 0.04), 0 14px 32px -18px rgb(16 19 28 / 0.22);
+  --hero-over: #ffc2b4;
+  --card-shadow: 0 0 0 1px rgb(8 120 160 / 0.17), 0 22px 44px -26px rgb(8 60 90 / 0.4);
   --nav-shadow: 0 12px 40px -12px rgb(16 19 28 / 0.4);
+  /* The skin: the page, the glass cards, the main number card, the ring, the chart and the bars. Components use only these names. */
+  --page-bg:
+    radial-gradient(64rem 30rem at 82% -10rem, rgb(0 180 220 / 0.22), transparent 70%),
+    radial-gradient(52rem 34rem at -8% 108%, rgb(16 185 129 / 0.16), transparent 70%),
+    linear-gradient(#e9f3f9, #dfecf4);
+  --card-bg: rgb(255 255 255 / 0.74);
+  --card-radius: 1.5rem;
+  --card-backdrop: blur(14px) saturate(1.2);
+  --hero-bg: linear-gradient(160deg, rgb(9 44 60 / 0.96), rgb(5 24 36 / 0.96));
+  --hero-ink: #f5f8fa;
+  --hero-radius: 2rem;
+  --hero-shadow: 0 0 0 1px rgb(0 160 200 / 0.4), 0 26px 50px -26px rgb(6 40 60 / 0.65);
+  --ring-track: rgb(0 217 255 / 0.16);
+  --ring-from: #00d9ff;
+  --ring-via: #168bff;
+  --ring-to: #20e6a0;
+  --ring-glow: rgb(0 217 255 / 0.5);
+  --status-bg: rgb(4 18 28 / 0.9);
+  --status-ink: #f5f8fa;
+  --status-ring: rgb(0 220 255 / 0.5);
+  --rail-bg: rgb(255 255 255 / 0.7);
+  --rail-border: rgb(8 120 160 / 0.16);
+  --nav-on-bg: rgb(29 111 214 / 0.12);
+  --nav-on-ink: #0f5bb5;
+  --nav-on-glow: inset 0 0 0 1px rgb(29 111 214 / 0.35);
+  --macro-protein: linear-gradient(90deg, #6d5bf0, #0ea5e9);
+  --macro-carbs: linear-gradient(90deg, #f59e0b, #f97316);
+  --macro-fat: linear-gradient(90deg, #ec4899, #ef4444);
+  --macro-glow: rgb(14 165 233 / 0.25);
+  --chart-from: #0891b2;
+  --chart-to: #1d6fd6;
+  --chart-glow: rgb(8 145 178 / 0.35);
+  --chart-area: rgb(8 145 178 / 0.16);
+  --chart-next: #e8730c;
+  --week-bar: rgb(29 111 214 / 0.26);
+  --week-bar-now: rgb(29 111 214 / 0.5);
+  --week-bar-chosen: linear-gradient(180deg, #0ea5e9, #1d6fd6);
+  --week-glow: rgb(14 165 233 / 0.4);
+  --text-halo: transparent;
+  --row-hover: rgb(8 145 178 / 0.1);
+  --tile-bg: rgb(8 120 160 / 0.07);
+  --tone-cyan: #0891b2;
+  --tone-blue: #1d6fd6;
+  --tone-mint: #0f9f72;
+  --tone-green: #15803d;
+  --tone-violet: #6d4fe0;
+  --toggle-on-bg: linear-gradient(160deg, #2a79e8, #1857d6);
+  --toggle-on-ink: #ffffff;
+  --toggle-on-glow: 0 6px 16px -6px rgb(24 87 214 / 0.6);
+  --marker-fill: #1d6fd6;
+  --marker-ring: #ffffff;
+  --marker-ink: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:where(:not([data-theme='light'])) {
-    --canvas: #0c0e14;
-    --surface: #171a23;
-    --surface-2: #1f2330;
-    --ink: #f5f6fa;
-    --muted: #aeb4c4;
-    --faint: #272b39;
-    --axis: #383d50;
+    --canvas: #050912;
+    --surface: #08141d;
+    --surface-2: #0b1f2c;
+    --ink: #f5f8fa;
+    --muted: #ffffff;
+    --faint: rgb(255 255 255 / 0.2);
+    --axis: #7f8f9c;
     --accent: #8aa4ff;
     --accent-2: #b49bff;
     --on-accent: #0b0d14;
-    --series-1: #3987e5;
-    --series-2: #d95926;
+    --series-1: #19b7ff;
+    --series-2: #ff8a24;
     --hero-over: #7a1f12;
-    --card-shadow: 0 0 0 1px rgb(255 255 255 / 0.06);
+    --card-shadow:
+      0 0 0 1px rgb(0 220 255 / 0.27), 0 0 32px -10px rgb(0 200 255 / 0.3),
+      0 26px 50px -28px rgb(0 0 0 / 0.85);
     --nav-shadow: 0 12px 40px -12px rgb(0 0 0 / 0.7);
+    --good: #19d879;
+    --warning: #ffb02e;
+    --serious: #ff8a24;
+    --critical: #ff4d6d;
+    --page-bg:
+      radial-gradient(70rem 34rem at 84% -12rem, rgb(0 217 255 / 0.2), transparent 70%),
+      radial-gradient(56rem 38rem at -10% 112%, rgb(32 230 160 / 0.14), transparent 70%),
+      radial-gradient(44rem 30rem at 48% 46%, rgb(22 139 255 / 0.07), transparent 70%),
+      linear-gradient(#050912, #07111a);
+    --card-bg: rgb(7 30 42 / 0.74);
+    --card-backdrop: blur(16px) saturate(1.3);
+    --hero-bg: linear-gradient(160deg, rgb(9 44 60 / 0.92), rgb(5 24 36 / 0.9));
+    --hero-ink: var(--ink);
+    --hero-shadow:
+      0 0 0 1px rgb(0 220 255 / 0.32), 0 0 46px -10px rgb(0 217 255 / 0.4),
+      0 30px 56px -30px rgb(0 0 0 / 0.9);
+    --ring-track: rgb(0 217 255 / 0.14);
+    --ring-from: #00d9ff;
+    --ring-via: #168bff;
+    --ring-to: #20e6a0;
+    --ring-glow: rgb(0 217 255 / 0.6);
+    --status-bg: rgb(4 18 28 / 0.9);
+    --status-ring: rgb(0 220 255 / 0.5);
+    --rail-bg: rgb(6 22 32 / 0.72);
+    --rail-border: rgb(0 220 255 / 0.22);
+    --nav-on-bg: linear-gradient(160deg, rgb(22 139 255 / 0.42), rgb(0 217 255 / 0.2));
+    --nav-on-ink: #c4ecff;
+    --nav-on-glow: 0 0 20px -2px rgb(22 139 255 / 0.6), inset 0 0 0 1px rgb(0 217 255 / 0.45);
+    --macro-protein: linear-gradient(90deg, #8a6bff, #19b7ff);
+    --macro-carbs: linear-gradient(90deg, #ff8a24, #ffc23d);
+    --macro-fat: linear-gradient(90deg, #ff3d81, #ff6a5c);
+    --macro-glow: rgb(25 183 255 / 0.45);
+    --chart-from: #00d9ff;
+    --chart-to: #168bff;
+    --chart-glow: rgb(0 217 255 / 0.75);
+    --chart-area: rgb(0 217 255 / 0.17);
+    --chart-next: #ff8a24;
+    --week-bar: rgb(255 255 255 / 0.85);
+    --week-bar-now: rgb(25 130 210 / 0.8);
+    --week-bar-chosen: linear-gradient(180deg, #5be4ff, #168bff);
+    --week-glow: rgb(0 217 255 / 0.6);
+    --row-hover: rgb(0 217 255 / 0.09);
+    --tile-bg: rgb(0 217 255 / 0.07);
+    --tone-cyan: #00d9ff;
+    --tone-blue: #3b9bff;
+    --tone-mint: #20e6a0;
+    --tone-green: #19d879;
+    --tone-violet: #9b7bff;
+    --toggle-on-bg: linear-gradient(160deg, #2f7bff, #1a5fe8);
+    --toggle-on-ink: #ffffff;
+    --toggle-on-glow: 0 0 20px -2px rgb(47 123 255 / 0.65);
+    --marker-fill: #168bff;
+    --marker-ring: #00d9ff;
+    --marker-ink: #ffffff;
   }
 }
 
 :root[data-theme='dark'] {
-  --canvas: #0c0e14;
-  --surface: #171a23;
-  --surface-2: #1f2330;
-  --ink: #f5f6fa;
-  --muted: #aeb4c4;
-  --faint: #272b39;
-  --axis: #383d50;
+  --canvas: #050912;
+  --surface: #08141d;
+  --surface-2: #0b1f2c;
+  --ink: #f5f8fa;
+  --muted: #ffffff;
+  --faint: rgb(255 255 255 / 0.2);
+  --axis: #7f8f9c;
   --accent: #8aa4ff;
   --accent-2: #b49bff;
   --on-accent: #0b0d14;
-  --series-1: #3987e5;
-  --series-2: #d95926;
+  --series-1: #19b7ff;
+  --series-2: #ff8a24;
   --hero-over: #7a1f12;
-  --card-shadow: 0 0 0 1px rgb(255 255 255 / 0.06);
+  --card-shadow:
+    0 0 0 1px rgb(0 220 255 / 0.27), 0 0 32px -10px rgb(0 200 255 / 0.3),
+    0 26px 50px -28px rgb(0 0 0 / 0.85);
   --nav-shadow: 0 12px 40px -12px rgb(0 0 0 / 0.7);
-}
-
-/*
- * "Skin" tokens: how cards, the main number card, the calorie ring, the chart and the side bar look. Components
- * use only these names. The values here are the phone's look (the same as before they existed); the blocks for
- * a computer (min-width 1024px) further down replace them with the glass look, in both light and dark.
- */
-:root {
+  --good: #19d879;
+  --warning: #ffb02e;
+  --serious: #ff8a24;
+  --critical: #ff4d6d;
   --page-bg:
-    radial-gradient(
-      60rem 24rem at 50% -14rem,
-      color-mix(in srgb, var(--accent) 16%, transparent),
-      transparent 70%
-    ),
-    var(--canvas);
-  --card-bg: var(--surface);
-  --card-radius: 1.5rem;
-  --card-backdrop: none;
-  --hero-bg: linear-gradient(140deg, var(--accent) 0%, var(--accent-2) 100%);
-  --hero-ink: var(--on-accent);
-  --hero-radius: 2rem;
-  --hero-shadow: 0 20px 40px -22px color-mix(in srgb, var(--accent) 80%, transparent);
-  --ring-track: rgb(255 255 255 / 0.25);
-  --ring-from: var(--on-accent);
-  --ring-via: var(--on-accent);
-  --ring-to: var(--on-accent);
-  --ring-glow: transparent;
-  --status-bg: var(--surface);
-  --status-ink: var(--ink);
-  --status-ring: transparent;
-  --rail-bg: var(--surface);
-  --rail-border: var(--faint);
-  --nav-on-bg: color-mix(in srgb, var(--accent) 10%, transparent);
-  --nav-on-ink: var(--accent);
-  --nav-on-glow: 0 0 0 0 transparent;
-  --macro-protein: var(--series-1);
-  --macro-carbs: var(--series-1);
-  --macro-fat: var(--series-1);
-  --macro-glow: transparent;
-  --chart-from: var(--series-1);
-  --chart-to: var(--series-1);
-  --chart-glow: transparent;
-  --chart-area: transparent;
-  --chart-next: var(--series-2);
-  --week-bar: color-mix(in srgb, var(--series-1) 45%, transparent);
-  --week-bar-now: color-mix(in srgb, var(--series-1) 70%, transparent);
-  --week-bar-chosen: var(--series-1);
-  --week-glow: transparent;
-  --text-halo: transparent;
-  --row-hover: transparent;
-  --tile-bg: var(--surface-2);
+    radial-gradient(70rem 34rem at 84% -12rem, rgb(0 217 255 / 0.2), transparent 70%),
+    radial-gradient(56rem 38rem at -10% 112%, rgb(32 230 160 / 0.14), transparent 70%),
+    radial-gradient(44rem 30rem at 48% 46%, rgb(22 139 255 / 0.07), transparent 70%),
+    linear-gradient(#050912, #07111a);
+  --card-bg: rgb(7 30 42 / 0.74);
+  --card-backdrop: blur(16px) saturate(1.3);
+  --hero-bg: linear-gradient(160deg, rgb(9 44 60 / 0.92), rgb(5 24 36 / 0.9));
+  --hero-ink: var(--ink);
+  --hero-shadow:
+    0 0 0 1px rgb(0 220 255 / 0.32), 0 0 46px -10px rgb(0 217 255 / 0.4),
+    0 30px 56px -30px rgb(0 0 0 / 0.9);
+  --ring-track: rgb(0 217 255 / 0.14);
+  --ring-from: #00d9ff;
+  --ring-via: #168bff;
+  --ring-to: #20e6a0;
+  --ring-glow: rgb(0 217 255 / 0.6);
+  --status-bg: rgb(4 18 28 / 0.9);
+  --status-ring: rgb(0 220 255 / 0.5);
+  --rail-bg: rgb(6 22 32 / 0.72);
+  --rail-border: rgb(0 220 255 / 0.22);
+  --nav-on-bg: linear-gradient(160deg, rgb(22 139 255 / 0.42), rgb(0 217 255 / 0.2));
+  --nav-on-ink: #c4ecff;
+  --nav-on-glow: 0 0 20px -2px rgb(22 139 255 / 0.6), inset 0 0 0 1px rgb(0 217 255 / 0.45);
+  --macro-protein: linear-gradient(90deg, #8a6bff, #19b7ff);
+  --macro-carbs: linear-gradient(90deg, #ff8a24, #ffc23d);
+  --macro-fat: linear-gradient(90deg, #ff3d81, #ff6a5c);
+  --macro-glow: rgb(25 183 255 / 0.45);
+  --chart-from: #00d9ff;
+  --chart-to: #168bff;
+  --chart-glow: rgb(0 217 255 / 0.75);
+  --chart-area: rgb(0 217 255 / 0.17);
+  --chart-next: #ff8a24;
+  --week-bar: rgb(255 255 255 / 0.85);
+  --week-bar-now: rgb(25 130 210 / 0.8);
+  --week-bar-chosen: linear-gradient(180deg, #5be4ff, #168bff);
+  --week-glow: rgb(0 217 255 / 0.6);
+  --row-hover: rgb(0 217 255 / 0.09);
+  --tile-bg: rgb(0 217 255 / 0.07);
   --tone-cyan: #00d9ff;
   --tone-blue: #3b9bff;
   --tone-mint: #20e6a0;
   --tone-green: #19d879;
   --tone-violet: #9b7bff;
-  --toggle-on-bg: var(--accent);
-  --toggle-on-ink: var(--on-accent);
-  --toggle-on-glow: 0 0 0 0 transparent;
-  --marker-fill: var(--series-1);
-  --marker-ring: var(--surface);
-  --marker-ink: var(--surface);
+  --toggle-on-bg: linear-gradient(160deg, #2f7bff, #1a5fe8);
+  --toggle-on-ink: #ffffff;
+  --toggle-on-glow: 0 0 20px -2px rgb(47 123 255 / 0.65);
+  --marker-fill: #168bff;
+  --marker-ring: #00d9ff;
+  --marker-ink: #ffffff;
 }
 
 @theme inline {
@@ -275,215 +377,6 @@
 }
 
 /*
- * The computer skin (width 1024px and up). Cards become glass over a deep background, with thin luminous borders
- * and soft glows; the data colors become neon on dark and clear, saturated tones on light. Phones are untouched.
- */
-@media (min-width: 1024px) {
-  :root {
-    --canvas: #e6f0f6;
-    --surface: #ffffff;
-    --surface-2: #eaf3f8;
-    --ink: #0a1a26;
-    --muted: #46606f;
-    --faint: rgb(8 90 130 / 0.14);
-    --axis: #b4c9d6;
-    --series-1: #0b7fc0;
-    --series-2: #d9660d;
-    --card-shadow: 0 0 0 1px rgb(8 120 160 / 0.17), 0 22px 44px -26px rgb(8 60 90 / 0.4);
-    --page-bg:
-      radial-gradient(64rem 30rem at 82% -10rem, rgb(0 180 220 / 0.22), transparent 70%),
-      radial-gradient(52rem 34rem at -8% 108%, rgb(16 185 129 / 0.16), transparent 70%),
-      linear-gradient(#e9f3f9, #dfecf4);
-    --card-bg: rgb(255 255 255 / 0.74);
-    --card-backdrop: blur(14px) saturate(1.2);
-    --hero-bg: linear-gradient(160deg, rgb(9 44 60 / 0.96), rgb(5 24 36 / 0.96));
-    --hero-ink: #f5f8fa;
-    --hero-shadow: 0 0 0 1px rgb(0 160 200 / 0.4), 0 26px 50px -26px rgb(6 40 60 / 0.65);
-    --ring-track: rgb(0 217 255 / 0.16);
-    --ring-from: #00d9ff;
-    --ring-via: #168bff;
-    --ring-to: #20e6a0;
-    --ring-glow: rgb(0 217 255 / 0.5);
-    --status-bg: rgb(4 18 28 / 0.9);
-    --status-ring: rgb(0 220 255 / 0.5);
-    --status-ink: #f5f8fa;
-    --rail-bg: rgb(255 255 255 / 0.7);
-    --rail-border: rgb(8 120 160 / 0.16);
-    --nav-on-bg: rgb(29 111 214 / 0.12);
-    --nav-on-ink: #0f5bb5;
-    --nav-on-glow: inset 0 0 0 1px rgb(29 111 214 / 0.35);
-    --macro-protein: linear-gradient(90deg, #6d5bf0, #0ea5e9);
-    --macro-carbs: linear-gradient(90deg, #f59e0b, #f97316);
-    --macro-fat: linear-gradient(90deg, #ec4899, #ef4444);
-    --macro-glow: rgb(14 165 233 / 0.25);
-    --chart-from: #0891b2;
-    --chart-to: #1d6fd6;
-    --chart-glow: rgb(8 145 178 / 0.35);
-    --chart-area: rgb(8 145 178 / 0.16);
-    --chart-next: #e8730c;
-    --week-bar: rgb(29 111 214 / 0.26);
-    --week-bar-now: rgb(29 111 214 / 0.5);
-    --week-bar-chosen: linear-gradient(180deg, #0ea5e9, #1d6fd6);
-    --week-glow: rgb(14 165 233 / 0.4);
-    --row-hover: rgb(8 145 178 / 0.1);
-    --tile-bg: rgb(8 120 160 / 0.07);
-    --tone-cyan: #0891b2;
-    --tone-blue: #1d6fd6;
-    --tone-mint: #0f9f72;
-    --tone-green: #15803d;
-    --tone-violet: #6d4fe0;
-    --toggle-on-bg: linear-gradient(160deg, #2a79e8, #1857d6);
-    --toggle-on-ink: #ffffff;
-    --toggle-on-glow: 0 6px 16px -6px rgb(24 87 214 / 0.6);
-    --marker-fill: #1d6fd6;
-    --marker-ring: #ffffff;
-    --marker-ink: #ffffff;
-  }
-}
-
-@media (min-width: 1024px) and (prefers-color-scheme: dark) {
-  :root:where(:not([data-theme='light'])) {
-    --canvas: #050912;
-    --surface: #08141d;
-    --surface-2: #0b1f2c;
-    --ink: #f5f8fa;
-    --muted: #ffffff;
-    --faint: rgb(255 255 255 / 0.2);
-    --axis: rgb(255 255 255 / 0.5);
-    --series-1: #19b7ff;
-    --series-2: #ff8a24;
-    --good: #19d879;
-    --warning: #ffb02e;
-    --serious: #ff8a24;
-    --critical: #ff4d6d;
-    --card-shadow:
-      0 0 0 1px rgb(0 220 255 / 0.27), 0 0 32px -10px rgb(0 200 255 / 0.3),
-      0 26px 50px -28px rgb(0 0 0 / 0.85);
-    --page-bg:
-      radial-gradient(70rem 34rem at 84% -12rem, rgb(0 217 255 / 0.2), transparent 70%),
-      radial-gradient(56rem 38rem at -10% 112%, rgb(32 230 160 / 0.14), transparent 70%),
-      radial-gradient(44rem 30rem at 48% 46%, rgb(22 139 255 / 0.07), transparent 70%),
-      linear-gradient(#050912, #07111a);
-    --card-bg: rgb(7 30 42 / 0.74);
-    --card-backdrop: blur(16px) saturate(1.3);
-    --hero-bg: linear-gradient(160deg, rgb(9 44 60 / 0.92), rgb(5 24 36 / 0.9));
-    --hero-ink: var(--ink);
-    --hero-shadow:
-      0 0 0 1px rgb(0 220 255 / 0.32), 0 0 46px -10px rgb(0 217 255 / 0.4),
-      0 30px 56px -30px rgb(0 0 0 / 0.9);
-    --ring-track: rgb(0 217 255 / 0.14);
-    --ring-from: #00d9ff;
-    --ring-via: #168bff;
-    --ring-to: #20e6a0;
-    --ring-glow: rgb(0 217 255 / 0.6);
-    --status-bg: rgb(4 18 28 / 0.9);
-    --status-ring: rgb(0 220 255 / 0.5);
-    --rail-bg: rgb(6 22 32 / 0.72);
-    --rail-border: rgb(0 220 255 / 0.22);
-    --nav-on-bg: linear-gradient(160deg, rgb(22 139 255 / 0.42), rgb(0 217 255 / 0.2));
-    --nav-on-ink: #c4ecff;
-    --nav-on-glow: 0 0 20px -2px rgb(22 139 255 / 0.6), inset 0 0 0 1px rgb(0 217 255 / 0.45);
-    --macro-protein: linear-gradient(90deg, #8a6bff, #19b7ff);
-    --macro-carbs: linear-gradient(90deg, #ff8a24, #ffc23d);
-    --macro-fat: linear-gradient(90deg, #ff3d81, #ff6a5c);
-    --macro-glow: rgb(25 183 255 / 0.45);
-    --chart-from: #00d9ff;
-    --chart-to: #168bff;
-    --chart-glow: rgb(0 217 255 / 0.75);
-    --chart-area: rgb(0 217 255 / 0.17);
-    --chart-next: #ff8a24;
-    --week-bar: rgb(255 255 255 / 0.85);
-    --week-bar-now: rgb(25 130 210 / 0.8);
-    --week-bar-chosen: linear-gradient(180deg, #5be4ff, #168bff);
-    --week-glow: rgb(0 217 255 / 0.6);
-    --row-hover: rgb(0 217 255 / 0.09);
-    --tile-bg: rgb(0 217 255 / 0.07);
-    --tone-cyan: #00d9ff;
-    --tone-blue: #3b9bff;
-    --tone-mint: #20e6a0;
-    --tone-green: #19d879;
-    --tone-violet: #9b7bff;
-    --toggle-on-bg: linear-gradient(160deg, #2f7bff, #1a5fe8);
-    --toggle-on-ink: #ffffff;
-    --toggle-on-glow: 0 0 20px -2px rgb(47 123 255 / 0.65);
-    --marker-fill: #168bff;
-    --marker-ring: #00d9ff;
-    --marker-ink: #ffffff;
-  }
-}
-
-@media (min-width: 1024px) {
-  :root[data-theme='dark'] {
-    --canvas: #050912;
-    --surface: #08141d;
-    --surface-2: #0b1f2c;
-    --ink: #f5f8fa;
-    --muted: #ffffff;
-    --faint: rgb(255 255 255 / 0.2);
-    --axis: rgb(255 255 255 / 0.5);
-    --series-1: #19b7ff;
-    --series-2: #ff8a24;
-    --good: #19d879;
-    --warning: #ffb02e;
-    --serious: #ff8a24;
-    --critical: #ff4d6d;
-    --card-shadow:
-      0 0 0 1px rgb(0 220 255 / 0.27), 0 0 32px -10px rgb(0 200 255 / 0.3),
-      0 26px 50px -28px rgb(0 0 0 / 0.85);
-    --page-bg:
-      radial-gradient(70rem 34rem at 84% -12rem, rgb(0 217 255 / 0.2), transparent 70%),
-      radial-gradient(56rem 38rem at -10% 112%, rgb(32 230 160 / 0.14), transparent 70%),
-      radial-gradient(44rem 30rem at 48% 46%, rgb(22 139 255 / 0.07), transparent 70%),
-      linear-gradient(#050912, #07111a);
-    --card-bg: rgb(7 30 42 / 0.74);
-    --card-backdrop: blur(16px) saturate(1.3);
-    --hero-bg: linear-gradient(160deg, rgb(9 44 60 / 0.92), rgb(5 24 36 / 0.9));
-    --hero-ink: var(--ink);
-    --hero-shadow:
-      0 0 0 1px rgb(0 220 255 / 0.32), 0 0 46px -10px rgb(0 217 255 / 0.4),
-      0 30px 56px -30px rgb(0 0 0 / 0.9);
-    --ring-track: rgb(0 217 255 / 0.14);
-    --ring-from: #00d9ff;
-    --ring-via: #168bff;
-    --ring-to: #20e6a0;
-    --ring-glow: rgb(0 217 255 / 0.6);
-    --status-bg: rgb(4 18 28 / 0.9);
-    --status-ring: rgb(0 220 255 / 0.5);
-    --rail-bg: rgb(6 22 32 / 0.72);
-    --rail-border: rgb(0 220 255 / 0.22);
-    --nav-on-bg: linear-gradient(160deg, rgb(22 139 255 / 0.42), rgb(0 217 255 / 0.2));
-    --nav-on-ink: #c4ecff;
-    --nav-on-glow: 0 0 20px -2px rgb(22 139 255 / 0.6), inset 0 0 0 1px rgb(0 217 255 / 0.45);
-    --macro-protein: linear-gradient(90deg, #8a6bff, #19b7ff);
-    --macro-carbs: linear-gradient(90deg, #ff8a24, #ffc23d);
-    --macro-fat: linear-gradient(90deg, #ff3d81, #ff6a5c);
-    --macro-glow: rgb(25 183 255 / 0.45);
-    --chart-from: #00d9ff;
-    --chart-to: #168bff;
-    --chart-glow: rgb(0 217 255 / 0.75);
-    --chart-area: rgb(0 217 255 / 0.17);
-    --chart-next: #ff8a24;
-    --week-bar: rgb(255 255 255 / 0.85);
-    --week-bar-now: rgb(25 130 210 / 0.8);
-    --week-bar-chosen: linear-gradient(180deg, #5be4ff, #168bff);
-    --week-glow: rgb(0 217 255 / 0.6);
-    --row-hover: rgb(0 217 255 / 0.09);
-    --tile-bg: rgb(0 217 255 / 0.07);
-    --tone-cyan: #00d9ff;
-    --tone-blue: #3b9bff;
-    --tone-mint: #20e6a0;
-    --tone-green: #19d879;
-    --tone-violet: #9b7bff;
-    --toggle-on-bg: linear-gradient(160deg, #2f7bff, #1a5fe8);
-    --toggle-on-ink: #ffffff;
-    --toggle-on-glow: 0 0 20px -2px rgb(47 123 255 / 0.65);
-    --marker-fill: #168bff;
-    --marker-ring: #00d9ff;
-    --marker-ink: #ffffff;
-  }
-}
-
-/*
  * A card with a dark picture behind it keeps its text, lines and chart colors light-on-dark, also in the light theme
  * (used as lg:panel-dark, on a computer only). In the dark theme these are the same values as the theme's own.
  */
@@ -493,7 +386,7 @@
   --ink: #f5f8fa;
   --muted: #ffffff;
   --faint: rgb(255 255 255 / 0.2);
-  --axis: rgb(255 255 255 / 0.5);
+  --axis: #7f8f9c;
   --surface: #08141d;
   --surface-2: #0b1f2c;
   --series-1: #19b7ff;

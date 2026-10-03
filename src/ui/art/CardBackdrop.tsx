@@ -5,23 +5,20 @@ import macrosImage from '../../assets/backgrounds/macros.jpg';
 
 export type Backdrop = 'calories' | 'chart' | 'macros' | 'flour';
 
-/** A picture behind a card, under its content. Only a computer shows it; screen readers skip it. */
-const LAYER = 'pointer-events-none absolute -z-10 hidden bg-no-repeat lg:block';
+/** A picture behind a card, under its content; screen readers skip it. */
+const LAYER = 'pointer-events-none absolute -z-10 bg-no-repeat';
 
 /** A dark veil over a picture, so numbers and lines stay easy to read. */
 function Veil({ strength }: { strength: string }) {
   return (
-    <div
-      aria-hidden="true"
-      className={`pointer-events-none absolute inset-0 -z-10 hidden lg:block ${strength}`}
-    />
+    <div aria-hidden="true" className={`pointer-events-none absolute inset-0 -z-10 ${strength}`} />
   );
 }
 
 /**
  * The background pictures of the cards (basil, tomatoes, avocado, wheat on a dark ground), each made for one card.
  * The card must be `relative`, clip its corners and start its own stacking context (the cards that use this have
- * `lg:relative lg:isolate lg:overflow-hidden`).
+ * `relative isolate overflow-hidden`).
  *
  * - calories: the picture (food along its two sides, dark in the middle) fills the card without being stretched, so
  *   the food frames the ring and the dark middle sits behind it;
@@ -50,7 +47,7 @@ export function CardBackdrop({ name }: { name: Backdrop }) {
           className={`${LAYER} inset-0 bg-cover bg-center`}
           style={{ backgroundImage: `url(${chartImage})` }}
         />
-        <Veil strength="bg-[radial-gradient(ellipse_88%_80%_at_50%_56%,rgb(3_12_22/0.82),rgb(3_12_22/0.55)_72%,rgb(3_12_22/0.2))]" />
+        <Veil strength="[background:rgb(3_12_22/0.74)] lg:[background:radial-gradient(ellipse_88%_80%_at_50%_56%,rgb(3_12_22/0.82),rgb(3_12_22/0.55)_72%,rgb(3_12_22/0.2))]" />
       </>
     );
   }
@@ -66,7 +63,7 @@ export function CardBackdrop({ name }: { name: Backdrop }) {
   return (
     <div
       aria-hidden="true"
-      className={`${LAYER} inset-x-0 bottom-0 h-[40%] bg-cover bg-bottom [mask-image:linear-gradient(to_top,#000_55%,transparent)]`}
+      className={`${LAYER} inset-x-0 bottom-0 h-24 bg-cover bg-bottom lg:h-[40%] [mask-image:linear-gradient(to_top,#000_55%,transparent)]`}
       style={{ backgroundImage: `url(${flourImage})` }}
     />
   );

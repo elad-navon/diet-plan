@@ -131,20 +131,20 @@ export function DayChart({ model, tz, corridorNow }: DayChartProps) {
   return (
     <figure
       aria-labelledby={titleId}
-      className="card p-5 lg:relative lg:isolate lg:flex lg:flex-col lg:overflow-hidden lg:panel-dark lg:p-4"
+      className="card relative isolate overflow-hidden panel-dark p-5 lg:flex lg:flex-col lg:p-4"
     >
       <CardBackdrop name="chart" />
       <div className="lg:relative lg:z-10 lg:mb-2 lg:flex lg:flex-none lg:items-baseline lg:justify-between lg:gap-4">
         <figcaption
           id={titleId}
-          className="mb-2 flex items-center gap-2.5 text-xl font-bold lg:mb-0 lg:text-lg lg:[text-shadow:0_1px_8px_var(--text-halo)]"
+          className="mb-2 flex items-center gap-2.5 text-xl font-bold [text-shadow:0_1px_8px_var(--text-halo)] lg:mb-0 lg:text-lg"
         >
           <IconTile icon="trend" tone="cyan" />
           {he.today.chartTitle}
         </figcaption>
 
         <ul
-          className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted lg:mb-0 lg:[text-shadow:0_1px_8px_var(--text-halo)]"
+          className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted [text-shadow:0_1px_8px_var(--text-halo)] lg:mb-0"
           aria-label="מקרא"
         >
           <li className="flex items-center gap-1.5">

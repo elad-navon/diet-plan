@@ -5,7 +5,6 @@ import {
   useMealsOfDay,
   useMealsRange,
   usePlans,
-  useRestoreMeal,
 } from '../../app/data-hooks';
 import { useDesktop } from '../../app/use-media-query';
 import { useNow } from '../../app/services';
@@ -34,6 +33,7 @@ import { Button } from '../../ui/Button';
 import { CardBackdrop } from '../../ui/art/CardBackdrop';
 import { CardTitle } from '../../ui/CardTitle';
 import { Icon } from '../../ui/Icon';
+import { Sheet } from '../../ui/Sheet';
 import { useToast } from '../../ui/Toast';
 import { AddMealSheet, type MealPrefill } from '../meals/AddMealSheet';
 import { LoadGate } from '../shell/LoadGate';
@@ -117,9 +117,10 @@ function TodayContent() {
     return recipe ? portionParts(recipe, suggestion.portionFactor, foodsById) : null;
   };
   const deleteMeal = useDeleteMeal();
-  const restoreMeal = useRestoreMeal();
   const toast = useToast();
   const [sheet, setSheet] = useState<SheetState>(CLOSED);
+  // A meal is deleted only after it is confirmed in a window of its own (there is no undo).
+  const [toDelete, setToDelete] = useState<StoredMeal | null>(null);
 
   const plan = resolvePlanForDate(plans, date);
   const view = buildDayView({ date, now, tz, plans, meals, candidates: ideas });
@@ -189,13 +190,10 @@ function TodayContent() {
   }
 
   async function remove(meal: StoredMeal): Promise<void> {
+    setToDelete(null);
     try {
-      const deleted = await deleteMeal.mutateAsync({ id: meal.id, baseVersion: meal.version });
-      toast.show({
-        message: he.today.deleted,
-        actionLabel: he.undo,
-        onAction: () => restoreMeal.mutate({ id: deleted.id, baseVersion: deleted.version }),
-      });
+      await deleteMeal.mutateAsync({ id: meal.id, baseVersion: meal.version });
+      toast.show({ message: he.today.deleted });
     } catch (error) {
       toast.show({ message: dataErrorMessage(error instanceof DataError ? error.code : null) });
     }
@@ -216,7 +214,7 @@ function TodayContent() {
   const hero = (
     <section
       aria-label={he.today.ringRemaining}
-      className={`hero space-y-4 px-5 py-6 lg:relative lg:isolate lg:flex lg:min-h-0 lg:flex-col lg:items-center lg:justify-center lg:space-y-0 lg:gap-3 lg:overflow-hidden lg:panel-dark lg:px-4 lg:py-4 ${wideTop ? '' : 'lg:col-start-1 lg:row-start-1'}`}
+      className={`hero relative isolate flex flex-col items-center justify-center gap-4 overflow-hidden panel-dark px-5 py-6 lg:min-h-0 lg:gap-3 lg:px-4 lg:py-4 ${wideTop ? '' : 'lg:col-start-1 lg:row-start-1'}`}
     >
       <CardBackdrop name="calories" />
       <CalorieRing consumed={view.summary.kcal} target={view.target?.kcalTarget ?? null} />
@@ -331,7 +329,7 @@ function TodayContent() {
               meals={activeMeals}
               tz={tz}
               onEdit={(meal) => setSheet({ open: true, editing: meal, prefill: null })}
-              onDelete={(meal) => void remove(meal)}
+              onDelete={setToDelete}
               onAgain={eatAgain}
               {...(mealNumbers ? { numbers: mealNumbers } : {})}
             />
@@ -364,6 +362,20 @@ function TodayContent() {
       >
         <Icon name="plus" size={28} />
       </button>
+
+      <Sheet
+        open={toDelete !== null}
+        onClose={() => setToDelete(null)}
+        title={he.today.deleteConfirmTitle}
+      >
+        <p className="mb-4 text-base">{he.today.deleteConfirmBody(toDelete?.name ?? '')}</p>
+        <div className="flex gap-2">
+          <Button variant="danger" onClick={() => toDelete && void remove(toDelete)}>
+            {he.today.deleteConfirmAction}
+          </Button>
+          <Button onClick={() => setToDelete(null)}>{he.cancel}</Button>
+        </div>
+      </Sheet>
 
       <AddMealSheet
         open={sheet.open}

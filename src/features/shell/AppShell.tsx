@@ -73,14 +73,16 @@ export function AppShell() {
         aria-label={he.nav.label}
         className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden"
       >
-        <ul className="pointer-events-auto mx-auto flex max-w-sm gap-1 rounded-full bg-surface/90 p-1.5 ring-1 ring-faint backdrop-blur-xl [box-shadow:var(--nav-shadow)]">
+        <ul className="pointer-events-auto mx-auto flex max-w-sm gap-1 rounded-full bg-[var(--rail-bg)] p-1.5 ring-1 ring-[var(--rail-border)] backdrop-blur-xl [box-shadow:var(--nav-shadow)]">
           {TABS.map((tab) => (
             <li key={tab.to} className="flex-1">
               <NavLink
                 to={tab.to}
                 className={({ isActive }) =>
                   `flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-full text-sm transition ${
-                    isActive ? 'bg-accent/10 font-bold text-accent' : 'text-muted'
+                    isActive
+                      ? '[background:var(--nav-on-bg)] font-bold text-[var(--nav-on-ink)] shadow-[var(--nav-on-glow)]'
+                      : 'text-muted'
                   }`
                 }
               >

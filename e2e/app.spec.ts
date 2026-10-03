@@ -578,17 +578,30 @@ test('DAY-01: before 02:00 it is still the day before, and a meal added then bel
   await expect(remaining(page)).toHaveAttribute('aria-label', /1,240/); // 1,390 - 150
 });
 
-test('E2E-05: delete a meal and undo', async ({ page }) => {
+test('E2E-05: deleting a meal asks first, and there is no undo afterwards', async ({ page }) => {
   await openApp(page, { seed: { withMealsToday: true } });
   await expect(remaining(page)).toHaveAttribute('aria-label', /1,110/); // 1,390 - 280
+  const deleteButton = page.getByRole('button', { name: he.today.deleteMeal('חביתה וסלט') });
 
-  await page.getByRole('button', { name: he.today.deleteMeal('חביתה וסלט') }).click();
-  await expect(page.getByText(he.today.deleted)).toBeVisible();
-  await expect(remaining(page)).toHaveAttribute('aria-label', /1,390/);
-
-  await page.getByRole('button', { name: he.undo }).click();
-  await expect(page.getByRole('button', { name: he.today.deleteMeal('חביתה וסלט') })).toBeVisible();
+  // "cancel" leaves the meal where it is
+  await deleteButton.click();
+  const confirm = page.getByRole('dialog', { name: he.today.deleteConfirmTitle });
+  await expect(confirm).toContainText('חביתה וסלט');
+  await confirm.getByRole('button', { name: he.cancel }).click();
+  await expect(confirm).toBeHidden();
+  await expect(deleteButton).toBeVisible();
   await expect(remaining(page)).toHaveAttribute('aria-label', /1,110/);
+
+  // confirming deletes it, with a plain message and no "undo"
+  await deleteButton.click();
+  await page
+    .getByRole('dialog', { name: he.today.deleteConfirmTitle })
+    .getByRole('button', { name: he.today.deleteConfirmAction })
+    .click();
+  await expect(page.getByText(he.today.deleted)).toBeVisible();
+  await expect(page.getByRole('button', { name: he.undo })).toHaveCount(0);
+  await expect(deleteButton).toHaveCount(0);
+  await expect(remaining(page)).toHaveAttribute('aria-label', /1,390/);
 });
 
 test('INT-05: pressing save twice quickly creates only one meal', async ({ page }) => {

@@ -20,6 +20,8 @@ export const he = {
   undo: 'ביטול פעולה',
   gramsShort: "ג'",
   kcal: 'קק"ל',
+  /** The short form for a list of numbers on a computer: just the first letter, with a geresh. */
+  kcalLetter: 'ק׳',
   nav: {
     today: 'היום',
     progress: 'התקדמות',
@@ -176,6 +178,9 @@ export const he = {
     chartSummary: (eaten: string, target: string, from: string, to: string) =>
       `נאכלו ${eaten} קק"ל מתוך יעד של ${target}. הטווח המומלץ עד עכשיו: ${from} עד ${to} קק"ל.`,
     deleted: 'הארוחה נמחקה',
+    deleteConfirmTitle: 'למחוק את הארוחה?',
+    deleteConfirmBody: (name: string) => `"${name}" תימחק מהיום ולא ניתן יהיה להחזיר אותה.`,
+    deleteConfirmAction: 'מחק את הארוחה',
     restored: 'הארוחה שוחזרה',
     saved: 'הארוחה נשמרה',
     updated: 'הארוחה עודכנה',

@@ -43,7 +43,7 @@ export function FlourCard({ grain }: FlourCardProps) {
   return (
     <section
       aria-labelledby="flour-title"
-      className="card p-5 lg:relative lg:isolate lg:overflow-hidden lg:panel-dark lg:p-4"
+      className="card relative isolate overflow-hidden panel-dark p-5 pb-28 lg:p-4"
     >
       <CardBackdrop name="flour" />
       <CardTitle

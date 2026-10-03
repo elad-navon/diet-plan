@@ -77,7 +77,7 @@ export function CalorieRing({ consumed, target }: CalorieRingProps) {
           aria-hidden="true"
           className="absolute inset-0 flex flex-col items-center justify-center"
         >
-          <span className="text-5xl font-bold leading-none tracking-tight tabular-nums lg:text-[clamp(1.75rem,5.4vh,3rem)] lg:[text-shadow:0_0_26px_var(--ring-glow)]">
+          <span className="text-5xl font-bold leading-none tracking-tight tabular-nums [text-shadow:0_0_26px_var(--ring-glow)] lg:text-[clamp(1.75rem,5.4vh,3rem)]">
             <bdi>{formatInt(counted)}</bdi>
           </span>
           <span className="mt-1 text-base opacity-90">

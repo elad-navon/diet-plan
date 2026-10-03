@@ -24,7 +24,7 @@ export function StatusChip({ status }: { status: DayStatus }) {
     <span className="inline-flex items-center gap-2 rounded-full bg-[var(--status-bg)] px-4 py-1.5 text-base font-semibold text-[var(--status-ink)] shadow-md ring-1 ring-[var(--status-ring)]">
       <span
         aria-hidden="true"
-        className={`size-2.5 rounded-full lg:shadow-[0_0_10px_2px_currentColor] ${DOT[status]}`}
+        className={`size-2.5 rounded-full shadow-[0_0_10px_2px_currentColor] ${DOT[status]}`}
       />
       <Icon name={ICONS[status]} size={18} />
       {he.status[status]}

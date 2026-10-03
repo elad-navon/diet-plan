@@ -11,7 +11,7 @@ interface MacroBarsProps {
   summary: DaySummary;
 }
 
-/** Each macro has its own color on a computer (on a phone all three use the one chart color). */
+/** Each macro has its own color. */
 const ROWS: { key: keyof Macros; label: string; fill: string }[] = [
   { key: 'proteinG', label: he.today.protein, fill: '[background:var(--macro-protein)]' },
   { key: 'carbsG', label: he.today.carbs, fill: '[background:var(--macro-carbs)]' },
@@ -26,7 +26,7 @@ export function MacroBars({ target, macroState, summary }: MacroBarsProps) {
   return (
     <section
       aria-labelledby="macros-title"
-      className="card p-5 lg:relative lg:isolate lg:overflow-hidden lg:panel-dark"
+      className="card relative isolate overflow-hidden panel-dark p-5"
     >
       <CardBackdrop name="macros" />
       <CardTitle

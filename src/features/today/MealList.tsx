@@ -49,13 +49,7 @@ export function MealList({ meals, tz, onEdit, onDelete, onAgain, numbers }: Meal
                 )}
                 <span
                   aria-hidden="true"
-                  className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-surface-2 text-2xl lg:hidden"
-                >
-                  {mealIcon(meal)}
-                </span>
-                <span
-                  aria-hidden="true"
-                  className="hidden size-11 shrink-0 place-items-center rounded-2xl bg-[var(--tile-bg)] ring-1 ring-inset ring-faint lg:grid"
+                  className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--tile-bg)] ring-1 ring-inset ring-faint"
                 >
                   <MealArt emoji={mealIcon(meal)} size={34} />
                 </span>
@@ -84,6 +78,10 @@ export function MealList({ meals, tz, onEdit, onDelete, onAgain, numbers }: Meal
               <p className="shrink-0 text-2xl font-bold tabular-nums lg:text-lg">
                 <bdi>{formatInt(meal.kcal)}</bdi>{' '}
                 <span className="text-sm font-normal text-muted lg:hidden">{he.kcal}</span>
+                <span className="hidden text-xs font-normal text-muted lg:inline">
+                  <span aria-hidden="true">{he.kcalLetter}</span>
+                  <span className="sr-only">{he.kcal}</span>
+                </span>
               </p>
             </div>
             <div className="mt-1 flex gap-1 lg:mt-0 lg:flex-none lg:gap-0">
