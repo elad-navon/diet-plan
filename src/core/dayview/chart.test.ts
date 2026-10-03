@@ -78,6 +78,21 @@ describe('empty day (CHART-01)', () => {
     ]);
   });
 
+  it('draws the recommended path: rising through each meal window, flat in between', () => {
+    expect(model.plan).toEqual([
+      { minute: 360, kcal: 0 },
+      { minute: 450, kcal: 0 }, // 07:30: breakfast window opens
+      { minute: 570, kcal: 450 },
+      { minute: 750, kcal: 450 },
+      { minute: 870, kcal: 990 },
+      { minute: 960, kcal: 990 },
+      { minute: 1050, kcal: 1260 },
+      { minute: 1140, kcal: 1260 },
+      { minute: 1260, kcal: 1800 }, // the whole target, by the end of the last window
+      { minute: 1380, kcal: 1800 },
+    ]);
+  });
+
   it('labels the axis every three hours', () => {
     expect(model.ticks.map((t) => t.label)).toEqual([
       '06:00',
@@ -278,6 +293,15 @@ describe('property: the geometry is always drawable (CHART-02)', () => {
             expect(step.lowerKcal).toBeLessThanOrEqual(step.upperKcal);
             expect(step.minute).toBeGreaterThanOrEqual(startMinute);
             expect(step.minute).toBeLessThanOrEqual(endMinute);
+          }
+          for (let i = 0; i < model.plan.length; i += 1) {
+            const point = model.plan[i]!;
+            expect(point.minute).toBeGreaterThanOrEqual(startMinute);
+            expect(point.minute).toBeLessThanOrEqual(endMinute);
+            if (i > 0) {
+              expect(point.minute).toBeGreaterThanOrEqual(model.plan[i - 1]!.minute);
+              expect(point.kcal).toBeGreaterThanOrEqual(model.plan[i - 1]!.kcal);
+            }
           }
           expect(model.yMax).toBeGreaterThanOrEqual(plan.kcalTarget);
           expect(model.yMax).toBeLessThanOrEqual(3600);

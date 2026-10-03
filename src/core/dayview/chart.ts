@@ -59,6 +59,11 @@ export interface DayChartModel {
   overByKcal: number;
   bands: ChartBand[];
   corridor: CorridorStep[];
+  /**
+   * The recommended path: calories planned so far, rising through each meal window and flat in between.
+   * It always lies inside the corridor, and reaches the daily target at the end of the last window.
+   */
+  plan: ChartPoint[];
   /** A staircase: each meal is a vertical jump at its time. */
   eaten: ChartPoint[];
   meals: ChartMeal[];
@@ -139,6 +144,15 @@ export function buildDayChart(input: DayChartInput): DayChartModel {
       ),
     }));
 
+  const recommended: ChartPoint[] = [{ minute: startMinute, kcal: 0 }];
+  let planned = 0;
+  for (const band of bands) {
+    recommended.push({ minute: clamp(band.startMinute, startMinute, endMinute), kcal: planned });
+    planned += band.plannedKcal;
+    recommended.push({ minute: clamp(band.endMinute, startMinute, endMinute), kcal: planned });
+  }
+  recommended.push({ minute: endMinute, kcal: planned });
+
   // --- what was eaten: a staircase
   const isToday = localDateOf(now, tz) === date;
   const nowMinute = clamp(elapsed(now), startMinute, endMinute);
@@ -197,6 +211,7 @@ export function buildDayChart(input: DayChartInput): DayChartModel {
     overByKcal: Math.max(0, running - target),
     bands,
     corridor,
+    plan: recommended,
     eaten,
     meals: chartMeals,
     now: isToday ? { minute: nowMinute, kcal: running } : null,

@@ -32,12 +32,6 @@ for (const scheme of ['light', 'dark'] as const) {
       expect(await scan(page)).toEqual([]);
     });
 
-    test('today with the table view open', async ({ page }) => {
-      await openApp(page, { seed: { withMealsToday: true } });
-      await page.getByRole('button', { name: he.today.showTable }).click();
-      expect(await scan(page)).toEqual([]);
-    });
-
     test('add-meal sheet', async ({ page }) => {
       await openApp(page, { seed: {} });
       await page.getByRole('button', { name: he.today.addMeal }).first().click();

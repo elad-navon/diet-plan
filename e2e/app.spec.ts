@@ -416,6 +416,27 @@ test('REMEMBER-03: a food typed by hand into a meal of foods can be remembered, 
   await expect(remaining(page)).toHaveAttribute('aria-label', /616/);
 });
 
+test('CHART-08: each meal is a numbered marker on the line, and the list says what each number is', async ({
+  page,
+}) => {
+  // 08:00 white bread, 08:30 omelette, 13:00 whole-wheat bread: three meals, in time order.
+  await openApp(page, { seed: { withMealsToday: true, withBreadMealsToday: true } });
+  const chart = page.getByRole('figure', { name: he.today.chartTitle });
+  const list = chart.getByRole('list', { name: he.today.mealsListLabel });
+  const rows = list.getByRole('listitem');
+  await expect(rows).toHaveCount(3);
+  await expect(rows.nth(0)).toContainText('לחם לבן');
+  await expect(rows.nth(1)).toContainText('חביתה וסלט');
+  await expect(rows.nth(2)).toContainText('לחם מלא');
+  await expect(rows.nth(1)).toContainText('280');
+  // the numbers on the line are the same 1, 2, 3
+  await expect(chart.locator('svg[role="img"] text', { hasText: /^[123]$/ })).toHaveText([
+    '1',
+    '2',
+    '3',
+  ]);
+});
+
 test('E2E-05: delete a meal and undo', async ({ page }) => {
   await openApp(page, { seed: { withMealsToday: true } });
   await expect(remaining(page)).toHaveAttribute('aria-label', /1,110/); // 1,390 - 280
