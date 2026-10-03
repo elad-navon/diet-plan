@@ -121,6 +121,8 @@ test('E2E-04b: a food typed by hand can be added to a meal that already has food
   await expect(sheet.getByText(he.addMeal.byHand)).toBeVisible();
   await expect(sheet.getByLabel(he.addMeal.itemName)).toHaveValue('');
   await expect(sheet.getByText(he.addMeal.macrosMissing(1))).toBeVisible();
+  // The foods from the database still show their macros in the total, with the note beside it.
+  await expect(sheet.locator('p', { hasText: he.addMeal.total })).toContainText(he.today.protein);
 
   // And a second one, in a row.
   await sheet.getByLabel(he.addMeal.itemName).fill('סלט');
@@ -132,6 +134,8 @@ test('E2E-04b: a food typed by hand can be added to a meal that already has food
   await sheet.getByRole('button', { name: he.addMeal.saveMeal }).click();
   await expect(page.getByText(he.today.saved)).toBeVisible();
   await expect(remaining(page)).toHaveAttribute('aria-label', /898/); // 1,390 - 142 - 300 - 50
+  // ...and they are saved with the meal and counted in the day.
+  await expect(page.locator('li.card', { hasText: 'שניצל' })).toContainText(he.today.protein);
 });
 
 test('SUGAR-01: the day shows added sugar in its bands, and a typed value moves it', async ({

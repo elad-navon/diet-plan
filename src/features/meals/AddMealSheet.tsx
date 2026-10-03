@@ -342,8 +342,9 @@ function MealForm({
       fatG: number | null;
     } | null => {
       if (kind === 'food') {
-        // A food typed without macros leaves the meal's macros unknown rather than understated.
-        return totals.itemsWithoutMacros > 0
+        // Foods typed without macros add nothing to them: the macros are those of the foods that have them,
+        // and unknown only when none does.
+        return totals.itemsWithoutMacros === items.length
           ? null
           : { proteinG: totals.proteinG, carbsG: totals.carbsG, fatG: totals.fatG };
       }
@@ -380,7 +381,11 @@ function MealForm({
       kcal: checked.value.kcal,
       macros: checked.value.macros,
       addedSugarG: sugarChecked.value.addedSugarG,
-      warnings: checked.warnings,
+      // Calories and macros cannot be compared when some of the calories come from foods without macros.
+      warnings:
+        kind === 'food' && totals.itemsWithoutMacros > 0
+          ? checked.warnings.filter((warning) => warning !== 'macro_kcal_mismatch')
+          : checked.warnings,
     };
   }
 
@@ -892,7 +897,7 @@ function MealForm({
               <strong>
                 <bdi>{formatInt(totals.kcal)}</bdi> {he.kcal}
               </strong>{' '}
-              {totals.itemsWithoutMacros === 0 && (
+              {totals.itemsWithoutMacros < items.length && (
                 <>
                   {' '}
                   · {he.today.protein} <bdi>{formatDecimal(totals.proteinG)}</bdi>

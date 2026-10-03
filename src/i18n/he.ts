@@ -235,7 +235,7 @@ export const he = {
     itemName: 'שם המאכל',
     byHand: 'הוזן ידנית',
     itemPending: 'המאכל שהקלדת עוד לא נוסף לארוחה. לחץ "הוסף לארוחה".',
-    macrosMissing: (count: number) => `חסרים מאקרו ב-${count} מרכיבים`,
+    macrosMissing: (count: number) => `המאקרו לא כולל ${count} מרכיבים שהוזנו בלי מאקרו`,
     moreOptions: 'עוד אפשרויות (תאריך)',
   },
 
