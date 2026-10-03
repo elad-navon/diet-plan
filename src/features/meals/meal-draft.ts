@@ -28,6 +28,7 @@ const foodEntry = z.object({
   sugarG: number.optional(),
   addedSugarG: number.optional(),
   fiberG: number.optional(),
+  noMacros: z.literal(true).optional(),
 });
 
 const draftSchema = z.object({

@@ -232,7 +232,10 @@ export const he = {
     timeInvalid: 'הכנס שעה ותאריך תקינים',
     limitReached: 'הגעת למספר הארוחות המקסימלי ליום.',
     modeLegend: 'איך להוסיף',
-    manualDisabled: 'בארוחה יש מזונות מהמאגר. כדי להזין ידנית, הסר אותם קודם.',
+    itemName: 'שם המאכל',
+    byHand: 'הוזן ידנית',
+    itemPending: 'המאכל שהקלדת עוד לא נוסף לארוחה. לחץ "הוסף לארוחה".',
+    macrosMissing: (count: number) => `חסרים מאקרו ב-${count} מרכיבים`,
     moreOptions: 'עוד אפשרויות (תאריך)',
   },
 

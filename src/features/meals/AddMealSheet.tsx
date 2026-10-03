@@ -12,10 +12,13 @@ import {
 import {
   parseDecimalInput,
   validateAddedSugarInput,
+  validateFavoriteInput,
   validateMealInput,
   type InputError,
 } from '../../core/contracts';
 import {
+  isManualEntry,
+  manualEntry,
   mealNameFromEntries,
   shortFoodName,
   sumEntries,
@@ -110,9 +113,11 @@ const SLOT_OPTIONS = (Object.keys(he.slots) as MealSlot[]).map((slot) => ({
 }));
 
 const quantityLabel = (item: FoodEntry): string =>
-  item.unit !== undefined && item.count !== undefined
-    ? `${formatDecimal(item.count)} × ${item.unit} (${formatDecimal(item.grams)} ${he.gramsShort})`
-    : `${formatDecimal(item.grams)} ${he.gramsShort}`;
+  isManualEntry(item)
+    ? he.addMeal.byHand
+    : item.unit !== undefined && item.count !== undefined
+      ? `${formatDecimal(item.count)} × ${item.unit} (${formatDecimal(item.grams)} ${he.gramsShort})`
+      : `${formatDecimal(item.grams)} ${he.gramsShort}`;
 
 function MealForm({
   date,
@@ -203,11 +208,18 @@ function MealForm({
   const [confirmLarge, setConfirmLarge] = useState(false);
   const [needsConfirm, setNeedsConfirm] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
+  /** Problems with the food being typed by hand into a meal that has foods (apart from the meal's own). */
+  const [itemErrors, setItemErrors] = useState<FieldErrors>({});
   const [warnMismatch, setWarnMismatch] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const kind: 'food' | 'manual' = items.length > 0 ? 'food' : 'manual';
   const totals = sumEntries(items);
+  /** Something typed into the by-hand fields of a meal with foods, not yet added to it. */
+  const itemPending =
+    kind === 'food' &&
+    mode === 'manual' &&
+    (name.trim() !== '' || kcalText.trim() !== '' || sugarText.trim() !== '');
 
   // Keep what is typed as a draft, so closing the sheet by accident (a tap outside it, "back") loses nothing.
   useEffect(() => {
@@ -312,7 +324,10 @@ function MealForm({
       fatG: number | null;
     } | null => {
       if (kind === 'food') {
-        return { proteinG: totals.proteinG, carbsG: totals.carbsG, fatG: totals.fatG };
+        // A food typed without macros leaves the meal's macros unknown rather than understated.
+        return totals.itemsWithoutMacros > 0
+          ? null
+          : { proteinG: totals.proteinG, carbsG: totals.carbsG, fatG: totals.fatG };
       }
       if (!macrosOn) return null;
       const read = (text: string): number | null =>
@@ -351,7 +366,55 @@ function MealForm({
     };
   }
 
+  /** Adds the food typed by hand to the meal, next to the foods from the database. */
+  function addManualItem(): void {
+    const read = (text: string): number | null =>
+      text.trim() === '' ? null : (parseDecimalInput(text) ?? Number.NaN);
+    const macros = macrosOn
+      ? { proteinG: read(proteinText), carbsG: read(carbsText), fatG: read(fatText) }
+      : null;
+    const checked = validateFavoriteInput({
+      name,
+      kcal: parseDecimalInput(kcalText) ?? Number.NaN,
+      macros,
+    });
+    const sugarChecked = validateAddedSugarInput(read(sugarText));
+    const found: FieldErrors = {};
+    if (!checked.ok) {
+      for (const error of checked.errors) found[error.field] = he.errors[error.code];
+    }
+    if (!sugarChecked.ok) {
+      for (const error of sugarChecked.errors) found[error.field] = he.errors[error.code];
+    }
+    if (!checked.ok || !sugarChecked.ok) {
+      setItemErrors(found);
+      return;
+    }
+    setItemErrors({});
+    setItems((current) => [
+      ...current,
+      manualEntry({
+        id: newId(),
+        name: checked.value.name,
+        kcal: checked.value.kcal,
+        macros: checked.value.macros,
+        addedSugarG: sugarChecked.value.addedSugarG,
+      }),
+    ]);
+    setName('');
+    setKcalText('');
+    setMacrosOn(false);
+    setProteinText('');
+    setCarbsText('');
+    setFatText('');
+    setSugarText('');
+  }
+
   async function submit(): Promise<void> {
+    if (itemPending) {
+      setItemErrors({ form: he.addMeal.itemPending });
+      return;
+    }
     setSubmitted(true);
     if (saving) return;
     const result = collect();
@@ -496,6 +559,9 @@ function MealForm({
 
   const shown = (field: InputError['field'] | 'form'): string | undefined =>
     submitted ? errors[field] : undefined;
+  /** Errors of the by-hand fields: the meal's own, or those of the food being added to a meal of foods. */
+  const manualError = (field: InputError['field'] | 'form'): string | undefined =>
+    kind === 'food' ? itemErrors[field] : shown(field);
 
   return (
     <div className="space-y-4">
@@ -517,27 +583,23 @@ function MealForm({
             ['manual', he.addMeal.tabManual],
             ...(favorites.length > 0 ? [['favorites', he.addMeal.tabFavorites] as const] : []),
           ] as const
-        ).map(([value, label]) => {
-          const disabled = value === 'manual' && kind === 'food';
-          return (
-            <label
-              key={value}
-              className={`flex min-h-11 cursor-pointer items-center justify-center rounded-full px-2 text-center text-base transition has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent ${
-                mode === value ? 'bg-surface font-bold shadow-md' : 'text-muted'
-              } ${disabled ? 'opacity-50' : ''}`}
-            >
-              <input
-                type="radio"
-                name="meal-mode"
-                className="sr-only"
-                checked={mode === value}
-                disabled={disabled}
-                onChange={() => setMode(value)}
-              />
-              {label}
-            </label>
-          );
-        })}
+        ).map(([value, label]) => (
+          <label
+            key={value}
+            className={`flex min-h-11 cursor-pointer items-center justify-center rounded-full px-2 text-center text-base transition has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent ${
+              mode === value ? 'bg-surface font-bold shadow-md' : 'text-muted'
+            }`}
+          >
+            <input
+              type="radio"
+              name="meal-mode"
+              className="sr-only"
+              checked={mode === value}
+              onChange={() => setMode(value)}
+            />
+            {label}
+          </label>
+        ))}
       </fieldset>
 
       {mode === 'search' && (
@@ -546,7 +608,7 @@ function MealForm({
           onPickFavorite={applyFavorite}
           onPick={(food) => startQuantity(food, null)}
           onManual={(typed) => {
-            if (kind === 'manual') setName(typed);
+            setName(typed);
             setMode('manual');
           }}
         />
@@ -554,77 +616,86 @@ function MealForm({
 
       {mode === 'manual' && (
         <div className="space-y-3">
-          {kind === 'food' ? (
-            <p className="text-muted">{he.addMeal.manualDisabled}</p>
-          ) : (
-            <>
+          <TextField
+            label={kind === 'food' ? he.addMeal.itemName : he.addMeal.name}
+            value={name}
+            onChange={setName}
+            autoComplete="off"
+            error={manualError('name')}
+            maxLength={120}
+          />
+          <TextField
+            label={he.addMeal.kcalField}
+            value={kcalText}
+            onChange={setKcalText}
+            inputMode="decimal"
+            error={manualError('kcal')}
+          />
+          <label className="flex min-h-11 items-center gap-3 text-base">
+            <input
+              type="checkbox"
+              checked={macrosOn}
+              onChange={(event) => setMacrosOn(event.target.checked)}
+              className="size-6 accent-[var(--accent)]"
+            />
+            {he.addMeal.macrosToggle}
+          </label>
+          {macrosOn && (
+            <div className="grid grid-cols-3 gap-2">
               <TextField
-                label={he.addMeal.name}
-                value={name}
-                onChange={setName}
-                autoComplete="off"
-                error={shown('name')}
-                maxLength={120}
-              />
-              <TextField
-                label={he.addMeal.kcalField}
-                value={kcalText}
-                onChange={setKcalText}
+                label={he.addMeal.proteinField}
+                value={proteinText}
+                onChange={setProteinText}
                 inputMode="decimal"
-                error={shown('kcal')}
               />
+              <TextField
+                label={he.addMeal.carbsField}
+                value={carbsText}
+                onChange={setCarbsText}
+                inputMode="decimal"
+              />
+              <TextField
+                label={he.addMeal.fatField}
+                value={fatText}
+                onChange={setFatText}
+                inputMode="decimal"
+              />
+            </div>
+          )}
+          {manualError('macros') && (
+            <p className="text-sm font-medium">⚠ {manualError('macros')}</p>
+          )}
+          <TextField
+            label={he.sugar.field}
+            hint={he.sugar.fieldHint}
+            value={sugarText}
+            onChange={setSugarText}
+            inputMode="decimal"
+            error={manualError('sugar')}
+          />
+          {kind === 'food' ? (
+            <>
+              <Button onClick={addManualItem}>
+                <Icon name="plus" /> {he.addMeal.addToMeal}
+              </Button>
+              {itemErrors.form && itemPending && (
+                <p role="alert" className="text-base font-medium">
+                  {itemErrors.form}
+                </p>
+              )}
+            </>
+          ) : (
+            !editing && (
               <label className="flex min-h-11 items-center gap-3 text-base">
                 <input
                   type="checkbox"
-                  checked={macrosOn}
-                  onChange={(event) => setMacrosOn(event.target.checked)}
+                  checked={remember}
+                  onChange={(event) => setRemember(event.target.checked)}
                   className="size-6 accent-[var(--accent)]"
                 />
-                {he.addMeal.macrosToggle}
+                {he.addMeal.rememberManual}
               </label>
-              {macrosOn && (
-                <div className="grid grid-cols-3 gap-2">
-                  <TextField
-                    label={he.addMeal.proteinField}
-                    value={proteinText}
-                    onChange={setProteinText}
-                    inputMode="decimal"
-                  />
-                  <TextField
-                    label={he.addMeal.carbsField}
-                    value={carbsText}
-                    onChange={setCarbsText}
-                    inputMode="decimal"
-                  />
-                  <TextField
-                    label={he.addMeal.fatField}
-                    value={fatText}
-                    onChange={setFatText}
-                    inputMode="decimal"
-                  />
-                </div>
-              )}
-              {shown('macros') && <p className="text-sm font-medium">⚠ {shown('macros')}</p>}
-              <TextField
-                label={he.sugar.field}
-                hint={he.sugar.fieldHint}
-                value={sugarText}
-                onChange={setSugarText}
-                inputMode="decimal"
-                error={shown('sugar')}
-              />
-              {!editing && (
-                <label className="flex min-h-11 items-center gap-3 text-base">
-                  <input
-                    type="checkbox"
-                    checked={remember}
-                    onChange={(event) => setRemember(event.target.checked)}
-                    className="size-6 accent-[var(--accent)]"
-                  />
-                  {he.addMeal.rememberManual}
-                </label>
-              )}
-            </>
+            )
           )}
         </div>
       )}
@@ -789,9 +860,19 @@ function MealForm({
               <strong>
                 <bdi>{formatInt(totals.kcal)}</bdi> {he.kcal}
               </strong>{' '}
-              · {he.today.protein} <bdi>{formatDecimal(totals.proteinG)}</bdi>
+              {totals.itemsWithoutMacros === 0 && (
+                <>
+                  {' '}
+                  · {he.today.protein} <bdi>{formatDecimal(totals.proteinG)}</bdi>
+                </>
+              )}
               {totals.addedSugarG !== null && (
                 <> · {he.sugar.mealTotal(formatDecimal(totals.addedSugarG))}</>
+              )}
+              {totals.itemsWithoutMacros > 0 && (
+                <span className="block text-sm text-muted">
+                  {he.addMeal.macrosMissing(totals.itemsWithoutMacros)}
+                </span>
               )}
               {totals.itemsWithoutSugar > 0 && totals.addedSugarG !== null && (
                 <span className="block text-sm text-muted">

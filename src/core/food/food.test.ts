@@ -3,6 +3,8 @@ import {
   buildFoodIndex,
   buildFoodRecords,
   computeEntry,
+  isManualEntry,
+  manualEntry,
   mealNameFromEntries,
   normalizeHebrew,
   qualityFailures,
@@ -216,6 +218,35 @@ describe('quantity to calories (FOOD-01)', () => {
       fatG: 28.6,
     });
     expect(sumEntries([])).toMatchObject({ kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 });
+  });
+
+  it('adds a food typed by hand to the sum, and says when its macros are unknown', () => {
+    const fromDb = entry(computeEntry(egg, { kind: 'grams', grams: 150 }));
+    const withMacros = manualEntry({
+      id: 'a',
+      name: 'שניצל',
+      kcal: 300,
+      macros: { proteinG: 20, carbsG: 15, fatG: 18 },
+      addedSugarG: 0,
+    });
+    const bare = manualEntry({ id: 'b', name: 'עוגה', kcal: 250, macros: null, addedSugarG: null });
+
+    expect(isManualEntry(withMacros)).toBe(true);
+    expect(isManualEntry(fromDb)).toBe(false);
+    expect(withMacros).not.toHaveProperty('noMacros');
+    expect(bare.noMacros).toBe(true);
+    expect(bare).not.toHaveProperty('addedSugarG');
+
+    expect(sumEntries([fromDb, withMacros])).toMatchObject({
+      kcal: fromDb.kcal + 300,
+      proteinG: 18.9 + 20,
+      itemsWithoutMacros: 0,
+    });
+    // The macro totals cover only the foods that have them, and the count says how many do not.
+    expect(sumEntries([fromDb, bare])).toMatchObject({
+      kcal: fromDb.kcal + 250,
+      itemsWithoutMacros: 1,
+    });
   });
 
   it('names a meal after its foods, within 80 characters', () => {

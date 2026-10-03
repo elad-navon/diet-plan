@@ -94,6 +94,46 @@ test('E2E-04: add a manual meal and see validation', async ({ page }) => {
   await expect(remaining(page)).toHaveAttribute('aria-label', /1,140/);
 });
 
+test('E2E-04b: a food typed by hand can be added to a meal that already has foods from the database', async ({
+  page,
+}) => {
+  await openApp(page, { seed: {} });
+  await page.getByRole('button', { name: he.today.addMeal }).first().click();
+  const sheet = page.getByRole('dialog', { name: he.addMeal.title });
+  await sheet.getByLabel(he.addMeal.searchLabel).fill('ביצה');
+  await sheet
+    .getByRole('button', { name: /ביצה שלמה בלי קליפה/ })
+    .first()
+    .click();
+  await sheet.getByLabel(he.addMeal.count).fill('2'); // 142 kcal
+  await sheet.getByRole('button', { name: he.addMeal.addToMeal }).click();
+
+  // The manual tab stays open for more foods.
+  await sheet.getByText(he.addMeal.tabManual, { exact: true }).click();
+  await sheet.getByLabel(he.addMeal.itemName).fill('שניצל');
+  await sheet.getByLabel(he.addMeal.kcalField).fill('300');
+
+  // Saving with a food typed but not added would drop it silently: it asks first.
+  await sheet.getByRole('button', { name: he.addMeal.saveMeal }).click();
+  await expect(sheet.getByText(he.addMeal.itemPending)).toBeVisible();
+
+  await sheet.getByRole('button', { name: he.addMeal.addToMeal }).click();
+  await expect(sheet.getByText(he.addMeal.byHand)).toBeVisible();
+  await expect(sheet.getByLabel(he.addMeal.itemName)).toHaveValue('');
+  await expect(sheet.getByText(he.addMeal.macrosMissing(1))).toBeVisible();
+
+  // And a second one, in a row.
+  await sheet.getByLabel(he.addMeal.itemName).fill('סלט');
+  await sheet.getByRole('button', { name: he.addMeal.addToMeal }).click();
+  await expect(sheet.getByText(he.errors.kcal_invalid)).toBeVisible();
+  await sheet.getByLabel(he.addMeal.kcalField).fill('50');
+  await sheet.getByRole('button', { name: he.addMeal.addToMeal }).click();
+
+  await sheet.getByRole('button', { name: he.addMeal.saveMeal }).click();
+  await expect(page.getByText(he.today.saved)).toBeVisible();
+  await expect(remaining(page)).toHaveAttribute('aria-label', /898/); // 1,390 - 142 - 300 - 50
+});
+
 test('SUGAR-01: the day shows added sugar in its bands, and a typed value moves it', async ({
   page,
 }) => {

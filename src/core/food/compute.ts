@@ -27,6 +27,38 @@ export interface FoodEntry {
   sugarG?: number;
   addedSugarG?: number;
   fiberG?: number;
+  /** A food typed by hand without its macros (the three macro fields are then 0, not real values). */
+  noMacros?: true;
+}
+
+/** Ids of foods typed by hand inside a meal start with this; they are not in the food database. */
+const MANUAL_FOOD_PREFIX = 'manual:';
+
+export const isManualEntry = (entry: Pick<FoodEntry, 'foodId'>): boolean =>
+  entry.foodId.startsWith(MANUAL_FOOD_PREFIX);
+
+/**
+ * A food typed by hand (name, calories, optionally macros and added sugar) as an item of a meal, next to foods
+ * from the database. It has no weight, and without macros it is flagged so the meal's macros are not understated.
+ */
+export function manualEntry(input: {
+  id: string;
+  name: string;
+  kcal: number;
+  macros: { proteinG: number; carbsG: number; fatG: number } | null;
+  addedSugarG: number | null;
+}): FoodEntry {
+  return {
+    foodId: `${MANUAL_FOOD_PREFIX}${input.id}`,
+    name: input.name,
+    grams: 0,
+    kcal: input.kcal,
+    proteinG: input.macros?.proteinG ?? 0,
+    carbsG: input.macros?.carbsG ?? 0,
+    fatG: input.macros?.fatG ?? 0,
+    ...(input.addedSugarG !== null ? { addedSugarG: input.addedSugarG } : {}),
+    ...(input.macros === null ? { noMacros: true as const } : {}),
+  };
 }
 
 export type EntryError =
@@ -110,6 +142,8 @@ export interface EntryTotals {
   fiberG: number | null;
   /** How many items had no sugar value (the added-sugar total then covers only the others). */
   itemsWithoutSugar: number;
+  /** How many items were typed by hand without macros (the macro totals then cover only the others). */
+  itemsWithoutMacros: number;
 }
 
 /** Meal totals: the sum of the already-rounded items (no second rounding of calories). */
@@ -122,7 +156,9 @@ export function sumEntries(entries: readonly FoodEntry[]): EntryTotals {
   let addedSugarG: number | null = null;
   let fiberG: number | null = null;
   let itemsWithoutSugar = 0;
+  let itemsWithoutMacros = 0;
   for (const entry of entries) {
+    if (entry.noMacros) itemsWithoutMacros += 1;
     kcal += entry.kcal;
     proteinG += entry.proteinG;
     carbsG += entry.carbsG;
@@ -141,6 +177,7 @@ export function sumEntries(entries: readonly FoodEntry[]): EntryTotals {
     addedSugarG: addedSugarG === null ? null : round1(addedSugarG),
     fiberG: fiberG === null ? null : round1(fiberG),
     itemsWithoutSugar,
+    itemsWithoutMacros,
   };
 }
 
