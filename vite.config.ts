@@ -36,7 +36,7 @@ export default defineConfig({
       },
       workbox: {
         // The whole app (including the food database) works offline once opened.
-        globPatterns: ['**/*.{js,css,html,woff2,json,png,svg}'],
+        globPatterns: ['**/*.{js,css,html,woff2,json,png,svg,jpg}'],
         navigateFallback: `${base}index.html`,
         cleanupOutdatedCaches: true,
         // Health data is never kept in a cache: calls to the server always go to the network.

@@ -1,5 +1,7 @@
 import { type GrainDay } from '../../core/food';
 import { formatDecimal, he } from '../../i18n/he';
+import { CardBackdrop } from '../../ui/art/CardBackdrop';
+import { CardTitle } from '../../ui/CardTitle';
 
 interface FlourCardProps {
   grain: GrainDay;
@@ -15,12 +17,12 @@ interface AmountProps {
 /** One of the two figures: what it is, and its grams in a large size. */
 function Amount({ label, grams, swatch }: AmountProps) {
   return (
-    <div>
+    <div className="lg:flex lg:items-center lg:justify-between lg:gap-2">
       <p className="flex items-start gap-1.5 text-sm text-muted">
         <span aria-hidden="true" className={`mt-1 size-3 shrink-0 rounded-full ${swatch}`} />
         {label}
       </p>
-      <p className="mt-1 text-4xl font-bold leading-none tabular-nums">
+      <p className="mt-1 text-4xl font-bold leading-none tabular-nums lg:mt-0 lg:shrink-0 lg:text-2xl">
         <bdi>{formatDecimal(grams)}</bdi>
         <span className="ms-1 text-base font-normal text-muted">{he.flour.unit}</span>
       </p>
@@ -39,21 +41,30 @@ export function FlourCard({ grain }: FlourCardProps) {
   const label = he.flour.summary(formatDecimal(refinedCarbsG), formatDecimal(wholeCarbsG));
 
   return (
-    <section aria-labelledby="flour-title" className="card p-5">
-      <h2 id="flour-title" className="text-xl font-bold">
+    <section
+      aria-labelledby="flour-title"
+      className="card p-5 lg:relative lg:isolate lg:overflow-hidden lg:panel-dark lg:p-4"
+    >
+      <CardBackdrop name="flour" />
+      <CardTitle
+        id="flour-title"
+        icon="wheat"
+        tone="green"
+        className="text-xl font-bold lg:text-lg"
+      >
         {he.flour.title}
-      </h2>
+      </CardTitle>
 
       {total === 0 ? (
         <p className="mt-2 text-muted">{he.flour.empty}</p>
       ) : (
         <>
-          <div className="mt-3 grid grid-cols-2 gap-4">
+          <div className="mt-3 grid grid-cols-2 gap-4 lg:mt-2 lg:grid-cols-1 lg:gap-1">
             <Amount label={he.flour.refinedLabel} grams={refinedCarbsG} swatch={REFINED_SWATCH} />
             <Amount label={he.flour.wholeLabel} grams={wholeCarbsG} swatch={WHOLE_SWATCH} />
           </div>
 
-          <div role="img" aria-label={label} className="mt-4">
+          <div role="img" aria-label={label} className="mt-4 lg:mt-2">
             <div className="flex h-3 overflow-hidden rounded-full">
               <div className={REFINED_SWATCH} style={{ width: `${refinedPercent}%` }} />
               <div className={WHOLE_SWATCH} style={{ width: `${100 - refinedPercent}%` }} />
@@ -63,19 +74,32 @@ export function FlourCard({ grain }: FlourCardProps) {
       )}
 
       {swaps.length > 0 && (
-        <div className="mt-3 rounded-xl bg-surface-2 p-3 text-base">
-          <p className="font-semibold">{he.flour.swapTitle}</p>
-          <ul className="mt-1 list-disc space-y-0.5 ps-5">
-            {swaps.map((kind) => (
-              <li key={kind}>{he.flour.swap[kind]}</li>
-            ))}
-          </ul>
-        </div>
+        <>
+          {/* A phone shows what to try instead right away; a computer keeps it one click away to save room. */}
+          <div className="mt-3 rounded-xl bg-surface-2 p-3 text-base lg:hidden">
+            <p className="font-semibold">{he.flour.swapTitle}</p>
+            <ul className="mt-1 list-disc space-y-0.5 ps-5">
+              {swaps.map((kind) => (
+                <li key={kind}>{he.flour.swap[kind]}</li>
+              ))}
+            </ul>
+          </div>
+          <details className="mt-1 hidden text-sm lg:block">
+            <summary className="min-h-11 cursor-pointer py-2 font-medium text-accent">
+              {he.flour.swapTitle}
+            </summary>
+            <ul className="list-disc space-y-0.5 ps-5">
+              {swaps.map((kind) => (
+                <li key={kind}>{he.flour.swap[kind]}</li>
+              ))}
+            </ul>
+          </details>
+        </>
       )}
 
-      <p className="mt-3 text-sm text-muted">{he.flour.note}</p>
+      <p className="mt-3 text-sm text-muted lg:hidden">{he.flour.note}</p>
 
-      <details className="mt-1 text-sm text-muted">
+      <details className="mt-1 text-sm text-muted lg:hidden">
         <summary className="min-h-11 cursor-pointer py-2 font-medium text-accent">
           {he.flour.howTitle}
         </summary>

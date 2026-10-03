@@ -16,7 +16,16 @@ export type IconName =
   | 'chart'
   | 'settings'
   | 'star'
-  | 'chevron-down';
+  | 'chevron-down'
+  | 'sun'
+  | 'moon'
+  | 'trend'
+  | 'utensils'
+  | 'pie'
+  | 'cube'
+  | 'wheat'
+  | 'calendar'
+  | 'eye';
 
 const PATHS: Record<IconName, ReactNode> = {
   plus: <path d="M12 5v14M5 12h14" />,
@@ -55,6 +64,29 @@ const PATHS: Record<IconName, ReactNode> = {
   ),
   star: <path d="M12 4l2.4 5 5.4.7-4 3.7 1 5.4L12 16.2 7.2 18.8l1-5.4-4-3.7 5.4-.7L12 4z" />,
   'chevron-down': <path d="M6 9l6 6 6-6" />,
+  sun: (
+    <>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4" />
+    </>
+  ),
+  moon: <path d="M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z" />,
+  trend: <path d="M3 17l6-6 4 4 8-8M15 7h6v6" />,
+  utensils: <path d="M6 3v6a2 2 0 004 0V3M8 3v18M17 21V3c-2.6 1.4-3.6 4-3.6 7v3H17" />,
+  pie: <path d="M12 3a9 9 0 109 9h-9zM14.5 3.4A9 9 0 0120.6 9.5H14.5z" />,
+  cube: <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3zM4 7.5l8 4.5 8-4.5M12 12v9" />,
+  wheat: (
+    <path d="M12 21V8M12 8c-2.4 0-3.8-1.6-3.8-3.8 2.4 0 3.8 1.6 3.8 3.8zM12 8c2.4 0 3.8-1.6 3.8-3.8-2.4 0-3.8 1.6-3.8 3.8zM12 13c-2.4 0-3.8-1.6-3.8-3.8 2.4 0 3.8 1.6 3.8 3.8zM12 13c2.4 0 3.8-1.6 3.8-3.8-2.4 0-3.8 1.6-3.8 3.8zM12 18c-2.4 0-3.8-1.6-3.8-3.8 2.4 0 3.8 1.6 3.8 3.8zM12 18c2.4 0 3.8-1.6 3.8-3.8-2.4 0-3.8 1.6-3.8 3.8z" />
+  ),
+  calendar: (
+    <path d="M5 5h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1zM4 10h16M8 3v4M16 3v4" />
+  ),
+  eye: (
+    <>
+      <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" />
+      <circle cx="12" cy="12" r="2.8" />
+    </>
+  ),
 };
 
 /** A decorative 24px icon. The control that contains it carries the accessible name. */

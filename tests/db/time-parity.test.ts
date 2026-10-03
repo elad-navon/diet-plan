@@ -44,7 +44,7 @@ describe('TIME-05: TypeScript and Postgres agree on the local date', () => {
     }
 
     const rows = await db.admin.query<{ ms: string; tz: string; d: string }>(
-      `select ms::text, tz, ((to_timestamp(ms / 1000.0) at time zone tz)::date)::text as d
+      `select ms::text, tz, (((to_timestamp(ms / 1000.0) at time zone tz) - interval '2 hours')::date)::text as d
        from jsonb_to_recordset($1::jsonb) as t(ms bigint, tz text)`,
       [JSON.stringify(corpus)],
     );

@@ -1,6 +1,6 @@
 import { type Instant } from './clock';
-import { parseLocalDate, type LocalDate } from './dates';
-import { localParts, offsetMinutesAt, partsAsUtcMillis, type Tz } from './zone';
+import { addDays, parseLocalDate, type LocalDate } from './dates';
+import { DAY_STARTS_AT_HOUR, localParts, offsetMinutesAt, partsAsUtcMillis, type Tz } from './zone';
 
 /** Wall-clock time of day as `HH:mm` (00:00 - 23:59). */
 export type LocalTime = string;
@@ -63,4 +63,14 @@ export function wallToInstant(date: LocalDate, time: LocalTime, tz: Tz): Instant
   }
   // Gap: interpret with the offset in force before the transition -> lands after the gap.
   return wallAsUtc - offsetBefore * 60_000;
+}
+
+/**
+ * The instant of a wall-clock `time` on the day of eating `date`. From 02:00 on it is on that calendar date; the
+ * hours before 02:00 are the end of that day, so they are on the next calendar date (00:30 of day D is the night
+ * after D). The opposite of `localDateOf` + `localTimeOf`.
+ */
+export function dayTimeToInstant(date: LocalDate, time: LocalTime, tz: Tz): Instant {
+  const { hour } = parseLocalTime(time);
+  return wallToInstant(hour < DAY_STARTS_AT_HOUR ? addDays(date, 1) : date, time, tz);
 }

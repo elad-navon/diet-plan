@@ -4,8 +4,9 @@ import {
   dayLengthMinutes,
   dayStart,
   formatLocalTime,
+  DAY_STARTS_AT_HOUR,
   localDateOf,
-  wallToInstant,
+  dayTimeToInstant,
   type Instant,
   type LocalDate,
   type Tz,
@@ -49,7 +50,7 @@ export interface ChartMeal {
 export interface DayChartModel {
   date: LocalDate;
   dayLengthMinutes: number;
-  /** The visible part of the day (06:00-23:00, widened to include any meal). */
+  /** The visible part of the day (08:00 to 02:00 of the next date, widened earlier to include any meal). */
   domain: { startMinute: number; endMinute: number };
   targetKcal: number;
   yMax: number;
@@ -83,8 +84,7 @@ export interface DayChartInput {
 }
 
 const MINUTE_MS = 60_000;
-const DEFAULT_VISIBLE_FROM = '06:00';
-const DEFAULT_VISIBLE_TO = '23:00';
+const DEFAULT_VISIBLE_FROM = '08:00';
 const MIN_VISIBLE_MINUTES = 360;
 const Y_STEP = 200;
 const Y_HEADROOM = 1.15;
@@ -102,7 +102,7 @@ export function buildDayChart(input: DayChartInput): DayChartModel {
   const lengthMinutes = dayLengthMinutes(date, tz);
   const elapsed = (instant: Instant): number =>
     clamp((instant - dayBegin) / MINUTE_MS, 0, lengthMinutes);
-  const elapsedAtWall = (time: string): number => elapsed(wallToInstant(date, time, tz));
+  const elapsedAtWall = (time: string): number => elapsed(dayTimeToInstant(date, time, tz));
 
   const meals = [...input.meals]
     .filter((meal) => !meal.deletedAt)
@@ -112,7 +112,7 @@ export function buildDayChart(input: DayChartInput): DayChartModel {
   const firstMeal = meals[0];
   const lastMeal = meals[meals.length - 1];
   let startMinute = elapsedAtWall(DEFAULT_VISIBLE_FROM);
-  let endMinute = elapsedAtWall(DEFAULT_VISIBLE_TO);
+  let endMinute = lengthMinutes; // 02:00 of the next date, where the day ends
   if (firstMeal)
     startMinute = Math.min(startMinute, Math.floor(elapsed(firstMeal.eatenAt) / 60) * 60);
   if (lastMeal)
@@ -144,14 +144,19 @@ export function buildDayChart(input: DayChartInput): DayChartModel {
       ),
     }));
 
-  const recommended: ChartPoint[] = [{ minute: startMinute, kcal: 0 }];
+  const recommended: ChartPoint[] = [];
+  const addToPath = (minute: number, kcal: number): void => {
+    const last = recommended[recommended.length - 1];
+    if (!last || last.minute !== minute || last.kcal !== kcal) recommended.push({ minute, kcal });
+  };
+  addToPath(startMinute, 0);
   let planned = 0;
   for (const band of bands) {
-    recommended.push({ minute: clamp(band.startMinute, startMinute, endMinute), kcal: planned });
+    addToPath(clamp(band.startMinute, startMinute, endMinute), planned);
     planned += band.plannedKcal;
-    recommended.push({ minute: clamp(band.endMinute, startMinute, endMinute), kcal: planned });
+    addToPath(clamp(band.endMinute, startMinute, endMinute), planned);
   }
-  recommended.push({ minute: endMinute, kcal: planned });
+  addToPath(endMinute, planned);
 
   // --- what was eaten: a staircase
   const isToday = localDateOf(now, tz) === date;
@@ -193,11 +198,15 @@ export function buildDayChart(input: DayChartInput): DayChartModel {
       }
     : null;
 
+  // A label every three hours, from 02:00 (the start of the day) to the 02:00 that ends it.
   const ticks: { minute: number; label: string }[] = [];
-  for (let hour = 0; hour < 24; hour += TICK_EVERY_HOURS) {
-    const label = formatLocalTime(hour, 0);
+  for (let hour = DAY_STARTS_AT_HOUR; hour < DAY_STARTS_AT_HOUR + 24; hour += TICK_EVERY_HOURS) {
+    const label = formatLocalTime(hour % 24, 0);
     const minute = elapsedAtWall(label);
     if (minute >= startMinute && minute <= endMinute) ticks.push({ minute, label });
+  }
+  if (endMinute >= lengthMinutes) {
+    ticks.push({ minute: lengthMinutes, label: formatLocalTime(DAY_STARTS_AT_HOUR, 0) });
   }
 
   return {

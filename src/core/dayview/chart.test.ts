@@ -1,7 +1,7 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_SCHEDULE } from '../schedule';
-import { dayStart, wallToInstant } from '../time';
+import { dayStart, dayTimeToInstant, wallToInstant } from '../time';
 import { buildDayChart, type DayChartInput, type DayChartModel } from './chart';
 import { type MealRecord } from './dayview';
 
@@ -20,7 +20,7 @@ function meal(
     id,
     name: `meal ${time}`,
     localDate: date,
-    eatenAt: wallToInstant(date, time, tz),
+    eatenAt: dayTimeToInstant(date, time, tz),
     slot: 'lunch',
     kcal,
     proteinG: null,
@@ -48,59 +48,59 @@ function chart(
 describe('empty day (CHART-01)', () => {
   const model = chart('10:00');
 
-  it('shows 06:00-23:00 with the corridor and no meals', () => {
-    expect(model.domain).toEqual({ startMinute: 360, endMinute: 1380 });
+  it('shows 08:00 to 02:00 with the corridor and no meals', () => {
+    // The day runs 02:00 to 02:00, so 08:00 is minute 360 and the end of the day is minute 1440.
+    expect(model.domain).toEqual({ startMinute: 360, endMinute: 1440 });
     expect(model.meals).toEqual([]);
     expect(model.totalKcal).toBe(0);
     expect(model.overByKcal).toBe(0);
     expect(model.eaten[0]).toEqual({ minute: 360, kcal: 0 });
-    expect(model.eaten.at(-1)).toEqual({ minute: 600, kcal: 0 }); // runs up to "now" (10:00)
-    expect(model.now).toEqual({ minute: 600, kcal: 0 });
+    expect(model.eaten.at(-1)).toEqual({ minute: 480, kcal: 0 }); // runs up to "now" (10:00)
+    expect(model.now).toEqual({ minute: 480, kcal: 0 });
   });
 
   it('draws the corridor as a staircase of expected calories', () => {
     expect(model.corridor).toEqual([
-      { minute: 360, lowerKcal: 0, upperKcal: 0 },
-      { minute: 390, lowerKcal: 0, upperKcal: 450 }, // 06:30: breakfast may start
-      { minute: 570, lowerKcal: 450, upperKcal: 450 }, // 09:30: breakfast window over
-      { minute: 690, lowerKcal: 450, upperKcal: 990 }, // 11:30: lunch may start
-      { minute: 870, lowerKcal: 990, upperKcal: 990 },
-      { minute: 900, lowerKcal: 990, upperKcal: 1260 },
-      { minute: 1050, lowerKcal: 1260, upperKcal: 1260 },
-      { minute: 1080, lowerKcal: 1260, upperKcal: 1800 },
-      { minute: 1260, lowerKcal: 1800, upperKcal: 1800 },
+      { minute: 360, lowerKcal: 0, upperKcal: 450 }, // 08:00: breakfast may already have started
+      { minute: 450, lowerKcal: 450, upperKcal: 450 }, // 09:30: breakfast window over
+      { minute: 570, lowerKcal: 450, upperKcal: 990 }, // 11:30: lunch may start
+      { minute: 750, lowerKcal: 990, upperKcal: 990 },
+      { minute: 780, lowerKcal: 990, upperKcal: 1260 },
+      { minute: 930, lowerKcal: 1260, upperKcal: 1260 },
+      { minute: 960, lowerKcal: 1260, upperKcal: 1800 },
+      { minute: 1140, lowerKcal: 1800, upperKcal: 1800 },
     ]);
     expect(model.bands.map((b) => [b.slot, b.startMinute, b.endMinute])).toEqual([
-      ['breakfast', 450, 570],
-      ['lunch', 750, 870],
-      ['snack', 960, 1050],
-      ['dinner', 1140, 1260],
+      ['breakfast', 330, 450],
+      ['lunch', 630, 750],
+      ['snack', 840, 930],
+      ['dinner', 1020, 1140],
     ]);
   });
 
   it('draws the recommended path: rising through each meal window, flat in between', () => {
     expect(model.plan).toEqual([
-      { minute: 360, kcal: 0 },
-      { minute: 450, kcal: 0 }, // 07:30: breakfast window opens
-      { minute: 570, kcal: 450 },
-      { minute: 750, kcal: 450 },
-      { minute: 870, kcal: 990 },
-      { minute: 960, kcal: 990 },
-      { minute: 1050, kcal: 1260 },
-      { minute: 1140, kcal: 1260 },
-      { minute: 1260, kcal: 1800 }, // the whole target, by the end of the last window
-      { minute: 1380, kcal: 1800 },
+      { minute: 360, kcal: 0 }, // 08:00: breakfast is already under way
+      { minute: 450, kcal: 450 },
+      { minute: 630, kcal: 450 },
+      { minute: 750, kcal: 990 },
+      { minute: 840, kcal: 990 },
+      { minute: 930, kcal: 1260 },
+      { minute: 1020, kcal: 1260 },
+      { minute: 1140, kcal: 1800 }, // the whole target, by the end of the last window
+      { minute: 1440, kcal: 1800 },
     ]);
   });
 
   it('labels the axis every three hours', () => {
     expect(model.ticks.map((t) => t.label)).toEqual([
-      '06:00',
-      '09:00',
-      '12:00',
-      '15:00',
-      '18:00',
-      '21:00',
+      '08:00',
+      '11:00',
+      '14:00',
+      '17:00',
+      '20:00',
+      '23:00',
+      '02:00',
     ]);
   });
 });
@@ -109,16 +109,16 @@ describe('meals (CHART-02, CHART-04)', () => {
   it('draws each meal as a jump at its time and keeps a running total', () => {
     const model = chart('15:30', [meal('13:00', 700), meal('08:30', 450)]); // given out of order
     expect(model.meals.map((m) => [m.minute, m.kcal, m.cumulativeKcal])).toEqual([
-      [510, 450, 450],
-      [780, 700, 1150],
+      [390, 450, 450],
+      [660, 700, 1150],
     ]);
     expect(model.eaten).toEqual([
       { minute: 360, kcal: 0 },
-      { minute: 510, kcal: 0 },
-      { minute: 510, kcal: 450 },
-      { minute: 780, kcal: 450 },
-      { minute: 780, kcal: 1150 },
-      { minute: 930, kcal: 1150 },
+      { minute: 390, kcal: 0 },
+      { minute: 390, kcal: 450 },
+      { minute: 660, kcal: 450 },
+      { minute: 660, kcal: 1150 },
+      { minute: 810, kcal: 1150 },
     ]);
     expect(model.totalKcal).toBe(1150);
   });
@@ -138,14 +138,14 @@ describe('meals (CHART-02, CHART-04)', () => {
     expect(minutes).toEqual([...minutes].sort((a, b) => a - b));
   });
 
-  it('widens the visible window for a midnight meal and a 23:59 meal', () => {
-    const midnight = chart('08:00', [meal('00:00', 150)]);
-    expect(midnight.domain.startMinute).toBe(0);
-    expect(midnight.meals[0]?.minute).toBe(0);
+  it('widens the visible window for a meal at the start of the day and one in the small hours', () => {
+    const early = chart('08:00', [meal('02:00', 150)]); // the first minute of the day
+    expect(early.domain.startMinute).toBe(0);
+    expect(early.meals[0]?.minute).toBe(0);
 
-    const late = chart('23:59', [meal('23:59', 150)]);
-    expect(late.domain.endMinute).toBe(1440);
-    expect(late.meals[0]?.minute).toBe(1439);
+    const lateNight = chart('23:59', [meal('01:30', 150)]); // 01:30 of the next date: the end of this day
+    expect(lateNight.domain.endMinute).toBe(1440);
+    expect(lateNight.meals[0]?.minute).toBe(1410);
   });
 
   it('is a plain summary for a back-dated day: no "now", eaten line runs to the end', () => {
@@ -158,7 +158,7 @@ describe('meals (CHART-02, CHART-04)', () => {
       next: null,
     });
     expect(model.now).toBeNull();
-    expect(model.eaten.at(-1)).toEqual({ minute: 1380, kcal: 700 });
+    expect(model.eaten.at(-1)).toEqual({ minute: 1440, kcal: 700 });
   });
 });
 
@@ -193,29 +193,27 @@ describe('the suggested next meal', () => {
       suggestions: [],
     };
     const model = chart('10:00', [meal('08:30', 450)], { next });
-    expect(model.next).toEqual({ minute: 750, slot: 'lunch', fromKcal: 450, toKcal: 1170 });
+    expect(model.next).toEqual({ minute: 630, slot: 'lunch', fromKcal: 450, toKcal: 1170 });
   });
 });
 
 describe('DST days (CHART-05, TIME-04)', () => {
-  it('follows elapsed minutes on a 25-hour day: wall 23:00 is minute 1440, not 1380', () => {
+  it('follows elapsed minutes on the 25-hour day: it is the 24th, its end is minute 1500', () => {
     const model = buildDayChart({
-      date: '2026-10-25',
+      date: '2026-10-24',
       tz: TZ,
-      now: wallToInstant('2026-10-25', '12:00', TZ),
+      now: wallToInstant('2026-10-24', '12:00', TZ),
       plan,
       meals: [],
       next: null,
     });
     expect(model.dayLengthMinutes).toBe(1500);
-    expect(model.domain.endMinute).toBe(1440);
-    // 06:00 wall is 7 elapsed hours after midnight on this day (01:00 happens twice).
-    expect(model.domain.startMinute).toBe(420);
+    expect(model.domain).toEqual({ startMinute: 360, endMinute: 1500 });
   });
 
-  it('places both 01:30 meals of a fall-back night at their own times', () => {
-    const date = '2026-10-25';
-    const first = wallToInstant(date, '01:30', TZ);
+  it('places both 01:30 meals of the fall-back night at their own times, at the end of the 24th', () => {
+    const date = '2026-10-24';
+    const first = dayTimeToInstant(date, '01:30', TZ);
     const second = first + 60 * MINUTE;
     const mk = (eatenAt: number, id: string): MealRecord => ({
       ...meal('01:30', 100, id, date),
@@ -230,12 +228,12 @@ describe('DST days (CHART-05, TIME-04)', () => {
       next: null,
     });
     expect(model.meals.map((m) => [m.id, m.minute])).toEqual([
-      ['first', 90],
-      ['second', 150],
+      ['first', 1410],
+      ['second', 1470],
     ]);
   });
 
-  it('is shorter on a spring-forward day', () => {
+  it('is shorter on a spring-forward day: it starts after the skipped hour', () => {
     const model = buildDayChart({
       date: '2026-03-27',
       tz: TZ,
@@ -245,7 +243,7 @@ describe('DST days (CHART-05, TIME-04)', () => {
       next: null,
     });
     expect(model.dayLengthMinutes).toBe(1380);
-    expect(model.domain.endMinute).toBe(1320); // wall 23:00 is minute 1320 after the lost hour
+    expect(model.domain).toEqual({ startMinute: 300, endMinute: 1380 }); // 08:00 is 5 real hours after 03:00
   });
 });
 

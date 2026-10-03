@@ -45,19 +45,19 @@ beforeEach(async () => {
 });
 
 describe('adding a meal', () => {
-  it('derives the local date on the store side, in the user zone (DB-01)', async () => {
+  it('derives the day on the store side, in the user zone (DB-01): 00:30 is still the day before', async () => {
     const meal = await repos.meals.add(newMeal({ eatenAt: at('00:30', TODAY) }));
-    expect(meal.localDate).toBe(TODAY);
+    expect(meal.localDate).toBe('2026-10-01');
     expect(meal.tz).toBe(TZ);
     expect(meal.version).toBe(1);
     expect(meal.enteredAt).toBe(nowInstant);
     expect(meal.kcal).toBe(320);
   });
 
-  it('puts 23:59 and 00:01 on different days (TIME-01, TIME-02)', async () => {
+  it('puts 01:59 and 02:00 on different days (TIME-01, TIME-02)', async () => {
     nowInstant = at('09:00', '2026-10-03');
-    const late = await repos.meals.add(newMeal({ id: 'a', eatenAt: at('23:59') }));
-    const early = await repos.meals.add(newMeal({ id: 'b', eatenAt: at('00:01', '2026-10-03') }));
+    const late = await repos.meals.add(newMeal({ id: 'a', eatenAt: at('01:59', '2026-10-03') }));
+    const early = await repos.meals.add(newMeal({ id: 'b', eatenAt: at('02:00', '2026-10-03') }));
     expect([late.localDate, early.localDate]).toEqual([TODAY, '2026-10-03']);
   });
 

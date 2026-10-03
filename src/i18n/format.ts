@@ -1,6 +1,7 @@
 import { shortFoodName, type FoodEntry } from '../core/food';
 import {
   dayOfWeek,
+  dayStart,
   localTimeOf,
   wallToInstant,
   type Instant,
@@ -68,8 +69,7 @@ export const weekdayInitial = (date: LocalDate): string => WEEKDAY_INITIALS[dayO
 
 /** "HH:mm" of an elapsed-minutes position on a given day (chart table rows). */
 export function clockAtMinute(date: LocalDate, minute: number, tz: Tz): string {
-  const start = wallToInstant(date, '00:00', tz);
-  return localTimeOf(start + minute * 60_000, tz);
+  return localTimeOf(dayStart(date, tz) + minute * 60_000, tz);
 }
 
 // --- amounts in words: "2 פרוסות דקות (48 ג')" ------------------------------------------------

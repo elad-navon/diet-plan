@@ -75,9 +75,12 @@ class Store {
       const parsed: unknown = JSON.parse(raw);
       if (isDoc(parsed)) {
         // Meals saved before added sugar existed have no value for it: "not known".
-        parsed.meals = parsed.meals.map((meal) =>
-          meal.addedSugarG === undefined ? { ...meal, addedSugarG: null } : meal,
-        );
+        parsed.meals = parsed.meals.map((meal) => {
+          const withSugar = meal.addedSugarG === undefined ? { ...meal, addedSugarG: null } : meal;
+          // A day runs from 02:00 to 02:00: a meal between midnight and 02:00 is the previous day's.
+          const day = localDateOf(withSugar.eatenAt, withSugar.tz);
+          return day === withSugar.localDate ? withSugar : { ...withSugar, localDate: day };
+        });
         parsed.favorites = parsed.favorites.map((favorite) =>
           favorite.addedSugarG === undefined ? { ...favorite, addedSugarG: null } : favorite,
         );

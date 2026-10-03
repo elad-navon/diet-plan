@@ -49,14 +49,15 @@ async function addMeal(user: string, payload: Record<string, unknown>): Promise<
 const hoursAgo = (hours: number) => db.timestamp(`now() - interval '${hours} hours'`);
 
 describe('DB-01 / TIME-01: the day is decided by the server, from the instant and the user zone', () => {
-  it('puts 23:59:59.999 and 00:00:00.000 (Jerusalem) on consecutive days', async () => {
+  it('puts 01:59:59.999 and 02:00:00.000 (Jerusalem) on consecutive days', async () => {
     const user = await db.newUserWithProfile('Asia/Jerusalem');
-    // Day D = three days ago in the user's zone.
+    // A day of eating runs from 02:00 to 02:00: the last moment of the day three days ago is 01:59:59.999 on the
+    // calendar date after it, and 02:00:00 on that date starts the next day.
     const lastMoment = await db.timestamp(
-      `(((now() at time zone 'Asia/Jerusalem')::date - 3) + time '23:59:59.999') at time zone 'Asia/Jerusalem'`,
+      `(((now() at time zone 'Asia/Jerusalem')::date - 2) + time '01:59:59.999') at time zone 'Asia/Jerusalem'`,
     );
     const firstMoment = await db.timestamp(
-      `(((now() at time zone 'Asia/Jerusalem')::date - 2) + time '00:00:00') at time zone 'Asia/Jerusalem'`,
+      `(((now() at time zone 'Asia/Jerusalem')::date - 2) + time '02:00:00') at time zone 'Asia/Jerusalem'`,
     );
     const late = await addMeal(user, mealPayload(lastMoment));
     const early = await addMeal(user, mealPayload(firstMoment));

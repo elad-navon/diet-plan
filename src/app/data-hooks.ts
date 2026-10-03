@@ -52,11 +52,12 @@ export function useMealsOfDay(date: LocalDate) {
   return useQuery({ queryKey: keys.mealsOfDay(date), queryFn: () => repos.meals.listByDate(date) });
 }
 
-export function useMealsRange(from: LocalDate, to: LocalDate) {
+export function useMealsRange(from: LocalDate, to: LocalDate, enabled = true) {
   const { repos } = useServices();
   return useQuery({
     queryKey: keys.mealsRange(from, to),
     queryFn: () => repos.meals.listRange(from, to),
+    enabled,
   });
 }
 

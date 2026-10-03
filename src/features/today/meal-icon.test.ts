@@ -1,5 +1,9 @@
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_MEAL_ICON, mealIcon } from './meal-icon';
+import sprite from '../../ui/art/sprite.svg?raw';
+import { MealArt } from '../../ui/art/MealArt';
+import { DEFAULT_MEAL_ICON, MEAL_ICONS, mealIcon } from './meal-icon';
 
 const meal = (name: string, items: string[] = []) => ({
   name,
@@ -31,6 +35,30 @@ describe('the picture next to a meal follows the food, not the time of day', () 
     ['תותים', '🍓'],
     ['אבטיח', '🍉'],
     ['קיווי', '🥝'],
+    ['גזר, טרי', '🥕'],
+    ['גזר ומלפפון', '🥕'],
+    ['עגבניות שרי', '🍅'],
+    ['מלפפון', '🥒'],
+    ['פלפל אדום', '🫑'],
+    ['ברוקולי מאודה', '🥦'],
+    ['תירס', '🌽'],
+    ['חצילים בתנור', '🍆'],
+    ['אפרסק', '🍑'],
+    ['מנגו', '🥭'],
+    ['מלון כתום, טרי', '🍈'],
+    ['אננס', '🍍'],
+    ['אגס', '🍐'],
+    ['לימון', '🍋'],
+    ['דובדבנים', '🍒'],
+    ['ענבים, לפנ לסוג, טרי', '🍇'],
+    ['תפוזים', '🍊'],
+    ['שלגון שוקו/בננה בציפוי שוקולד', '🍧'],
+    ['קרטיב', '🍧'],
+    ['ארטיק קרח', '🍧'],
+    ['קרחון בטעם פרי, טעמים שונים', '🍧'],
+    ['גלידה', '🍦'],
+    ['לימונדה', '🧃'],
+    ['סלט גזר', '🥗'],
     ['חופן שקדים', '🥜'],
     ['במבה', '🥜'],
     ['קפה ועוגה', '☕'],
@@ -53,5 +81,14 @@ describe('the picture next to a meal follows the food, not the time of day', () 
   it('is not fooled by words that merely start the same: "דגני בוקר" is cereal, not fish', () => {
     expect(mealIcon(meal('דגני בוקר'))).toBe('🥣');
     expect(mealIcon(meal('דג בתנור'))).toBe('🐟');
+  });
+});
+
+describe('every picture a meal can get has its own drawing', () => {
+  it.each(MEAL_ICONS.map((icon) => [icon]))('%s', (icon) => {
+    const markup = renderToStaticMarkup(createElement(MealArt, { emoji: icon }));
+    const symbol = /href="#([^"]+)"/.exec(markup)?.[1];
+    expect(symbol, `no drawing for ${icon}`).toBeDefined();
+    expect(sprite).toContain(`id="${symbol}"`);
   });
 });

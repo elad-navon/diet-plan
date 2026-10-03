@@ -1,6 +1,6 @@
 import {
   parseLocalTime,
-  wallToInstant,
+  dayTimeToInstant,
   type Instant,
   type LocalDate,
   type LocalTime,
@@ -110,8 +110,8 @@ export interface SlotWindow {
 export function slotWindows(schedule: MealSchedule, date: LocalDate, tz: Tz): SlotWindow[] {
   return schedule.map((slot) => ({
     id: slot.id,
-    startInstant: wallToInstant(date, slot.start, tz),
-    endInstant: wallToInstant(date, slot.end, tz),
+    startInstant: dayTimeToInstant(date, slot.start, tz),
+    endInstant: dayTimeToInstant(date, slot.end, tz),
     weight: slot.weight,
   }));
 }

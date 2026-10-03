@@ -31,7 +31,7 @@ import {
   isValidLocalDate,
   localDateOf,
   localTimeOf,
-  wallToInstant,
+  dayTimeToInstant,
   type Instant,
   type LocalDate,
   type Tz,
@@ -276,7 +276,7 @@ function MealForm({
   const eatenAt = ((): Instant | null => {
     if (!isValidLocalDate(dateText) || !/^\d{2}:\d{2}$/.test(timeText)) return null;
     try {
-      return wallToInstant(dateText, timeText, tz);
+      return dayTimeToInstant(dateText, timeText, tz);
     } catch {
       return null;
     }

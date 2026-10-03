@@ -1,6 +1,7 @@
 import { type DaySummary } from '../../core/dayview';
 import { ADDED_SUGAR_BANDS, sugarBand, type SugarBand } from '../../core/food';
 import { formatDecimal, he } from '../../i18n/he';
+import { CardTitle } from '../../ui/CardTitle';
 import { Icon, type IconName } from '../../ui/Icon';
 
 /** The meter runs a little past the last band edge, so a high day shows as "beyond", not as a full bar. */
@@ -28,13 +29,13 @@ export function SugarCard({ summary }: SugarCardProps) {
   );
 
   return (
-    <section aria-labelledby="sugar-title" className="card p-5">
-      <h2 id="sugar-title" className="text-xl font-bold">
+    <section aria-labelledby="sugar-title" className="card p-5 lg:p-4">
+      <CardTitle id="sugar-title" icon="cube" tone="blue" className="text-xl font-bold lg:text-lg">
         {he.sugar.title}
-      </h2>
+      </CardTitle>
 
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-        <p className="text-4xl font-bold leading-none tabular-nums">
+        <p className="text-4xl font-bold leading-none tabular-nums lg:text-3xl">
           <bdi>{formatDecimal(addedSugarG)}</bdi>
           <span className="ms-1 text-base font-normal text-muted">{he.gramsShort}</span>
         </p>
@@ -44,7 +45,7 @@ export function SugarCard({ summary }: SugarCardProps) {
         </p>
       </div>
 
-      <div role="img" aria-label={label} className="relative mt-4 pb-6">
+      <div role="img" aria-label={label} className="relative mt-4 pb-6 lg:mt-3">
         <div className="flex h-3 overflow-hidden rounded-full">
           <div className="bg-good/30" style={{ width: `${percent(veryLowMaxG)}%` }} />
           <div
@@ -70,14 +71,14 @@ export function SugarCard({ summary }: SugarCardProps) {
         ))}
       </div>
 
-      <p className="text-sm text-muted">{he.sugar.note}</p>
+      <p className="text-sm text-muted lg:hidden">{he.sugar.note}</p>
       {missing > 0 && sugarCoverage.meals > 0 && (
-        <p className="mt-1 text-sm text-muted">
+        <p className="mt-1 text-sm text-muted lg:text-xs">
           {he.sugar.coverage(sugarCoverage.mealsWithSugar, sugarCoverage.meals)}
         </p>
       )}
 
-      <details className="mt-2 text-sm text-muted">
+      <details className="mt-2 text-sm text-muted lg:hidden">
         <summary className="min-h-11 cursor-pointer py-2 font-medium text-accent">
           {he.sugar.howTitle}
         </summary>

@@ -3,11 +3,18 @@ import {
   useDeleteMeal,
   useFoodDb,
   useMealsOfDay,
+  useMealsRange,
   usePlans,
   useRestoreMeal,
 } from '../../app/data-hooks';
+import { useDesktop } from '../../app/use-media-query';
 import { useNow } from '../../app/services';
-import { buildDayChart, buildDayView, resolvePlanForDate } from '../../core/dayview';
+import {
+  buildDayChart,
+  buildDayView,
+  resolvePlanForDate,
+  summarizeRange,
+} from '../../core/dayview';
 import {
   fillMissingMacros,
   fillMissingSugar,
@@ -18,25 +25,28 @@ import {
 } from '../../core/food';
 import { type Recommendation, type Suggestion } from '../../core/recommend';
 import { DEFAULT_SCHEDULE } from '../../core/schedule';
-import { localDateOf, localTimeOf } from '../../core/time';
+import { addDays, localDateOf, localTimeOf, type LocalDate } from '../../core/time';
 import { DataError, type StoredMeal } from '../../data';
 import { dataErrorMessage } from '../../i18n/data-errors';
 import { formatDayTitle } from '../../i18n/format';
 import { he } from '../../i18n/he';
 import { Button } from '../../ui/Button';
+import { CardBackdrop } from '../../ui/art/CardBackdrop';
+import { CardTitle } from '../../ui/CardTitle';
 import { Icon } from '../../ui/Icon';
 import { useToast } from '../../ui/Toast';
 import { AddMealSheet, type MealPrefill } from '../meals/AddMealSheet';
 import { LoadGate } from '../shell/LoadGate';
 import { useRequiredProfile } from '../shell/ProfileGate';
 import { CalorieRing } from './CalorieRing';
-import { DayChart } from './DayChart';
+import { DayChart, MAX_NUMBERED_MEALS } from './DayChart';
 import { FlourCard } from './FlourCard';
 import { MacroBars } from './MacroBars';
 import { MealList } from './MealList';
 import { NextMealCard } from './NextMealCard';
 import { StatusChip } from './StatusChip';
 import { SugarCard } from './SugarCard';
+import { WeekCard } from './WeekCard';
 
 interface SheetState {
   open: boolean;
@@ -71,10 +81,20 @@ function TodayContent() {
   const profile = useRequiredProfile();
   const tz = profile.timezone;
   const now = useNow();
-  const date = localDateOf(now, tz);
+  const today = localDateOf(now, tz);
 
   const plans = usePlans().data ?? [];
-  const storedMeals = useMealsOfDay(date).data;
+  const todayMeals = useMealsOfDay(today).data;
+  // On a computer the week sits on the day screen, so its meals are loaded there (a phone does not need them).
+  const desktop = useDesktop();
+  const weekFrom = addDays(today, -6);
+  const weekMeals = useMealsRange(weekFrom, today, desktop).data;
+  // Clicking a day in the week shows that day on the whole screen (a computer only). Null means today.
+  const [picked, setPicked] = useState<LocalDate | null>(null);
+  const date: LocalDate =
+    desktop && picked !== null && picked >= weekFrom && picked < today ? picked : today;
+  const isToday = date === today;
+  const storedMeals = isToday ? todayMeals : weekMeals?.filter((meal) => meal.localDate === date);
   const foodDb = useFoodDb().data;
   const ideas = useMemo(() => foodDb?.ideas ?? [], [foodDb]);
   const foodsById = useMemo(
@@ -152,6 +172,8 @@ function TodayContent() {
   }
 
   function eatAgain(meal: StoredMeal): void {
+    // "I ate this again" is about today, also when the meal was picked from an earlier day.
+    setPicked(null);
     openNew({
       name: meal.name,
       kcal: meal.kcal,
@@ -179,72 +201,166 @@ function TodayContent() {
     }
   }
 
+  const weekRange = desktop
+    ? summarizeRange({ from: weekFrom, to: today, plans, meals: weekMeals ?? [] })
+    : null;
+  // Meals have the same numbers in the list as on the chart (a long day has plain dots there instead).
+  const mealNumbers =
+    chart && chart.meals.length <= MAX_NUMBERED_MEALS
+      ? new Map(chart.meals.map((meal, index) => [meal.id, index + 1]))
+      : undefined;
+
+  // On a computer the top row is the calories, the chart and the next meal. Without a next meal (an earlier
+  // day) the first two take the whole row instead of leaving a gap.
+  const wideTop = desktop && !recommendation && chart !== null;
+  const hero = (
+    <section
+      aria-label={he.today.ringRemaining}
+      className={`hero space-y-4 px-5 py-6 lg:relative lg:isolate lg:flex lg:min-h-0 lg:flex-col lg:items-center lg:justify-center lg:space-y-0 lg:gap-3 lg:overflow-hidden lg:panel-dark lg:px-4 lg:py-4 ${wideTop ? '' : 'lg:col-start-1 lg:row-start-1'}`}
+    >
+      <CardBackdrop name="calories" />
+      <CalorieRing consumed={view.summary.kcal} target={view.target?.kcalTarget ?? null} />
+      {recommendation && (
+        <div className="flex justify-center">
+          <StatusChip status={recommendation.status} />
+        </div>
+      )}
+    </section>
+  );
+  const chartCell = chart && (
+    <div
+      className={`lg:min-h-0 lg:*:h-full ${wideTop ? '' : 'lg:col-span-2 lg:col-start-2 lg:row-start-1'}`}
+    >
+      <DayChart
+        model={chart}
+        tz={tz}
+        corridorNow={recommendation ? recommendation.corridor : null}
+      />
+    </div>
+  );
+
   return (
-    <div className="space-y-4">
-      <header>
-        <p className="text-base text-muted">{greeting(now, tz)}</p>
-        <h1 className="text-3xl font-bold tracking-tight">{formatDayTitle(date, tz)}</h1>
+    <div className="space-y-4 lg:flex lg:h-full lg:flex-col lg:space-y-0 lg:gap-3.5">
+      <header className="lg:flex lg:flex-none lg:items-center lg:justify-between">
+        <div>
+          <p className="flex items-center gap-1.5 text-base text-muted">
+            {!isToday && <Icon name="eye" size={16} />}
+            {isToday ? greeting(now, tz) : he.today.viewingPast}
+          </p>
+          <h1 className="text-3xl font-bold tracking-tight lg:text-2xl">
+            {formatDayTitle(date, tz)}
+          </h1>
+        </div>
+        <div className="hidden items-center gap-2 lg:flex">
+          {!isToday && (
+            <Button onClick={() => setPicked(null)}>
+              <Icon name="calendar" size={18} /> {he.today.backToToday}
+            </Button>
+          )}
+          <Button variant="primary" onClick={() => openNew()}>
+            <Icon name="plus" size={18} /> {he.today.addMeal}
+          </Button>
+        </div>
       </header>
 
-      <section aria-label={he.today.ringRemaining} className="hero space-y-4 px-5 py-6">
-        <CalorieRing consumed={view.summary.kcal} target={view.target?.kcalTarget ?? null} />
-        {recommendation && (
-          <div className="flex justify-center">
-            <StatusChip status={recommendation.status} />
+      {/* A phone: one column, top to bottom. A computer: everything on one screen, in a grid. */}
+      <div className="space-y-4 lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[0.95fr_0.95fr_1.4fr_1.2fr] lg:grid-rows-[minmax(14rem,1fr)_minmax(23rem,1.1fr)] lg:gap-3.5 lg:space-y-0">
+        {wideTop ? (
+          // Nothing to suggest (an earlier day): the calories and the chart share the whole top row.
+          <div className="space-y-4 lg:col-span-4 lg:row-start-1 lg:grid lg:min-h-0 lg:grid-cols-[1.25fr_3.25fr] lg:grid-rows-[minmax(0,1fr)] lg:gap-3.5 lg:space-y-0">
+            {hero}
+            {chartCell}
+          </div>
+        ) : (
+          <>
+            {hero}
+            {chartCell}
+          </>
+        )}
+
+        <div className="lg:col-start-1 lg:row-start-2 lg:min-h-0 lg:*:h-full">
+          <MacroBars
+            target={view.target?.macros ?? null}
+            macroState={view.target?.macroState ?? null}
+            summary={view.summary}
+          />
+        </div>
+
+        <div className="space-y-4 lg:col-start-2 lg:row-start-2 lg:grid lg:min-h-0 lg:grid-rows-[auto_1fr] lg:gap-3.5 lg:space-y-0">
+          <SugarCard summary={view.summary} />
+          <FlourCard grain={grain} />
+        </div>
+
+        {/* What to eat next: a drop-down on a phone, and on a computer a column of its own above the week. */}
+        {recommendation &&
+          (desktop ? (
+            <div className="lg:col-start-4 lg:row-start-1 lg:min-h-0 lg:*:h-full">
+              <NextMealCard
+                alwaysOpen
+                recommendation={recommendation}
+                tz={tz}
+                partsOf={partsOf}
+                onPick={pickSuggestion}
+                onAddManual={() => openNew()}
+              />
+            </div>
+          ) : (
+            <NextMealCard
+              recommendation={recommendation}
+              tz={tz}
+              partsOf={partsOf}
+              onPick={pickSuggestion}
+              onAddManual={() => openNew()}
+            />
+          ))}
+
+        <section
+          aria-labelledby="meals-title"
+          className="space-y-2 lg:card lg:col-start-3 lg:row-start-2 lg:flex lg:min-h-0 lg:flex-col lg:space-y-0 lg:p-4"
+        >
+          <CardTitle
+            id="meals-title"
+            icon="utensils"
+            tone="cyan"
+            className="text-xl font-bold lg:mb-2 lg:flex-none lg:text-lg"
+          >
+            {he.today.mealsTitle}
+          </CardTitle>
+          <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+            <MealList
+              meals={activeMeals}
+              tz={tz}
+              onEdit={(meal) => setSheet({ open: true, editing: meal, prefill: null })}
+              onDelete={(meal) => void remove(meal)}
+              onAgain={eatAgain}
+              {...(mealNumbers ? { numbers: mealNumbers } : {})}
+            />
+          </div>
+          {activeMeals.length === 0 && (
+            <Button variant="primary" onClick={() => openNew()}>
+              {he.today.addFirst}
+            </Button>
+          )}
+        </section>
+
+        {weekRange && (
+          <div className="lg:col-start-4 lg:row-start-2 lg:min-h-0 lg:*:h-full">
+            <WeekCard
+              range={weekRange}
+              tz={tz}
+              today={today}
+              selected={date}
+              onSelect={(day) => setPicked(day === today ? null : day)}
+            />
           </div>
         )}
-      </section>
-
-      {chart && (
-        <DayChart
-          model={chart}
-          tz={tz}
-          corridorNow={recommendation ? recommendation.corridor : null}
-        />
-      )}
-
-      <MacroBars
-        target={view.target?.macros ?? null}
-        macroState={view.target?.macroState ?? null}
-        summary={view.summary}
-      />
-
-      <SugarCard summary={view.summary} />
-      <FlourCard grain={grain} />
-
-      {recommendation && (
-        <NextMealCard
-          recommendation={recommendation}
-          tz={tz}
-          partsOf={partsOf}
-          onPick={pickSuggestion}
-          onAddManual={() => openNew()}
-        />
-      )}
-
-      <section aria-labelledby="meals-title" className="space-y-2">
-        <h2 id="meals-title" className="text-xl font-bold">
-          {he.today.mealsTitle}
-        </h2>
-        <MealList
-          meals={activeMeals}
-          tz={tz}
-          onEdit={(meal) => setSheet({ open: true, editing: meal, prefill: null })}
-          onDelete={(meal) => void remove(meal)}
-          onAgain={eatAgain}
-        />
-        {activeMeals.length === 0 && (
-          <Button variant="primary" onClick={() => openNew()}>
-            {he.today.addFirst}
-          </Button>
-        )}
-      </section>
+      </div>
 
       <button
         type="button"
         aria-label={he.today.addMeal}
         onClick={() => openNew()}
-        className="fixed bottom-[calc(6.25rem+env(safe-area-inset-bottom))] end-4 z-30 flex size-14 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent-2 text-on-accent shadow-[0_12px_28px_-8px_color-mix(in_srgb,var(--accent)_80%,transparent)] transition active:scale-95"
+        className="fixed bottom-[calc(6.25rem+env(safe-area-inset-bottom))] end-4 z-30 flex size-14 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent-2 text-on-accent shadow-[0_12px_28px_-8px_color-mix(in_srgb,var(--accent)_80%,transparent)] transition active:scale-95 lg:hidden"
       >
         <Icon name="plus" size={28} />
       </button>

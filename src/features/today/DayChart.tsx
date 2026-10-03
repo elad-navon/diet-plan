@@ -1,19 +1,21 @@
-import { useId } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { useDesktop } from '../../app/use-media-query';
 import { type DayChartModel } from '../../core/dayview';
 import { type Tz } from '../../core/time';
 import { clockAtMinute } from '../../i18n/format';
 import { formatInt, he } from '../../i18n/he';
+import { CardBackdrop } from '../../ui/art/CardBackdrop';
+import { IconTile } from '../../ui/CardTitle';
 
-const W = 360;
-const H = 232;
-const PAD = { left: 40, right: 14, top: 16, bottom: 30 } as const;
-const PLOT_W = W - PAD.left - PAD.right;
-const PLOT_H = H - PAD.top - PAD.bottom;
-const MARKER_R = 8.5;
-/** Two numbered markers closer than this would hide each other's number. */
-const MARKER_GAP = 2 * MARKER_R + 1;
+/** The drawing of a phone: it scales to the width. On a computer it is drawn at the size of its box instead. */
+const PHONE_W = 360;
+const PHONE_H = 232;
+const PHONE_PAD = { left: 40, right: 14, top: 16, bottom: 30 } as const;
+/** On a computer the drawing covers the whole card: its top margin is where the heading and the legend are. */
+const DESKTOP_PAD = { left: 52, right: 30, top: 66, bottom: 32 } as const;
 /** Past this many meals the numbers would crowd the line: plain dots are drawn and the list is not numbered. */
-const MAX_NUMBERED = 10;
+export const MAX_NUMBERED_MEALS = 10;
+const MAX_NUMBERED = MAX_NUMBERED_MEALS;
 const DOT_R = 4.5;
 
 interface DayChartProps {
@@ -24,8 +26,18 @@ interface DayChartProps {
 }
 
 /** Y-axis labels at clean steps. */
-function yTicks(yMax: number): number[] {
-  const step = yMax <= 1200 ? 200 : yMax <= 2600 ? 600 : 1200;
+function yTicks(yMax: number, roomy: boolean): number[] {
+  const step = roomy
+    ? yMax <= 1800
+      ? 200
+      : yMax <= 3200
+        ? 400
+        : 800
+    : yMax <= 1200
+      ? 200
+      : yMax <= 2600
+        ? 600
+        : 1200;
   const ticks: number[] = [];
   for (let value = 0; value <= yMax; value += step) ticks.push(value);
   return ticks;
@@ -40,6 +52,33 @@ function yTicks(yMax: number): number[] {
 export function DayChart({ model, tz, corridorNow }: DayChartProps) {
   const titleId = useId();
   const summaryId = useId();
+  const lineId = useId();
+  const areaId = useId();
+
+  // On a computer the chart fills the box it is given, so the plot uses all of it.
+  const desktop = useDesktop();
+  const boxRef = useRef<HTMLDivElement>(null);
+  const [box, setBox] = useState<{ w: number; h: number } | null>(null);
+  useEffect(() => {
+    const element = boxRef.current;
+    if (!desktop || !element) return;
+    const watcher = new ResizeObserver(([entry]) => {
+      if (!entry) return;
+      setBox({ w: Math.round(entry.contentRect.width), h: Math.round(entry.contentRect.height) });
+    });
+    watcher.observe(element);
+    return () => watcher.disconnect();
+  }, [desktop]);
+  const roomy = desktop && box !== null && box.w > 0 && box.h > 0;
+  const PAD = roomy ? DESKTOP_PAD : PHONE_PAD;
+  const W = roomy ? box.w : PHONE_W;
+  const H = roomy ? box.h : PHONE_H;
+  const PLOT_W = W - PAD.left - PAD.right;
+  const PLOT_H = H - PAD.top - PAD.bottom;
+  const fontSize = roomy ? 13 : 11;
+  const markerR = roomy ? 10.5 : 8.5;
+  /** Two numbered markers closer than this would hide each other's number. */
+  const markerGap = 2 * markerR + 1;
 
   const { startMinute, endMinute } = model.domain;
   const x = (minute: number): number =>
@@ -65,8 +104,12 @@ export function DayChart({ model, tz, corridorNow }: DayChartProps) {
         while (moved) {
           moved = false;
           for (const other of placed) {
-            if (Math.abs(cx - other.x) < MARKER_GAP && Math.abs(cy - other.y) < MARKER_GAP) {
-              cx = other.x + MARKER_GAP;
+            // The small allowance keeps rounding from reading "exactly one gap away" as "too close", forever.
+            if (
+              Math.abs(cx - other.x) < markerGap - 1e-6 &&
+              Math.abs(cy - other.y) < markerGap - 1e-6
+            ) {
+              cx = other.x + markerGap;
               moved = true;
             }
           }
@@ -86,211 +129,304 @@ export function DayChart({ model, tz, corridorNow }: DayChartProps) {
   );
 
   return (
-    <figure className="card p-5">
-      <figcaption id={titleId} className="mb-2 text-xl font-bold">
-        {he.today.chartTitle}
-      </figcaption>
+    <figure
+      aria-labelledby={titleId}
+      className="card p-5 lg:relative lg:isolate lg:flex lg:flex-col lg:overflow-hidden lg:panel-dark lg:p-4"
+    >
+      <CardBackdrop name="chart" />
+      <div className="lg:relative lg:z-10 lg:mb-2 lg:flex lg:flex-none lg:items-baseline lg:justify-between lg:gap-4">
+        <figcaption
+          id={titleId}
+          className="mb-2 flex items-center gap-2.5 text-xl font-bold lg:mb-0 lg:text-lg lg:[text-shadow:0_1px_8px_var(--text-halo)]"
+        >
+          <IconTile icon="trend" tone="cyan" />
+          {he.today.chartTitle}
+        </figcaption>
 
-      <ul className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted" aria-label="מקרא">
-        <li className="flex items-center gap-1.5">
-          <svg width="22" height="10" aria-hidden="true">
-            <path
-              d="M1 8h8V2h12"
-              fill="none"
-              stroke="var(--series-1)"
-              strokeWidth="2"
-              strokeLinejoin="round"
-            />
-          </svg>
-          {he.today.legendEaten}
-        </li>
-        {corridorNow && (
+        <ul
+          className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted lg:mb-0 lg:[text-shadow:0_1px_8px_var(--text-halo)]"
+          aria-label="מקרא"
+        >
           <li className="flex items-center gap-1.5">
             <svg width="22" height="10" aria-hidden="true">
-              <path d="M1 5h20" stroke="var(--muted)" strokeWidth="2" strokeDasharray="5 3" />
+              <path
+                d="M1 8h8V2h12"
+                fill="none"
+                stroke="var(--series-1)"
+                strokeWidth="2"
+                strokeLinejoin="round"
+              />
             </svg>
-            {he.today.legendPlan}
+            {he.today.legendEaten}
           </li>
-        )}
-        <li className="flex items-center gap-1.5">
-          <svg width="22" height="10" aria-hidden="true">
-            <path d="M1 5h20" stroke="var(--muted)" strokeWidth="1" />
-          </svg>
-          {he.today.legendTarget}
-        </li>
-      </ul>
+          {corridorNow && (
+            <li className="flex items-center gap-1.5">
+              <svg width="22" height="10" aria-hidden="true">
+                <path d="M1 5h20" stroke="var(--muted)" strokeWidth="2" strokeDasharray="5 3" />
+              </svg>
+              {he.today.legendPlan}
+            </li>
+          )}
+          <li className="flex items-center gap-1.5">
+            <svg width="22" height="10" aria-hidden="true">
+              <path d="M1 5h20" stroke="var(--muted)" strokeWidth="1" />
+            </svg>
+            {he.today.legendTarget}
+          </li>
+        </ul>
+      </div>
 
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        role="img"
-        aria-labelledby={titleId}
-        aria-describedby={summaryId}
-        className="h-auto w-full"
-        style={{ direction: 'ltr' }}
-      >
-        {/* grid and Y labels */}
-        {yTicks(model.yMax).map((tick) => (
-          <g key={tick}>
-            <line
+      <div ref={boxRef} className="lg:absolute lg:inset-0">
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          role="img"
+          aria-labelledby={titleId}
+          aria-describedby={summaryId}
+          className="h-auto w-full lg:absolute lg:inset-0 lg:size-full"
+          style={{ direction: 'ltr' }}
+        >
+          <defs>
+            <linearGradient
+              id={lineId}
+              gradientUnits="userSpaceOnUse"
               x1={PAD.left}
+              y1="0"
               x2={W - PAD.right}
-              y1={y(tick)}
-              y2={y(tick)}
-              stroke="var(--faint)"
-              strokeWidth="1"
-            />
-            <text
-              x={PAD.left - 6}
-              y={y(tick) + 4}
-              textAnchor="end"
-              fontSize="11"
-              fill="var(--muted)"
+              y2="0"
             >
-              {formatInt(tick)}
-            </text>
-          </g>
-        ))}
-        <line
-          x1={PAD.left}
-          x2={W - PAD.right}
-          y1={baseline}
-          y2={baseline}
-          stroke="var(--axis)"
-          strokeWidth="1"
-        />
+              <stop offset="0" stopColor="var(--chart-from)" />
+              <stop offset="1" stopColor="var(--chart-to)" />
+            </linearGradient>
+            <linearGradient id={areaId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="var(--chart-area)" />
+              <stop offset="1" stopColor="var(--chart-area)" stopOpacity="0" />
+            </linearGradient>
+          </defs>
 
-        {/* X axis labels */}
-        {model.ticks.map((tick) => (
-          <text
-            key={tick.label}
-            x={x(tick.minute)}
-            y={H - 10}
-            textAnchor="middle"
-            fontSize="11"
-            fill="var(--muted)"
-          >
-            {tick.label}
-          </text>
-        ))}
-
-        {/* the recommended path (today only) */}
-        {corridorNow && (
-          <path
-            d={planPath}
-            fill="none"
-            stroke="var(--muted)"
-            strokeWidth="1.75"
-            strokeDasharray="5 4"
-            strokeLinejoin="round"
-          />
-        )}
-
-        {/* daily target */}
-        <line
-          x1={PAD.left}
-          x2={W - PAD.right}
-          y1={targetY}
-          y2={targetY}
-          stroke="var(--muted)"
-          strokeWidth="1"
-        />
-        <text x={W - PAD.right} y={targetY - 5} textAnchor="end" fontSize="11" fill="var(--muted)">
-          {`${he.today.legendTarget} ${formatInt(model.targetKcal)}`}
-        </text>
-
-        {/* now */}
-        {model.now && (
-          <g>
-            <line
-              x1={x(model.now.minute)}
-              x2={x(model.now.minute)}
-              y1={PAD.top}
-              y2={baseline}
-              stroke="var(--muted)"
-              strokeWidth="1"
-              strokeOpacity="0.7"
-              strokeDasharray="2 3"
-            />
-            <text
-              x={x(model.now.minute)}
-              y={PAD.top - 4}
-              textAnchor="middle"
-              fontSize="11"
-              fill="var(--muted)"
-            >
-              {he.today.now}
-            </text>
-          </g>
-        )}
-
-        {/* what was eaten */}
-        <path
-          d={eatenPath}
-          fill="none"
-          stroke="var(--series-1)"
-          strokeWidth="2.5"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-
-        {model.now && (
-          <circle
-            cx={x(model.now.minute)}
-            cy={y(model.now.kcal)}
-            r={DOT_R + 1}
-            fill="var(--series-1)"
-            stroke="var(--surface)"
-            strokeWidth="2"
-          />
-        )}
-
-        {/* meals: a numbered marker at each jump of the line */}
-        {markers.map((marker, index) => (
-          <g key={marker.id}>
-            <circle
-              cx={marker.cx}
-              cy={marker.cy}
-              r={numbered ? MARKER_R : DOT_R}
-              fill="var(--series-1)"
-              stroke="var(--surface)"
-              strokeWidth="2"
-            />
-            {numbered && (
+          {/* grid and Y labels */}
+          {yTicks(model.yMax, roomy).map((tick) => (
+            <g key={tick}>
+              <line
+                x1={PAD.left}
+                x2={W - PAD.right}
+                y1={y(tick)}
+                y2={y(tick)}
+                stroke="var(--faint)"
+                strokeWidth="1"
+              />
               <text
-                x={marker.cx}
-                y={marker.cy + 3.5}
-                textAnchor="middle"
-                fontSize="10"
-                fontWeight="700"
-                fill="var(--surface)"
+                x={PAD.left - 6}
+                y={y(tick) + 4}
+                textAnchor="end"
+                fontSize={fontSize}
+                fill="var(--muted)"
+                stroke="var(--text-halo)"
+                strokeWidth="3"
+                paintOrder="stroke"
               >
-                {index + 1}
+                {formatInt(tick)}
               </text>
-            )}
-          </g>
-        ))}
+            </g>
+          ))}
+          <line
+            x1={PAD.left}
+            x2={W - PAD.right}
+            y1={baseline}
+            y2={baseline}
+            stroke="var(--axis)"
+            strokeWidth="1"
+          />
 
-        {/* total above the visible range */}
-        {model.clippedAtMax && (
-          <g>
-            <path d={`M${W - PAD.right - 8} ${PAD.top + 10}l6-10 6 10z`} fill="var(--ink)" />
+          {/* X axis labels */}
+          {model.ticks.map((tick) => (
             <text
-              x={W - PAD.right - 18}
-              y={PAD.top + 9}
-              textAnchor="end"
-              fontSize="11"
-              fill="var(--ink)"
+              key={tick.minute}
+              x={x(tick.minute)}
+              y={H - 10}
+              textAnchor="middle"
+              fontSize={fontSize}
+              fill="var(--muted)"
+              stroke="var(--text-halo)"
+              strokeWidth="3"
+              paintOrder="stroke"
             >
-              {formatInt(model.totalKcal)}
+              {tick.label}
             </text>
-          </g>
-        )}
-      </svg>
+          ))}
+
+          {/* the recommended path (today only), with a soft glow of color under it */}
+          {corridorNow && (
+            <>
+              <path
+                d={`${planPath} L${x(model.plan[model.plan.length - 1]?.minute ?? endMinute)} ${baseline} L${x(model.plan[0]?.minute ?? startMinute)} ${baseline} Z`}
+                fill={`url(#${areaId})`}
+                stroke="none"
+              />
+              <path
+                d={planPath}
+                fill="none"
+                stroke="var(--muted)"
+                strokeWidth="1.75"
+                strokeDasharray="5 4"
+                strokeLinejoin="round"
+              />
+            </>
+          )}
+
+          {/* daily target */}
+          <line
+            x1={PAD.left}
+            x2={W - PAD.right}
+            y1={targetY}
+            y2={targetY}
+            stroke="var(--muted)"
+            strokeWidth="1"
+          />
+          <text
+            x={W - PAD.right}
+            y={targetY - 5}
+            textAnchor="end"
+            fontSize={fontSize}
+            fill="var(--muted)"
+            stroke="var(--text-halo)"
+            strokeWidth="3"
+            paintOrder="stroke"
+          >
+            {`${he.today.legendTarget} ${formatInt(model.targetKcal)}`}
+          </text>
+
+          {/* the suggested next meal: from what is eaten up to what is still available (a computer only) */}
+          {roomy && model.next && (
+            <g className="fade-in" style={{ filter: 'drop-shadow(0 0 6px var(--chart-next))' }}>
+              <line
+                x1={x(model.next.minute)}
+                x2={x(model.next.minute)}
+                y1={y(model.next.fromKcal)}
+                y2={y(model.next.toKcal)}
+                stroke="var(--chart-next)"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+              <path
+                d={`M${x(model.next.minute)} ${y(model.next.toKcal) - 8}l7 8-7 8-7-8z`}
+                fill="var(--chart-next)"
+                stroke="var(--surface)"
+                strokeWidth="2"
+              />
+            </g>
+          )}
+
+          {/* now */}
+          {model.now && (
+            <g>
+              <line
+                x1={x(model.now.minute)}
+                x2={x(model.now.minute)}
+                y1={PAD.top}
+                y2={baseline}
+                stroke="var(--muted)"
+                strokeWidth="1"
+                strokeOpacity="0.7"
+                strokeDasharray="2 3"
+              />
+              <text
+                x={x(model.now.minute)}
+                y={PAD.top - 4}
+                textAnchor="middle"
+                fontSize={fontSize}
+                fill="var(--muted)"
+                stroke="var(--text-halo)"
+                strokeWidth="3"
+                paintOrder="stroke"
+              >
+                {he.today.now}
+              </text>
+            </g>
+          )}
+
+          {/* what was eaten */}
+          <path
+            d={eatenPath}
+            pathLength={1}
+            fill="none"
+            stroke={`url(#${lineId})`}
+            strokeWidth="2.5"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            className="lg:draw-line"
+            style={{ filter: 'drop-shadow(0 0 5px var(--chart-glow))' }}
+          />
+
+          {model.now && (
+            <circle
+              cx={x(model.now.minute)}
+              cy={y(model.now.kcal)}
+              r={DOT_R + 1}
+              fill="var(--marker-fill)"
+              stroke="var(--marker-ring)"
+              strokeWidth="2"
+              style={{ filter: 'drop-shadow(0 0 5px var(--chart-glow))' }}
+            />
+          )}
+
+          {/* meals: a numbered marker at each jump of the line */}
+          {markers.map((marker, index) => (
+            <g key={marker.id}>
+              <circle
+                cx={marker.cx}
+                cy={marker.cy}
+                r={numbered ? markerR : DOT_R}
+                fill="var(--marker-fill)"
+                stroke="var(--marker-ring)"
+                strokeWidth="2"
+                style={{ filter: 'drop-shadow(0 0 6px var(--chart-glow))' }}
+              />
+              {numbered && (
+                <text
+                  x={marker.cx}
+                  y={marker.cy + 3.5}
+                  textAnchor="middle"
+                  fontSize={roomy ? 12 : 10}
+                  fontWeight="700"
+                  fill="var(--marker-ink)"
+                >
+                  {index + 1}
+                </text>
+              )}
+            </g>
+          ))}
+
+          {/* total above the visible range */}
+          {model.clippedAtMax && (
+            <g>
+              <path
+                d={`M${W - PAD.right - 8} ${PAD.top + 10}l6-10 6 10z`}
+                fill="var(--ink)"
+                stroke="var(--text-halo)"
+                strokeWidth="3"
+                paintOrder="stroke"
+              />
+              <text
+                x={W - PAD.right - 18}
+                y={PAD.top + 9}
+                textAnchor="end"
+                fontSize={fontSize}
+                fill="var(--ink)"
+                stroke="var(--text-halo)"
+                strokeWidth="3"
+                paintOrder="stroke"
+              >
+                {formatInt(model.totalKcal)}
+              </text>
+            </g>
+          )}
+        </svg>
+      </div>
 
       {model.meals.length > 0 && (
         <ol
           aria-label={he.today.mealsListLabel}
-          className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] gap-x-4 gap-y-2"
+          className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] gap-x-4 gap-y-2 lg:hidden"
         >
           {model.meals.map((meal, index) => (
             <li key={meal.id} className="flex min-w-0 items-baseline gap-2 text-base">
@@ -316,7 +452,7 @@ export function DayChart({ model, tz, corridorNow }: DayChartProps) {
         </ol>
       )}
 
-      <p id={summaryId} className="mt-3 text-base">
+      <p id={summaryId} className="mt-3 text-base lg:sr-only">
         {summary}
         {model.overByKcal > 0 &&
           ` ${he.status.over_budget}: ${formatInt(model.overByKcal)} ${he.kcal}.`}

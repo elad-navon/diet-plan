@@ -1,5 +1,5 @@
 import { type Instant } from './clock';
-import { formatLocalDate, toEpochDay, type LocalDate } from './dates';
+import { addDays, formatLocalDate, toEpochDay, type LocalDate } from './dates';
 
 /** IANA time zone id, e.g. `Asia/Jerusalem`. */
 export type Tz = string;
@@ -75,8 +75,15 @@ export function offsetMinutesAt(instant: Instant, tz: Tz): number {
   return (partsAsUtcMillis(localParts(instant, tz)) - flooredToSecond) / 60_000;
 }
 
-/** The calendar date `instant` falls on in `tz`. */
+/**
+ * A day of eating runs from 02:00 to 02:00, not from midnight to midnight: a meal at 00:30 is the last one of the day
+ * before. Everything in the app that says "the day" (the day screen, a meal's date, the week) means this day.
+ */
+export const DAY_STARTS_AT_HOUR = 2;
+
+/** The day `instant` belongs to in `tz`: its calendar date, except from midnight to 02:00, when it is still the day before. */
 export function localDateOf(instant: Instant, tz: Tz): LocalDate {
-  const { year, month, day } = localParts(instant, tz);
-  return formatLocalDate(year, month, day);
+  const { year, month, day, hour } = localParts(instant, tz);
+  const date = formatLocalDate(year, month, day);
+  return hour < DAY_STARTS_AT_HOUR ? addDays(date, -1) : date;
 }
