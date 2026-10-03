@@ -3,6 +3,7 @@ import {
   buildFoodIndex,
   buildFoodRecords,
   computeEntry,
+  fillMissingMacros,
   isManualEntry,
   manualEntry,
   mealNameFromEntries,
@@ -13,6 +14,7 @@ import {
   sumEntries,
   tokenize,
   tokensEquivalent,
+  type FoodEntry,
   type FoodRecord,
   type RawFoodRow,
   type RawFoodTables,
@@ -247,6 +249,31 @@ describe('quantity to calories (FOOD-01)', () => {
       kcal: fromDb.kcal + 250,
       itemsWithoutMacros: 1,
     });
+  });
+
+  it('gives a meal saved without macros those of the foods that have them', () => {
+    const fromDb = entry(computeEntry(egg, { kind: 'grams', grams: 150 }));
+    const bare = manualEntry({ id: 'b', name: 'עוגה', kcal: 250, macros: null, addedSugarG: null });
+    const saved = (items: FoodEntry[]) => ({
+      items,
+      proteinG: null as number | null,
+      carbsG: null as number | null,
+      fatG: null as number | null,
+    });
+
+    const mixed = fillMissingMacros(saved([fromDb, bare]));
+    expect(mixed).toMatchObject({
+      proteinG: fromDb.proteinG,
+      carbsG: fromDb.carbsG,
+      fatG: fromDb.fatG,
+    });
+
+    // Nothing to add: no foods, only foods without macros, or macros that are already there.
+    const manualOnly = saved([]);
+    expect(fillMissingMacros(manualOnly)).toBe(manualOnly);
+    const withoutAny = saved([bare]);
+    expect(fillMissingMacros(withoutAny)).toBe(withoutAny);
+    expect(fillMissingMacros(mixed)).toBe(mixed);
   });
 
   it('names a meal after its foods, within 80 characters', () => {

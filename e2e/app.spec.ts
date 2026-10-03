@@ -209,6 +209,13 @@ test('SUGAR-04: a meal saved before sugar was tracked still counts, from the foo
   await expect(page.getByText(he.sugar.mealTotal('28.8'))).toBeVisible();
 });
 
+test('a meal saved earlier with empty macros, because of a hand-typed food, gets the macros of its other foods', async ({
+  page,
+}) => {
+  await openApp(page, { seed: { withMixedMealWithoutMacrosToday: true } });
+  await expect(page.locator('li.card', { hasText: 'מיץ וחטיף' })).toContainText(he.today.protein);
+});
+
 test('FLOUR-01: the day tells white flour from whole grain and suggests what to try instead', async ({
   page,
 }) => {
@@ -492,6 +499,10 @@ test('"I ate this again" opens the meal ready to confirm', async ({ page }) => {
 test('E2E-06: a suggestion can be added with one confirmation', async ({ page }) => {
   await openApp(page, { seed: {}, time: `${TODAY}T11:00:00+03:00` });
   const suggestions = page.getByRole('region', { name: he.today.nextMeal });
+  // Closed by default: the suggestions are not on the page until they are asked for.
+  await expect(suggestions.getByText(he.slotMeal.lunch)).toBeHidden();
+  await expect(suggestions.getByRole('button', { name: new RegExp(`^${he.add}:`) })).toHaveCount(0);
+  await suggestions.locator('summary').click();
   await expect(suggestions.getByText(he.slotMeal.lunch)).toBeVisible();
   // Each suggestion says exactly what to put on the plate: which food and how much of it.
   const firstIngredients = suggestions.getByRole('list', { name: /^המרכיבים של/ }).first();

@@ -216,6 +216,26 @@ export function fillMissingSugar<M extends { items: FoodEntry[]; addedSugarG: nu
   return { ...meal, items, addedSugarG: meal.addedSugarG ?? sumEntries(items).addedSugarG };
 }
 
+/**
+ * A meal of foods saved without macros because one of its foods was typed by hand without them: it has the
+ * macros of the foods that do have them, like a meal saved today. Returns the same object when there is
+ * nothing to add (the meal has macros, no foods, or no food with macros).
+ */
+export function fillMissingMacros<
+  M extends {
+    items: FoodEntry[];
+    proteinG: number | null;
+    carbsG: number | null;
+    fatG: number | null;
+  },
+>(meal: M): M {
+  if (meal.items.length === 0) return meal;
+  if (meal.proteinG !== null || meal.carbsG !== null || meal.fatG !== null) return meal;
+  if (meal.items.every((item) => item.noMacros)) return meal;
+  const { proteinG, carbsG, fatG } = sumEntries(meal.items);
+  return { ...meal, proteinG, carbsG, fatG };
+}
+
 /** The part of a database name before the first comma: "ביצה קשה שלמה, ללא קליפה" -> "ביצה קשה שלמה". */
 export function shortFoodName(name: string): string {
   const head = name.split(',')[0]?.trim() ?? '';

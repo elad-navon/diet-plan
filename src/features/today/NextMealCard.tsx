@@ -4,6 +4,7 @@ import { type Tz } from '../../core/time';
 import { formatClock, ingredientLine } from '../../i18n/format';
 import { formatDecimal, formatInt, he } from '../../i18n/he';
 import { Button } from '../../ui/Button';
+import { Icon } from '../../ui/Icon';
 
 interface NextMealCardProps {
   recommendation: Recommendation;
@@ -27,84 +28,97 @@ export function NextMealCard({
 
   return (
     <section aria-labelledby="next-title" className="card p-5">
-      <h2 id="next-title" className="mb-1 text-xl font-bold">
-        {next?.optional ? he.today.optionalSnack : he.today.nextMeal}
-      </h2>
+      {/* Closed by default: the suggestions are there when asked for, not in the way of the day. */}
+      <details className="group">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+          <h2 id="next-title" className="text-xl font-bold">
+            {next?.optional ? he.today.optionalSnack : he.today.nextMeal}
+          </h2>
+          <span className="shrink-0 text-muted transition group-open:rotate-180">
+            <Icon name="chevron-down" />
+          </span>
+        </summary>
 
-      {status === 'over_budget' && (
-        <p className="text-base">{he.today.overMessage(formatInt(-remainingKcal))}</p>
-      )}
-      {status === 'day_complete' && !next && (
-        <p className="text-base">{he.today.completeMessage}</p>
-      )}
-
-      {next && (
-        <>
-          <p className="text-base text-muted">
-            {next.slot && (
-              <span className="font-semibold text-ink">{he.slotMeal[next.slot]} · </span>
-            )}
-            {he.today.nextAround(formatClock(next.suggestedAt, tz))} ·{' '}
-            {he.today.nextUpTo(formatInt(next.budgetKcal))}
-          </p>
-          {next.suggestions.length > 0 && (
-            <ul className="mt-3 space-y-2">
-              {next.suggestions.map((suggestion) => {
-                const parts = partsOf(suggestion);
-                // With a recipe, show the numbers of the amounts listed (they are rounded to measures).
-                const shown = parts
-                  ? sumEntries(parts.map((part) => part.entry))
-                  : { kcal: suggestion.kcal, proteinG: suggestion.proteinG, addedSugarG: null };
-                return (
-                  <li key={suggestion.candidateId} className="rounded-2xl bg-surface-2 px-4 py-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="break-words text-base font-semibold">{suggestion.name}</p>
-                        <p className="text-sm text-muted">
-                          <bdi>{formatInt(shown.kcal)}</bdi> {he.kcal} ·{' '}
-                          {he.today.suggestionProtein(formatInt(shown.proteinG))}
-                          {shown.addedSugarG !== null &&
-                            shown.addedSugarG > 0 &&
-                            ` · ${he.sugar.mealTotal(formatDecimal(shown.addedSugarG))}`}
-                        </p>
-                      </div>
-                      <Button
-                        variant="secondary"
-                        aria-label={`${he.add}: ${suggestion.name}`}
-                        onClick={() => onPick(suggestion, next)}
-                      >
-                        {he.add}
-                      </Button>
-                    </div>
-                    {parts && (
-                      <ul
-                        aria-label={he.today.ingredients(suggestion.name)}
-                        className="mt-2 space-y-0.5 border-t border-faint pt-2 text-sm text-muted"
-                      >
-                        {parts.map((part) => (
-                          <li key={part.entry.foodId}>{ingredientLine(part)}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
+        <div className="mt-1">
+          {status === 'over_budget' && (
+            <p className="text-base">{he.today.overMessage(formatInt(-remainingKcal))}</p>
           )}
-        </>
-      )}
+          {status === 'day_complete' && !next && (
+            <p className="text-base">{he.today.completeMessage}</p>
+          )}
 
-      {notes.map((note) => (
-        <p key={note} className="mt-3 text-sm text-muted">
-          {he.notes[note]}
-        </p>
-      ))}
+          {next && (
+            <>
+              <p className="text-base text-muted">
+                {next.slot && (
+                  <span className="font-semibold text-ink">{he.slotMeal[next.slot]} · </span>
+                )}
+                {he.today.nextAround(formatClock(next.suggestedAt, tz))} ·{' '}
+                {he.today.nextUpTo(formatInt(next.budgetKcal))}
+              </p>
+              {next.suggestions.length > 0 && (
+                <ul className="mt-3 space-y-2">
+                  {next.suggestions.map((suggestion) => {
+                    const parts = partsOf(suggestion);
+                    // With a recipe, show the numbers of the amounts listed (they are rounded to measures).
+                    const shown = parts
+                      ? sumEntries(parts.map((part) => part.entry))
+                      : { kcal: suggestion.kcal, proteinG: suggestion.proteinG, addedSugarG: null };
+                    return (
+                      <li
+                        key={suggestion.candidateId}
+                        className="rounded-2xl bg-surface-2 px-4 py-3"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="break-words text-base font-semibold">{suggestion.name}</p>
+                            <p className="text-sm text-muted">
+                              <bdi>{formatInt(shown.kcal)}</bdi> {he.kcal} ·{' '}
+                              {he.today.suggestionProtein(formatInt(shown.proteinG))}
+                              {shown.addedSugarG !== null &&
+                                shown.addedSugarG > 0 &&
+                                ` · ${he.sugar.mealTotal(formatDecimal(shown.addedSugarG))}`}
+                            </p>
+                          </div>
+                          <Button
+                            variant="secondary"
+                            aria-label={`${he.add}: ${suggestion.name}`}
+                            onClick={() => onPick(suggestion, next)}
+                          >
+                            {he.add}
+                          </Button>
+                        </div>
+                        {parts && (
+                          <ul
+                            aria-label={he.today.ingredients(suggestion.name)}
+                            className="mt-2 space-y-0.5 border-t border-faint pt-2 text-sm text-muted"
+                          >
+                            {parts.map((part) => (
+                              <li key={part.entry.foodId}>{ingredientLine(part)}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </>
+          )}
 
-      {(next || status !== 'over_budget') && (
-        <Button variant="ghost" className="mt-2 -ms-4" onClick={onAddManual}>
-          {he.today.addMeal}
-        </Button>
-      )}
+          {notes.map((note) => (
+            <p key={note} className="mt-3 text-sm text-muted">
+              {he.notes[note]}
+            </p>
+          ))}
+
+          {(next || status !== 'over_budget') && (
+            <Button variant="ghost" className="mt-2 -ms-4" onClick={onAddManual}>
+              {he.today.addMeal}
+            </Button>
+          )}
+        </div>
+      </details>
     </section>
   );
 }

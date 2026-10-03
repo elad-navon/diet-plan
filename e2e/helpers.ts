@@ -54,6 +54,8 @@ export interface SeedOptions {
   withOldFoodMealToday?: boolean;
   /** Breakfast with white bread and lunch with whole-wheat bread, both built from database foods. */
   withBreadMealsToday?: boolean;
+  /** A meal of a database food and a hand-typed one without macros, saved with empty macros. */
+  withMixedMealWithoutMacrosToday?: boolean;
 }
 
 /** Two slices of white bread (about 61 g) and two of whole-wheat bread (about 68 g). */
@@ -113,6 +115,38 @@ const oldJuiceMeal = (): StoredMeal => ({
   ],
 });
 
+/**
+ * A glass of apple juice and a snack typed by hand without macros, saved while a meal with such a food had no
+ * macros at all: the meal's macros are empty although the juice has them.
+ */
+const mixedMealWithoutMacros = (): StoredMeal => ({
+  ...meal('m1', TODAY, '09:30', 'מיץ וחטיף', 205),
+  source: 'food_db',
+  items: [
+    {
+      foodId: '3371',
+      name: 'מיץ תפוחים, משקה סיידר הגליל',
+      grams: 240,
+      unit: 'כוס',
+      count: 1,
+      kcal: 115,
+      proteinG: 0.2,
+      carbsG: 28.8,
+      fatG: 0,
+    },
+    {
+      foodId: 'manual:m1-snack',
+      name: 'חטיף',
+      grams: 0,
+      kcal: 90,
+      proteinG: 0,
+      carbsG: 0,
+      fatG: 0,
+      noMacros: true,
+    },
+  ],
+});
+
 /** A user who finished onboarding a week ago: a plan, a few weigh-ins and some meals. */
 export function seedDocument(options: SeedOptions = {}): string {
   const outcome = computePlan(inputs);
@@ -151,6 +185,7 @@ export function seedDocument(options: SeedOptions = {}): string {
       : []),
     ...(options.withOldFoodMealToday ? [oldJuiceMeal()] : []),
     ...(options.withBreadMealsToday ? breadMeals() : []),
+    ...(options.withMixedMealWithoutMacrosToday ? [mixedMealWithoutMacros()] : []),
   ];
   return JSON.stringify({
     version: 1,

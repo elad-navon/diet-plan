@@ -15,7 +15,8 @@ export type IconName =
   | 'home'
   | 'chart'
   | 'settings'
-  | 'star';
+  | 'star'
+  | 'chevron-down';
 
 const PATHS: Record<IconName, ReactNode> = {
   plus: <path d="M12 5v14M5 12h14" />,
@@ -53,6 +54,7 @@ const PATHS: Record<IconName, ReactNode> = {
     </>
   ),
   star: <path d="M12 4l2.4 5 5.4.7-4 3.7 1 5.4L12 16.2 7.2 18.8l1-5.4-4-3.7 5.4-.7L12 4z" />,
+  'chevron-down': <path d="M6 9l6 6 6-6" />,
 };
 
 /** A decorative 24px icon. The control that contains it carries the accessible name. */

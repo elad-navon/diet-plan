@@ -9,6 +9,7 @@ import {
 import { useNow } from '../../app/services';
 import { buildDayChart, buildDayView, resolvePlanForDate } from '../../core/dayview';
 import {
+  fillMissingMacros,
   fillMissingSugar,
   portionParts,
   summarizeGrain,
@@ -80,9 +81,10 @@ function TodayContent() {
     () => new Map((foodDb?.db.foods ?? []).map((food) => [food.id, food])),
     [foodDb],
   );
-  // Meals saved before sugar was tracked count too: their sugar is looked up from the foods they hold.
+  // Meals saved before sugar was tracked count too: their sugar is looked up from the foods they hold. So do
+  // meals saved without macros because of a food typed by hand: they get the macros of the other foods.
   const meals = useMemo(
-    () => (storedMeals ?? []).map((meal) => fillMissingSugar(meal, foodsById)),
+    () => (storedMeals ?? []).map((meal) => fillMissingMacros(fillMissingSugar(meal, foodsById))),
     [storedMeals, foodsById],
   );
   const recipes = useMemo(
