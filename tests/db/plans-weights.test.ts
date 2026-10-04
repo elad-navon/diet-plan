@@ -25,10 +25,10 @@ afterAll(async () => {
   await db.close();
 });
 
-/** A date in the user's zone, relative to the server's today. */
+/** A date in the user's zone, relative to the server's today (the day of eating runs from 02:00 to 02:00). */
 async function day(offset: number, tz = 'Asia/Jerusalem'): Promise<string> {
   const [row] = await db.admin.query<{ d: string }>(
-    `select ((now() at time zone '${tz}')::date + ${offset})::text as d`,
+    `select (((now() at time zone '${tz}') - interval '2 hours')::date + ${offset})::text as d`,
   );
   return row?.d ?? '';
 }
