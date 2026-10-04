@@ -10,6 +10,8 @@ import { mealIcon } from './meal-icon';
 interface MealListProps {
   meals: readonly StoredMeal[];
   tz: Tz;
+  /** Pressing a meal shows its details (to read only). */
+  onOpen: (meal: StoredMeal) => void;
   onEdit: (meal: StoredMeal) => void;
   onDelete: (meal: StoredMeal) => void;
   /** The number each meal has on the day chart (computer layout: the same number is shown here). */
@@ -20,10 +22,11 @@ interface MealListProps {
 const ACTION = 'lg:min-h-9 lg:min-w-9';
 
 /**
- * The day's meals, newest last, each with the two things you do to a meal: edit and delete.
+ * The day's meals, newest last. Pressing a meal opens its details; beside it are the two things you do to a meal:
+ * edit and delete.
  * On a computer the same list is a compact column of rows, numbered like the meals on the chart.
  */
-export function MealList({ meals, tz, onEdit, onDelete, numbers }: MealListProps) {
+export function MealList({ meals, tz, onOpen, onEdit, onDelete, numbers }: MealListProps) {
   if (meals.length === 0) {
     return <p className="card p-5 text-muted lg:shadow-none lg:p-0">{he.today.noMealsYet}</p>;
   }
@@ -34,8 +37,15 @@ export function MealList({ meals, tz, onEdit, onDelete, numbers }: MealListProps
         return (
           <li
             key={meal.id}
-            className="card p-4 lg:flex lg:items-center lg:gap-1 lg:rounded-xl lg:border-b lg:border-faint lg:bg-transparent lg:p-1.5 lg:shadow-none lg:transition lg:last:border-b-0 lg:hover:bg-[var(--row-hover)]"
+            className="card relative p-4 lg:flex lg:items-center lg:gap-1 lg:rounded-xl lg:border-b lg:border-faint lg:bg-transparent lg:p-1.5 lg:shadow-none lg:transition lg:last:border-b-0 lg:hover:bg-[var(--row-hover)]"
           >
+            {/* The whole row is one press target, under the edit and delete buttons that sit on top of it. */}
+            <button
+              type="button"
+              aria-label={he.today.mealDetails.open(meal.name)}
+              onClick={() => onOpen(meal)}
+              className="absolute inset-0 cursor-pointer rounded-[inherit] focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+            />
             <div className="flex items-start justify-between gap-3 lg:min-w-0 lg:flex-1 lg:items-center lg:gap-2">
               <div className="flex min-w-0 gap-3 lg:items-center lg:gap-2">
                 {number !== undefined && (
@@ -83,7 +93,7 @@ export function MealList({ meals, tz, onEdit, onDelete, numbers }: MealListProps
                 </span>
               </p>
             </div>
-            <div className="mt-1 flex gap-1 lg:mt-0 lg:flex-none lg:gap-0">
+            <div className="relative z-10 mt-1 flex gap-1 lg:mt-0 lg:flex-none lg:gap-0">
               <Button
                 icon
                 variant="ghost"

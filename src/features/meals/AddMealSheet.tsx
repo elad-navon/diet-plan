@@ -18,7 +18,6 @@ import {
   type InputError,
 } from '../../core/contracts';
 import {
-  isManualEntry,
   manualEntry,
   mealNameFromEntries,
   shortFoodName,
@@ -61,6 +60,7 @@ import {
 } from './meal-draft';
 import { savedMealPrefill, type MealPrefill } from './prefill';
 import { QuantityEditor } from './QuantityEditor';
+import { quantityLabel } from './quantity-label';
 
 export type { MealPrefill } from './prefill';
 
@@ -116,13 +116,6 @@ const SLOT_OPTIONS = (Object.keys(he.slots) as MealSlot[]).map((slot) => ({
 /** A number field typed by hand: null when empty, NaN when it is not a number. */
 const readNumber = (text: string): number | null =>
   text.trim() === '' ? null : (parseDecimalInput(text) ?? Number.NaN);
-
-const quantityLabel = (item: FoodEntry): string =>
-  isManualEntry(item)
-    ? he.addMeal.byHand
-    : item.unit !== undefined && item.count !== undefined
-      ? `${formatDecimal(item.count)} × ${item.unit} (${formatDecimal(item.grams)} ${he.gramsShort})`
-      : `${formatDecimal(item.grams)} ${he.gramsShort}`;
 
 function MealForm({
   date,

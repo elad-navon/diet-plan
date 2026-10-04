@@ -49,6 +49,7 @@ import { MealList } from './MealList';
 import { NextMealCard } from './NextMealCard';
 import { StatusChip } from './StatusChip';
 import { SugarCard } from './SugarCard';
+import { MealDetailsSheet } from './MealDetailsSheet';
 import { WeekCard } from './WeekCard';
 
 interface SheetState {
@@ -57,13 +58,18 @@ interface SheetState {
   prefill: MealPrefill | null;
 }
 
-/** "בוקר טוב" … by the local hour of the person's own time zone. */
+/** "היי אלעד, בוקר טוב" … by the local hour of the person's own time zone. */
 function greeting(now: number, tz: string): string {
   const hour = Number(localTimeOf(now, tz).slice(0, 2));
-  if (hour < 5 || hour >= 22) return he.today.greeting.night;
-  if (hour < 12) return he.today.greeting.morning;
-  if (hour < 17) return he.today.greeting.noon;
-  return he.today.greeting.evening;
+  const part =
+    hour < 5 || hour >= 22
+      ? he.today.greeting.night
+      : hour < 12
+        ? he.today.greeting.morning
+        : hour < 17
+          ? he.today.greeting.noon
+          : he.today.greeting.evening;
+  return `${he.today.hello} ${part}`;
 }
 
 const CLOSED: SheetState = { open: false, editing: null, prefill: null };
@@ -129,6 +135,8 @@ function TodayContent() {
   const [sheet, setSheet] = useState<SheetState>(CLOSED);
   // A meal is deleted only after it is confirmed in a window of its own (there is no undo).
   const [toDelete, setToDelete] = useState<StoredMeal | null>(null);
+  // Pressing a meal in the list shows its details, to read only.
+  const [viewing, setViewing] = useState<StoredMeal | null>(null);
   // The list of saved meals opens from the add button; picking one opens it in the new-meal window.
   const [savedOpen, setSavedOpen] = useState(false);
 
@@ -244,7 +252,7 @@ function TodayContent() {
             width of the screen, so the line never wraps; an earlier day has a longer label and an icon. */}
         <h1
           className={`flex items-center gap-2 whitespace-nowrap font-semibold tracking-tight ${
-            isToday ? 'text-[clamp(0.9rem,4.6vw,1.75rem)]' : 'text-[clamp(0.9rem,4.1vw,1.75rem)]'
+            isToday ? 'text-[clamp(0.7rem,3.9vw,1.75rem)]' : 'text-[clamp(0.9rem,4.1vw,1.75rem)]'
           }`}
         >
           {!isToday && <Icon name="eye" size={16} />}
@@ -339,6 +347,7 @@ function TodayContent() {
             <MealList
               meals={activeMeals}
               tz={tz}
+              onOpen={setViewing}
               onEdit={(meal) => setSheet({ open: true, editing: meal, prefill: null })}
               onDelete={setToDelete}
               {...(mealNumbers ? { numbers: mealNumbers } : {})}
@@ -369,6 +378,8 @@ function TodayContent() {
       </div>
 
       <AddMealMenu variant="fab" onNew={() => openNew()} onSaved={() => setSavedOpen(true)} />
+
+      <MealDetailsSheet meal={viewing} tz={tz} foods={foodsById} onClose={() => setViewing(null)} />
 
       <Sheet
         open={toDelete !== null}

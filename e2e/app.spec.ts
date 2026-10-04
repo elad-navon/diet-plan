@@ -760,6 +760,44 @@ test('E2E-03: edit a meal and the day updates', async ({ page }) => {
   await expect(remaining(page)).toHaveAttribute('aria-label', /1,040/); // 1,390 - 350
 });
 
+test('DETAILS-01: pressing a meal shows its details, to read only; edit and delete still work', async ({
+  page,
+}) => {
+  await openApp(page, { seed: { withMealsToday: true } });
+  // "חביתה וסלט": 280 kcal, 18 g protein, 12 g carbohydrate, 18 g fat, typed by hand
+  await page.getByRole('button', { name: he.today.mealDetails.open('חביתה וסלט') }).click();
+  const details = page.getByRole('dialog', { name: 'חביתה וסלט' });
+  await expect(details).toBeVisible();
+  await expect(details).toContainText('280');
+  await expect(details).toContainText(he.today.protein);
+  await expect(details).toContainText(he.today.carbs);
+  await expect(details).toContainText(he.today.fat);
+  await expect(details).toContainText(he.today.mealDetails.typedByHand);
+  await expect(details).toContainText(he.today.mealDetails.sugarUnknown);
+  // nothing to change in it: the only button is the one that closes it
+  await expect(details.getByRole('button')).toHaveCount(1);
+  await expect(details.getByRole('button', { name: he.close })).toBeVisible();
+  await details.getByRole('button', { name: he.close }).click();
+  await expect(details).toBeHidden();
+
+  // the pencil and the bin beside the meal are still their own buttons
+  await page.getByRole('button', { name: he.today.editMeal('חביתה וסלט') }).click();
+  await expect(page.getByRole('dialog', { name: he.addMeal.editTitle })).toBeVisible();
+});
+
+test('DETAILS-02: the details of a meal of foods list each food with its amount and numbers', async ({
+  page,
+}) => {
+  await openApp(page, { seed: { withBreadMealsToday: true } });
+  await page.getByRole('button', { name: he.today.mealDetails.open('לחם לבן') }).click();
+  const details = page.getByRole('dialog', { name: 'לחם לבן' });
+  await expect(details.getByText(he.today.mealDetails.itemsTitle)).toBeVisible();
+  await expect(details.getByText('לחם לבן, קלוי')).toBeVisible();
+  await expect(details.getByText(/2 × פרוסה בינונית/)).toBeVisible();
+  await expect(details.getByText(he.flour.tag.refined, { exact: true })).toBeVisible();
+  await expect(details.getByText(new RegExp(`${he.flour.refinedLabel}: 44.7`))).toBeVisible();
+});
+
 test.describe('saved meals', () => {
   /** Adds a meal typed by hand, with "save this meal" ticked. */
   async function addAndSave(page: Page, name: string, kcal: string): Promise<void> {

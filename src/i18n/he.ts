@@ -126,6 +126,8 @@ export const he = {
   },
 
   today: {
+    /** Said before the time-of-day greeting. */
+    hello: 'היי אלעד,',
     greeting: {
       morning: 'בוקר טוב',
       noon: 'צהריים טובים',
@@ -172,6 +174,14 @@ export const he = {
     completeMessage: 'חלונות הארוחות של היום הסתיימו.',
     suggestionProtein: (g: string) => `${g} ג' חלבון`,
     editMeal: (name: string) => `עריכת ${name}`,
+    mealDetails: {
+      open: (name: string) => `פרטי ${name}`,
+      noMacros: 'לא הוזנו ערכי מאקרו לארוחה הזאת.',
+      sugarUnknown: 'סוכר מוסף: לא ידוע',
+      typedByHand: 'הארוחה הוקלדה ידנית, והמספרים הם מה שהוקלד.',
+      itemsTitle: 'מה בארוחה',
+      itemNoMacros: 'הוזן בלי ערכי מאקרו',
+    },
     deleteMeal: (name: string) => `מחיקת ${name}`,
     portion: (factor: string) => `${factor} מנות`,
     chartSummary: (eaten: string, target: string, from: string, to: string) =>
