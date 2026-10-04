@@ -178,7 +178,7 @@ export const he = {
       open: (name: string) => `פרטי ${name}`,
       noMacros: 'לא הוזנו ערכי מאקרו לארוחה הזאת.',
       sugarUnknown: 'סוכר מוסף: לא ידוע',
-      typedByHand: 'הארוחה הוקלדה ידנית, והמספרים הם מה שהוקלד.',
+      typedByHand: 'הארוחה והערכים הוקלדו ידנית.',
       itemsTitle: 'מה בארוחה',
       itemNoMacros: 'הוזן בלי ערכי מאקרו',
     },
