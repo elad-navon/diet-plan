@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router';
 import avatarUrl from '../../assets/avatar.jpg';
+import railImage from '../../assets/backgrounds/rail.jpg';
 import { applyTheme } from '../../app/theme';
 import { useThemeMode } from '../../app/use-theme';
 import { he } from '../../i18n/he';
@@ -53,10 +54,23 @@ function ThemeToggle() {
   );
 }
 
-/** The side bar of the computer layout: my picture on top, the three screens, and the light/dark switch at the bottom. */
+/**
+ * The side bar of the computer layout: my picture on top, the three screens, and the light/dark switch at the bottom,
+ * over a tall picture of basil, tomatoes and avocado. The picture is dark, so the bar keeps its light-on-dark colors
+ * in the light theme too (the same `panel-dark` as the cards that have a picture), under a thin veil for the labels.
+ */
 export function SideRail() {
   return (
-    <aside className="hidden w-20 shrink-0 flex-col items-center gap-3 border-e border-[var(--rail-border)] bg-[var(--rail-bg)] py-4 backdrop-blur-xl lg:flex">
+    <aside className="relative isolate hidden w-20 shrink-0 flex-col items-center gap-3 overflow-hidden border-e border-[var(--rail-border)] py-4 panel-dark lg:flex">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${railImage})` }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 bg-[rgb(4_14_26/0.38)]"
+      />
       <img
         src={avatarUrl}
         alt={he.nav.avatarAlt}
