@@ -8,7 +8,7 @@
  * sandwich, where only part of the carbohydrate is flour), gets no mark at all.
  */
 
-import { type FoodEntry } from './compute';
+import { isManualEntry, type FoodEntry } from './compute';
 import { type FoodRecord } from './types';
 
 export type GrainKind = 'refined' | 'whole';
@@ -84,6 +84,46 @@ export function wholeGrainSwap(name: string, group: string): SwapKind | null {
   return null;
 }
 
+// --- a food or meal typed by hand ------------------------------------------------------------------------
+
+/**
+ * A food typed by hand has no database record, so what it is made of is read from its name alone. Only a clear
+ * grain word counts (bread, pita, pasta, rice, crackers, cereal, bulgur...), with the one-letter prefixes Hebrew
+ * glues on ("בלחם", "והפיתה"); "טוסט" or "כריך" alone say nothing about the flour.
+ */
+const MANUAL_GRAIN_WORD =
+  /(?<![א-ת])[בולהמש]{0,2}(?:לחם|לחמני|פיתה|פיתות|בגט|חלה|חלות|לאפה|טורטי|בייגל|פסטה|ספגטי|אטריות|פתיתים|קוסקוס|נודלס|מקרוני|אורז|קרקר|דגני בוקר|קורנפלקס|גרנולה|שיבולת שועל|בורגול|קינואה|כוסמת|שיפון)/;
+/** "מלא" typed by hand often carries the article: "הלחם המלא", "ופיתה מלאה". */
+const MANUAL_SAYS_WHOLE = /(?<![א-ת])[וה]{0,2}מלא(?:ה|ים)?(?![א-ת])/;
+const MANUAL_RICE = /אורז/;
+const MANUAL_PASTA = /פסטה|ספגטי|אטריות|פתיתים|קוסקוס|נודלס|מקרוני/;
+const MANUAL_CRACKER = /קרקר/;
+const MANUAL_CEREAL = /דגני בוקר|קורנפלקס|גרנולה/;
+
+export interface GrainMark {
+  kind: GrainKind;
+  /** For white flour: the whole-grain alternative to suggest (bread when nothing else fits). */
+  swap: SwapKind | null;
+}
+
+/** Which whole-grain alternative fits a food typed by hand: by the grain word in its name, bread when unclear. */
+export function manualSwap(name: string): SwapKind {
+  if (MANUAL_RICE.test(name)) return 'rice';
+  if (MANUAL_PASTA.test(name)) return 'pasta';
+  if (MANUAL_CRACKER.test(name)) return 'cracker';
+  if (MANUAL_CEREAL.test(name)) return 'cereal';
+  return 'bread';
+}
+
+/** Whole grain or white flour for a food or meal typed by hand, or null when its name holds no grain word. */
+export function manualGrain(name: string): GrainMark | null {
+  if (!MANUAL_GRAIN_WORD.test(name)) return null;
+  // "מלא" wins over "לבן", as for database foods: "לחם מלא עם גבינה לבנה" is whole grain.
+  if (MANUAL_SAYS_WHOLE.test(name) || SAYS_WHOLE_GRAIN.test(name))
+    return { kind: 'whole', swap: null };
+  return { kind: 'refined', swap: manualSwap(name) };
+}
+
 // --- what a meal and a day hold --------------------------------------------------------------------------
 
 export interface GrainTotals {
@@ -115,22 +155,88 @@ export interface GrainDay extends GrainTotals {
   swaps: SwapKind[];
 }
 
-/** White flour and whole grain over a day's meals (only meals built from database foods can be counted). */
+interface GrainItem extends Pick<FoodEntry, 'foodId' | 'carbsG'> {
+  name?: string;
+  /** Typed by hand for a food typed by hand: the grams of its carbohydrate from white flour and whole grains. */
+  refinedCarbsG?: number | null;
+  wholeCarbsG?: number | null;
+}
+
+interface GrainMeal {
+  items: readonly GrainItem[];
+  /** The meal's own name, carbohydrate and typed split, used only when it holds no foods (a meal typed by hand). */
+  name?: string;
+  carbsG?: number | null;
+  refinedCarbsG?: number | null;
+  wholeCarbsG?: number | null;
+}
+
+/** Some carbohydrate (g) that is white flour or whole grain; `swap` is what to try instead of the white. */
+interface GrainPart extends GrainMark {
+  carbsG: number;
+}
+
+/**
+ * What a person typed as the split of a food's carbohydrate: those grams, as they said, whatever the name. Null
+ * when nothing was typed (then the name decides).
+ */
+function typedSplit(
+  name: string | undefined,
+  refinedCarbsG: number | null | undefined,
+  wholeCarbsG: number | null | undefined,
+): GrainPart[] | null {
+  if ((refinedCarbsG ?? null) === null && (wholeCarbsG ?? null) === null) return null;
+  const parts: GrainPart[] = [];
+  if (refinedCarbsG)
+    parts.push({ kind: 'refined', swap: manualSwap(name ?? ''), carbsG: refinedCarbsG });
+  if (wholeCarbsG) parts.push({ kind: 'whole', swap: null, carbsG: wholeCarbsG });
+  return parts;
+}
+
+/** A food or meal typed by hand, with no split typed: all its carbohydrate by what its name says. */
+function namedPart(name: string | undefined, carbsG: number): GrainPart[] {
+  const mark = name ? manualGrain(name) : null;
+  return mark ? [{ ...mark, carbsG }] : [];
+}
+
+function partsOfItem(item: GrainItem, foods: ReadonlyMap<string, FoodRecord>): GrainPart[] {
+  if (isManualEntry(item)) {
+    return (
+      typedSplit(item.name, item.refinedCarbsG, item.wholeCarbsG) ??
+      namedPart(item.name, item.carbsG)
+    );
+  }
+  const food = foods.get(item.foodId);
+  return food?.grain ? [{ kind: food.grain, swap: food.swap ?? null, carbsG: item.carbsG }] : [];
+}
+
+function partsOfMeal(meal: GrainMeal, foods: ReadonlyMap<string, FoodRecord>): GrainPart[] {
+  if (meal.items.length > 0) return meal.items.flatMap((item) => partsOfItem(item, foods));
+  return (
+    typedSplit(meal.name, meal.refinedCarbsG, meal.wholeCarbsG) ??
+    namedPart(meal.name, meal.carbsG ?? 0)
+  );
+}
+
+/**
+ * White flour and whole grain over a day's meals. Foods from the database are counted by their mark. A food or a
+ * meal typed by hand is counted by the split the person typed (white flour grams and whole grain grams), and when
+ * none was typed by its name, with all the carbohydrate that was typed for it.
+ */
 export function summarizeGrain(
-  meals: readonly { items: readonly Pick<FoodEntry, 'foodId' | 'carbsG'>[] }[],
+  meals: readonly GrainMeal[],
   foods: ReadonlyMap<string, FoodRecord>,
 ): GrainDay {
   let refined = 0;
   let whole = 0;
   const bySwap = new Map<SwapKind, number>();
   for (const meal of meals) {
-    for (const item of meal.items) {
-      const food = foods.get(item.foodId);
-      if (food?.grain === 'refined') {
-        refined += item.carbsG;
-        if (food.swap) bySwap.set(food.swap, (bySwap.get(food.swap) ?? 0) + item.carbsG);
-      } else if (food?.grain === 'whole') {
-        whole += item.carbsG;
+    for (const { kind, swap, carbsG } of partsOfMeal(meal, foods)) {
+      if (kind === 'refined') {
+        refined += carbsG;
+        if (swap && carbsG > 0) bySwap.set(swap, (bySwap.get(swap) ?? 0) + carbsG);
+      } else {
+        whole += carbsG;
       }
     }
   }

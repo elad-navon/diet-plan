@@ -2,6 +2,7 @@ import {
   MEAL_LIMITS,
   validateFavoriteInput,
   validateAddedSugarInput,
+  validateGrainCarbsInput,
   validateMealInput,
   validateWeightInput,
   type InputError,
@@ -124,6 +125,8 @@ const sameContent = (a: StoredMeal, b: StoredMeal): boolean =>
   JSON.stringify([a.proteinG, a.carbsG, a.fatG]) ===
     JSON.stringify([b.proteinG, b.carbsG, b.fatG]) &&
   a.addedSugarG === b.addedSugarG &&
+  (a.refinedCarbsG ?? null) === (b.refinedCarbsG ?? null) &&
+  (a.wholeCarbsG ?? null) === (b.wholeCarbsG ?? null) &&
   JSON.stringify(a.items) === JSON.stringify(b.items);
 
 export function createLocalRepositories(options: {
@@ -208,6 +211,12 @@ export function createLocalRepositories(options: {
           }
           const sugar = validateAddedSugarInput(input.addedSugarG);
           if (!sugar.ok) throw invalid(sugar.errors);
+          const grain = validateGrainCarbsInput({
+            refinedCarbsG: input.refinedCarbsG,
+            wholeCarbsG: input.wholeCarbsG,
+            carbsG: checked.value.macros?.carbsG ?? null,
+          });
+          if (!grain.ok) throw invalid(grain.errors);
 
           const meal: StoredMeal = {
             id: input.id,
@@ -222,6 +231,8 @@ export function createLocalRepositories(options: {
             fatG: checked.value.macros?.fatG ?? null,
             items: input.items,
             addedSugarG: sugar.value.addedSugarG,
+            refinedCarbsG: grain.value.refinedCarbsG,
+            wholeCarbsG: grain.value.wholeCarbsG,
             source: input.source,
             ...(input.foodDbVersion !== undefined ? { foodDbVersion: input.foodDbVersion } : {}),
             version: 1,
@@ -274,6 +285,13 @@ export function createLocalRepositories(options: {
             patch.addedSugarG !== undefined ? patch.addedSugarG : existing.addedSugarG,
           );
           if (!sugar.ok) throw invalid(sugar.errors);
+          const grain = validateGrainCarbsInput({
+            refinedCarbsG:
+              patch.refinedCarbsG !== undefined ? patch.refinedCarbsG : existing.refinedCarbsG,
+            wholeCarbsG: patch.wholeCarbsG !== undefined ? patch.wholeCarbsG : existing.wholeCarbsG,
+            carbsG: checked.value.macros?.carbsG ?? null,
+          });
+          if (!grain.ok) throw invalid(grain.errors);
           const items = patch.items ?? existing.items;
           if (items.length > MEAL_LIMITS.itemsMax) throw new DataError('invalid', 'items:too_many');
 
@@ -299,6 +317,8 @@ export function createLocalRepositories(options: {
             tz: timeChanged ? profile.timezone : existing.tz,
             items,
             addedSugarG: sugar.value.addedSugarG,
+            refinedCarbsG: grain.value.refinedCarbsG,
+            wholeCarbsG: grain.value.wholeCarbsG,
             version: existing.version + 1,
           };
           replaceMeal(doc, updated);
@@ -411,6 +431,12 @@ export function createLocalRepositories(options: {
           if (!checked.ok) throw invalid(checked.errors);
           const sugar = validateAddedSugarInput(input.addedSugarG);
           if (!sugar.ok) throw invalid(sugar.errors);
+          const grain = validateGrainCarbsInput({
+            refinedCarbsG: input.refinedCarbsG,
+            wholeCarbsG: input.wholeCarbsG,
+            carbsG: checked.value.macros?.carbsG ?? null,
+          });
+          if (!grain.ok) throw invalid(grain.errors);
           if (doc.favorites.length >= MEAL_LIMITS.favoritesMax) {
             throw new DataError('limit_reached');
           }
@@ -421,6 +447,8 @@ export function createLocalRepositories(options: {
             macros: checked.value.macros,
             items: input.items,
             addedSugarG: sugar.value.addedSugarG,
+            refinedCarbsG: grain.value.refinedCarbsG,
+            wholeCarbsG: grain.value.wholeCarbsG,
             ...(input.foodDbVersion !== undefined ? { foodDbVersion: input.foodDbVersion } : {}),
             useCount: 0,
             lastUsedAt: null,

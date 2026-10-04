@@ -107,6 +107,27 @@ describe('saved meals', () => {
     expect(entry).toMatchObject({ name: 'ארוחת צהריים', kcal: 600, addedSugarG: 4 });
   });
 
+  it('keep the split of a meal typed by hand into white flour and whole grains', () => {
+    const base = {
+      name: 'ארוחת צהריים',
+      kcal: 600,
+      macros: { proteinG: 30, carbsG: 70, fatG: 20 },
+      addedSugarG: null,
+      refinedCarbsG: 20,
+      wholeCarbsG: 35,
+    };
+    const [entry] = savedMealItems({ ...base, items: [] }, 'x');
+    expect(entry).toMatchObject({ refinedCarbsG: 20, wholeCarbsG: 35 });
+    const typed = favorite('6', base.name, {
+      kcal: 600,
+      macros: base.macros,
+      refinedCarbsG: 20,
+      wholeCarbsG: 35,
+      items: savedMealItems({ ...base, items: [] }, 'x'),
+    });
+    expect(savedMealPrefill(typed)).toMatchObject({ refinedCarbsG: 20, wholeCarbsG: 35 });
+  });
+
   it('come back as they were saved: foods as foods, a meal typed by hand as the by-hand fields', () => {
     const base = { name: 'ארוחת צהריים', kcal: 600, macros: null, addedSugarG: 4 };
     const typed = favorite('5', base.name, {
@@ -119,6 +140,8 @@ describe('saved meals', () => {
       kcal: 600,
       macros: null,
       addedSugarG: 4,
+      refinedCarbsG: null,
+      wholeCarbsG: null,
       source: 'favorite',
       favoriteId: '5',
     });

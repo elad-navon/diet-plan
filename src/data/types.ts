@@ -32,6 +32,12 @@ export interface StoredMeal extends MealRecord {
   items: FoodEntry[];
   /** Added sugar of the whole meal in grams (an estimate for foods from the database); null = not known. */
   addedSugarG: number | null;
+  /**
+   * A meal typed by hand: the grams of its carbohydrate the person said come from white flour and from whole
+   * grains (parts of `carbsG`); absent or null = not typed. A meal of foods has none: its foods say it.
+   */
+  refinedCarbsG?: number | null;
+  wholeCarbsG?: number | null;
   foodDbVersion?: string;
   /** Bumped on every change; used to detect edits from another device. */
   version: number;
@@ -50,6 +56,9 @@ export interface NewMeal {
   items: FoodEntry[];
   /** Added sugar of the whole meal in grams; leave out when not known. */
   addedSugarG?: number | null;
+  /** The split of a manual meal's carbohydrate into white flour and whole grains; leave out when not typed. */
+  refinedCarbsG?: number | null;
+  wholeCarbsG?: number | null;
   source: MealSource;
   foodDbVersion?: string;
 }
@@ -72,6 +81,9 @@ export interface FavoriteRecord {
   items: FoodEntry[];
   /** Added sugar in grams (typed for a meal entered by hand); null = not known. */
   addedSugarG: number | null;
+  /** The split of a meal typed by hand into white flour and whole grains (grams of carbohydrate); absent or null = not typed. */
+  refinedCarbsG?: number | null;
+  wholeCarbsG?: number | null;
   foodDbVersion?: string;
   useCount: number;
   lastUsedAt: Instant | null;

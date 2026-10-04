@@ -29,6 +29,8 @@ const foodEntry = z.object({
   addedSugarG: number.optional(),
   fiberG: number.optional(),
   noMacros: z.literal(true).optional(),
+  refinedCarbsG: number.optional(),
+  wholeCarbsG: number.optional(),
 });
 
 const draftSchema = z.object({
@@ -47,6 +49,9 @@ const draftSchema = z.object({
   proteinText: z.string(),
   carbsText: z.string(),
   fatText: z.string(),
+  /** The split of the carbohydrate typed by hand (white flour, whole grains); drafts saved before it have none. */
+  refinedText: z.string().optional(),
+  wholeText: z.string().optional(),
   sugarText: z.string(),
   mealName: z.string(),
   /** Only when the person changed them: an untouched time must be "now" again when the form comes back. */
@@ -72,7 +77,13 @@ export function isMeaningful(draft: MealDraft): boolean {
     draft.mealName.trim() !== '' ||
     draft.sugarText.trim() !== '' ||
     (draft.macrosOn &&
-      [draft.proteinText, draft.carbsText, draft.fatText].some((text) => text.trim() !== ''))
+      [
+        draft.proteinText,
+        draft.carbsText,
+        draft.fatText,
+        draft.refinedText ?? '',
+        draft.wholeText ?? '',
+      ].some((text) => text.trim() !== ''))
   );
 }
 

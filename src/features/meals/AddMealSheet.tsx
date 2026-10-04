@@ -13,6 +13,7 @@ import {
   parseDecimalInput,
   validateAddedSugarInput,
   validateFavoriteInput,
+  validateGrainCarbsInput,
   validateMealInput,
   type InputError,
 } from '../../core/contracts';
@@ -112,6 +113,10 @@ const SLOT_OPTIONS = (Object.keys(he.slots) as MealSlot[]).map((slot) => ({
   label: he.slots[slot],
 }));
 
+/** A number field typed by hand: null when empty, NaN when it is not a number. */
+const readNumber = (text: string): number | null =>
+  text.trim() === '' ? null : (parseDecimalInput(text) ?? Number.NaN);
+
 const quantityLabel = (item: FoodEntry): string =>
   isManualEntry(item)
     ? he.addMeal.byHand
@@ -170,6 +175,15 @@ function MealForm({
   );
   const [fatText, setFatText] = useState(
     draft?.fatText ?? (seedMacros ? String(seedMacros.fatG) : ''),
+  );
+  // The split of the carbohydrate typed by hand into white flour and whole grains (both optional).
+  const seedRefined = editing?.refinedCarbsG ?? prefill?.refinedCarbsG ?? null;
+  const seedWhole = editing?.wholeCarbsG ?? prefill?.wholeCarbsG ?? null;
+  const [refinedText, setRefinedText] = useState(
+    draft?.refinedText ?? (seedRefined === null ? '' : String(seedRefined)),
+  );
+  const [wholeText, setWholeText] = useState(
+    draft?.wholeText ?? (seedWhole === null ? '' : String(seedWhole)),
   );
   // A meal built from foods keeps the name it was given (an edited meal, or a suggestion such as "טוסט גבינה").
   const seedSugar = editing?.addedSugarG ?? prefill?.addedSugarG ?? null;
@@ -239,6 +253,8 @@ function MealForm({
       proteinText,
       carbsText,
       fatText,
+      refinedText,
+      wholeText,
       sugarText,
       mealName,
       ...(dateText !== defaultDate ? { dateText } : {}),
@@ -262,6 +278,8 @@ function MealForm({
     proteinText,
     carbsText,
     fatText,
+    refinedText,
+    wholeText,
     sugarText,
     mealName,
     dateText,
@@ -306,6 +324,8 @@ function MealForm({
           kcal: favorite.kcal,
           macros: favorite.macros,
           addedSugarG: favorite.addedSugarG,
+          refinedCarbsG: favorite.refinedCarbsG ?? null,
+          wholeCarbsG: favorite.wholeCarbsG ?? null,
         }),
       ]);
       return;
@@ -321,10 +341,24 @@ function MealForm({
     setProteinText(favorite.macros ? String(favorite.macros.proteinG) : '');
     setCarbsText(favorite.macros ? String(favorite.macros.carbsG) : '');
     setFatText(favorite.macros ? String(favorite.macros.fatG) : '');
+    setRefinedText(favorite.refinedCarbsG == null ? '' : String(favorite.refinedCarbsG));
+    setWholeText(favorite.wholeCarbsG == null ? '' : String(favorite.wholeCarbsG));
     setSourceHint('favorite');
     setFavoriteId(id);
     setMode(foods.length > 0 ? 'search' : 'manual');
   }
+
+  /** The carbohydrate typed by hand; when left empty, the sum of the two parts typed under it (white flour, whole grain). */
+  function handCarbs(): number | null {
+    const typed = readNumber(carbsText);
+    if (typed !== null) return typed;
+    const refined = readNumber(refinedText);
+    const whole = readNumber(wholeText);
+    if (refined === null && whole === null) return null;
+    const sum = (refined ?? 0) + (whole ?? 0);
+    return Number.isNaN(sum) ? null : Math.round(sum * 10) / 10;
+  }
+  const autoCarbs = carbsText.trim() === '' && macrosOn ? handCarbs() : null;
 
   /** The values the meal would be saved with, or the problems with them. */
   function collect():
@@ -334,6 +368,8 @@ function MealForm({
         kcal: number;
         macros: Macros | null;
         addedSugarG: number | null;
+        refinedCarbsG: number | null;
+        wholeCarbsG: number | null;
         warnings: string[];
       }
     | { ok: false; errors: FieldErrors } {
@@ -352,9 +388,11 @@ function MealForm({
           : { proteinG: totals.proteinG, carbsG: totals.carbsG, fatG: totals.fatG };
       }
       if (!macrosOn) return null;
-      const read = (text: string): number | null =>
-        text.trim() === '' ? null : (parseDecimalInput(text) ?? Number.NaN);
-      return { proteinG: read(proteinText), carbsG: read(carbsText), fatG: read(fatText) };
+      return {
+        proteinG: readNumber(proteinText),
+        carbsG: handCarbs(),
+        fatG: readNumber(fatText),
+      };
     })();
 
     const checked = validateMealInput(
@@ -376,14 +414,27 @@ function MealForm({
     if (!sugarChecked.ok) {
       for (const error of sugarChecked.errors) found[error.field] = he.errors[error.code];
     }
+    // The split of the carbohydrate: typed for a meal typed by hand (a meal of foods is split by its foods).
+    const grainChecked = validateGrainCarbsInput({
+      refinedCarbsG: kind === 'food' || !macrosOn ? null : readNumber(refinedText),
+      wholeCarbsG: kind === 'food' || !macrosOn ? null : readNumber(wholeText),
+      carbsG: checked.ok ? (checked.value.macros?.carbsG ?? null) : null,
+    });
+    if (!grainChecked.ok && checked.ok) {
+      for (const error of grainChecked.errors) found[error.field] = he.errors[error.code];
+    }
     if (eatenAt === null) found.eatenAt = he.addMeal.timeInvalid;
-    if (!checked.ok || !sugarChecked.ok || eatenAt === null) return { ok: false, errors: found };
+    if (!checked.ok || !sugarChecked.ok || !grainChecked.ok || eatenAt === null) {
+      return { ok: false, errors: found };
+    }
     return {
       ok: true,
       name: checked.value.name,
       kcal: checked.value.kcal,
       macros: checked.value.macros,
       addedSugarG: sugarChecked.value.addedSugarG,
+      refinedCarbsG: grainChecked.value.refinedCarbsG,
+      wholeCarbsG: grainChecked.value.wholeCarbsG,
       // Calories and macros cannot be compared when some of the calories come from foods without macros.
       warnings:
         kind === 'food' && totals.itemsWithoutMacros > 0
@@ -394,17 +445,20 @@ function MealForm({
 
   /** Adds the food typed by hand to the meal, next to the foods from the database. */
   function addManualItem(): void {
-    const read = (text: string): number | null =>
-      text.trim() === '' ? null : (parseDecimalInput(text) ?? Number.NaN);
     const macros = macrosOn
-      ? { proteinG: read(proteinText), carbsG: read(carbsText), fatG: read(fatText) }
+      ? { proteinG: readNumber(proteinText), carbsG: handCarbs(), fatG: readNumber(fatText) }
       : null;
     const checked = validateFavoriteInput({
       name,
       kcal: parseDecimalInput(kcalText) ?? Number.NaN,
       macros,
     });
-    const sugarChecked = validateAddedSugarInput(read(sugarText));
+    const sugarChecked = validateAddedSugarInput(readNumber(sugarText));
+    const grainChecked = validateGrainCarbsInput({
+      refinedCarbsG: macrosOn ? readNumber(refinedText) : null,
+      wholeCarbsG: macrosOn ? readNumber(wholeText) : null,
+      carbsG: checked.ok ? (checked.value.macros?.carbsG ?? null) : null,
+    });
     const found: FieldErrors = {};
     if (!checked.ok) {
       for (const error of checked.errors) found[error.field] = he.errors[error.code];
@@ -412,7 +466,10 @@ function MealForm({
     if (!sugarChecked.ok) {
       for (const error of sugarChecked.errors) found[error.field] = he.errors[error.code];
     }
-    if (!checked.ok || !sugarChecked.ok) {
+    if (!grainChecked.ok && checked.ok) {
+      for (const error of grainChecked.errors) found[error.field] = he.errors[error.code];
+    }
+    if (!checked.ok || !sugarChecked.ok || !grainChecked.ok) {
       setItemErrors(found);
       return;
     }
@@ -423,6 +480,8 @@ function MealForm({
       kcal: checked.value.kcal,
       macros: checked.value.macros,
       addedSugarG: sugarChecked.value.addedSugarG,
+      refinedCarbsG: grainChecked.value.refinedCarbsG,
+      wholeCarbsG: grainChecked.value.wholeCarbsG,
     });
     setItems((current) => [...current, entry]);
     if (remember && !editing) setRememberIds((current) => [...current, entry.foodId]);
@@ -432,6 +491,8 @@ function MealForm({
     setProteinText('');
     setCarbsText('');
     setFatText('');
+    setRefinedText('');
+    setWholeText('');
     setSugarText('');
   }
 
@@ -468,6 +529,8 @@ function MealForm({
             macros: result.macros,
             items,
             addedSugarG: result.addedSugarG,
+            refinedCarbsG: result.refinedCarbsG,
+            wholeCarbsG: result.wholeCarbsG,
             eatenAt,
             slot,
           },
@@ -482,6 +545,8 @@ function MealForm({
           macros: result.macros,
           items,
           addedSugarG: result.addedSugarG,
+          refinedCarbsG: result.refinedCarbsG,
+          wholeCarbsG: result.wholeCarbsG,
           source:
             sourceHint === 'favorite' || sourceHint === 'copy'
               ? sourceHint
@@ -506,6 +571,8 @@ function MealForm({
               ? null
               : { proteinG: item.proteinG, carbsG: item.carbsG, fatG: item.fatG },
             addedSugarG: item.addedSugarG ?? null,
+            refinedCarbsG: item.refinedCarbsG ?? null,
+            wholeCarbsG: item.wholeCarbsG ?? null,
           });
         }
       }
@@ -534,6 +601,8 @@ function MealForm({
     kcal: number;
     macros: Macros | null;
     addedSugarG: number | null;
+    refinedCarbsG: number | null;
+    wholeCarbsG: number | null;
   }): Promise<void> {
     try {
       // The new one first: if that fails, the earlier one is still there.
@@ -544,6 +613,8 @@ function MealForm({
         macros: result.macros,
         items: [],
         addedSugarG: result.addedSugarG,
+        refinedCarbsG: result.refinedCarbsG,
+        wholeCarbsG: result.wholeCarbsG,
       });
       for (const earlier of sameManualFavorites(favorites, result.name)) {
         await removeFavorite.mutateAsync(earlier.id);
@@ -562,6 +633,8 @@ function MealForm({
     kcal: number;
     macros: Macros | null;
     addedSugarG: number | null;
+    refinedCarbsG: number | null;
+    wholeCarbsG: number | null;
   }): Promise<boolean> {
     try {
       await addFavorite.mutateAsync({
@@ -571,6 +644,8 @@ function MealForm({
         macros: result.macros,
         items: savedMealItems({ ...result, items }, newId()),
         addedSugarG: result.addedSugarG,
+        refinedCarbsG: result.refinedCarbsG,
+        wholeCarbsG: result.wholeCarbsG,
         ...(database.data ? { foodDbVersion: database.data.db.version } : {}),
       });
       // The new one first: if that fails, the earlier one is still there.
@@ -700,6 +775,7 @@ function MealForm({
                 value={carbsText}
                 onChange={setCarbsText}
                 inputMode="decimal"
+                placeholder={autoCarbs !== null ? formatDecimal(autoCarbs) : undefined}
               />
               <TextField
                 label={he.addMeal.fatField}
@@ -707,6 +783,30 @@ function MealForm({
                 onChange={setFatText}
                 inputMode="decimal"
               />
+            </div>
+          )}
+          {macrosOn && (
+            <div className="space-y-1">
+              <div className="grid grid-cols-2 gap-2">
+                <TextField
+                  label={he.addMeal.refinedCarbsField}
+                  value={refinedText}
+                  onChange={setRefinedText}
+                  inputMode="decimal"
+                />
+                <TextField
+                  label={he.addMeal.wholeCarbsField}
+                  value={wholeText}
+                  onChange={setWholeText}
+                  inputMode="decimal"
+                />
+              </div>
+              <p className="text-sm text-muted">{he.addMeal.grainHint}</p>
+              {manualError('grain') && (
+                <p role="alert" className="text-sm font-medium">
+                  ⚠ {manualError('grain')}
+                </p>
+              )}
             </div>
           )}
           {manualError('macros') && (

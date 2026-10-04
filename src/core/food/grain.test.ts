@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { grainKind, mealGrainCarbs, summarizeGrain, wholeGrainSwap } from './grain';
+import { grainKind, manualGrain, mealGrainCarbs, summarizeGrain, wholeGrainSwap } from './grain';
 import { type FoodRecord } from './types';
 
 const kind = (group: string, name: string, fiber: number | null = null) =>
@@ -128,5 +128,124 @@ describe('white flour and whole grain in a meal and a day', () => {
       wholeCarbsG: 0,
       swaps: [],
     });
+  });
+
+  it('counts a meal typed by hand by its name, with the carbohydrate typed for it', () => {
+    const day = summarizeGrain(
+      [
+        { name: 'לחם מחיטה מלאה עם גבינה', carbsG: 30, items: [] },
+        { name: 'פסטה ברוטב עגבניות', carbsG: 60, items: [] },
+        { name: 'סלט ירקות', carbsG: 8, items: [] },
+        { name: 'לחם מלא', carbsG: null, items: [] },
+      ],
+      foods,
+    );
+    expect(day).toEqual({ refinedCarbsG: 60, wholeCarbsG: 30, swaps: ['pasta'] });
+  });
+
+  it('counts a food typed by hand inside a meal of database foods', () => {
+    const day = summarizeGrain(
+      [
+        {
+          name: 'ארוחת בוקר',
+          carbsG: 40,
+          items: [
+            item('egg', 1),
+            { foodId: 'manual:a', name: 'פיתה מקמח מלא', carbsG: 25 },
+            { foodId: 'manual:b', name: 'אורז', carbsG: 0 },
+          ],
+        },
+      ],
+      foods,
+    );
+    expect(day).toEqual({ refinedCarbsG: 0, wholeCarbsG: 25, swaps: [] });
+  });
+});
+
+describe('a food or meal typed by hand (manualGrain)', () => {
+  it('reads whole wheat and rye bread as whole grain, with Hebrew prefixes and plurals', () => {
+    expect(manualGrain('לחם מחיטה מלאה')?.kind).toBe('whole');
+    expect(manualGrain('כריך בלחם שיפון')?.kind).toBe('whole');
+    expect(manualGrain('2 פרוסות של הלחם המלא')?.kind).toBe('whole');
+    expect(manualGrain('פיתות מקמח מלא')?.kind).toBe('whole');
+    expect(manualGrain('דייסת שיבולת שועל')?.kind).toBe('whole');
+  });
+
+  it('"whole" beats the white cheese on the bread', () => {
+    expect(manualGrain('לחם מלא עם גבינה לבנה')?.kind).toBe('whole');
+  });
+
+  it('reads plain bread, pasta and rice as white flour, with the swap to suggest', () => {
+    expect(manualGrain('לחם עם חמאה')).toEqual({ kind: 'refined', swap: 'bread' });
+    expect(manualGrain('פסטה בולונז')).toEqual({ kind: 'refined', swap: 'pasta' });
+    expect(manualGrain('אורז עם עוף')).toEqual({ kind: 'refined', swap: 'rice' });
+    expect(manualGrain('קרקרים וגבינה')).toEqual({ kind: 'refined', swap: 'cracker' });
+    expect(manualGrain('קורנפלקס עם חלב')).toEqual({ kind: 'refined', swap: 'cereal' });
+    expect(manualGrain('אורז חום')?.kind).toBe('whole');
+  });
+
+  it('says nothing when the name has no grain word', () => {
+    expect(manualGrain('סלט ירקות')).toBeNull();
+    expect(manualGrain('חלב מלא')).toBeNull();
+    expect(manualGrain('כריך טונה')).toBeNull();
+    expect(manualGrain('שוקולד כהה')).toBeNull();
+  });
+});
+
+describe('a split typed by hand', () => {
+  const foods = new Map<string, FoodRecord>();
+
+  it('counts the grams the person typed, whatever the name says', () => {
+    const day = summarizeGrain(
+      [
+        // The name says whole bread, but the person typed what is really white flour and what is whole.
+        {
+          name: 'לחם מלא עם ריבה',
+          carbsG: 50,
+          refinedCarbsG: 20,
+          wholeCarbsG: 25,
+          items: [],
+        },
+        { name: 'ארוחת צהריים', carbsG: 60, refinedCarbsG: null, wholeCarbsG: 35, items: [] },
+      ],
+      foods,
+    );
+    expect(day).toEqual({ refinedCarbsG: 20, wholeCarbsG: 60, swaps: ['bread'] });
+  });
+
+  it('leaves the rest of the carbohydrate (fruit, sugar...) out of both', () => {
+    const day = summarizeGrain(
+      [{ name: 'פסטה ופרי', carbsG: 80, refinedCarbsG: 30, wholeCarbsG: null, items: [] }],
+      foods,
+    );
+    expect(day).toEqual({ refinedCarbsG: 30, wholeCarbsG: 0, swaps: ['pasta'] });
+  });
+
+  it('a typed split of 0 and 0 means none of it is grain, even with "לחם" in the name', () => {
+    const day = summarizeGrain(
+      [{ name: 'לחם ופירות', carbsG: 50, refinedCarbsG: 0, wholeCarbsG: 0, items: [] }],
+      foods,
+    );
+    expect(day).toEqual({ refinedCarbsG: 0, wholeCarbsG: 0, swaps: [] });
+  });
+
+  it('counts the split of a food typed by hand inside a meal of foods', () => {
+    const day = summarizeGrain(
+      [
+        {
+          items: [
+            {
+              foodId: 'manual:a',
+              name: 'כריך ביתי',
+              carbsG: 45,
+              refinedCarbsG: 10,
+              wholeCarbsG: 30,
+            },
+          ],
+        },
+      ],
+      foods,
+    );
+    expect(day).toEqual({ refinedCarbsG: 10, wholeCarbsG: 30, swaps: ['bread'] });
   });
 });

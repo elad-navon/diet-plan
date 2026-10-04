@@ -14,6 +14,9 @@ export interface MealPrefill {
   items?: FoodEntry[];
   /** Added sugar in grams; for a meal built from foods it is recomputed from the foods. */
   addedSugarG?: number | null;
+  /** A meal typed by hand: the split of its carbohydrate into white flour and whole grains (grams). */
+  refinedCarbsG?: number | null;
+  wholeCarbsG?: number | null;
   foodDbVersion?: string;
   favoriteId?: string;
 }
@@ -34,6 +37,8 @@ export function savedMealPrefill(favorite: FavoriteRecord): MealPrefill {
     kcal: favorite.kcal,
     macros: favorite.macros,
     addedSugarG: favorite.addedSugarG,
+    refinedCarbsG: favorite.refinedCarbsG ?? null,
+    wholeCarbsG: favorite.wholeCarbsG ?? null,
     source: 'favorite',
     favoriteId: favorite.id,
     ...(typedByHand ? {} : { items: favorite.items }),

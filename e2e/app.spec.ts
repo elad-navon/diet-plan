@@ -244,6 +244,61 @@ test('FLOUR-02: a food says whether it is white flour or whole grain, and what t
   await expect(sheet.getByText(he.flour.swapHint(he.flour.swap.bread))).toBeVisible();
 });
 
+test('FLOUR-03: a meal typed by hand splits its carbohydrate into white flour and whole grains', async ({
+  page,
+}) => {
+  await openApp(page, { seed: {} });
+  const card = page.getByRole('region', { name: he.flour.title });
+  await openNewMeal(page);
+  const sheet = page.getByRole('dialog', { name: he.addMeal.title });
+  await sheet.getByText(he.addMeal.tabManual, { exact: true }).click();
+  await sheet.getByLabel(he.addMeal.name).fill('כריך ביתי');
+  await sheet.getByLabel(he.addMeal.kcalField).fill('420');
+  await sheet.getByLabel(he.addMeal.macrosToggle).check();
+  await sheet.getByLabel(he.addMeal.proteinField, { exact: true }).fill('15');
+  await sheet.getByLabel(he.addMeal.fatField, { exact: true }).fill('12');
+  await sheet.getByLabel(he.addMeal.refinedCarbsField, { exact: true }).fill('20');
+  await sheet.getByLabel(he.addMeal.wholeCarbsField, { exact: true }).fill('15,5');
+
+  // With the carbohydrate field left empty, the total is the sum of the two parts.
+  await expect(sheet.getByLabel(he.addMeal.carbsField, { exact: true })).toHaveAttribute(
+    'placeholder',
+    /35[.,]5/,
+  );
+
+  // Two parts that are more than the carbohydrate typed are refused, and say so.
+  await sheet.getByLabel(he.addMeal.carbsField, { exact: true }).fill('30');
+  await sheet.getByRole('button', { name: he.addMeal.saveMeal }).click();
+  await expect(sheet.getByText(he.errors.grain_exceeds_carbs)).toBeVisible();
+
+  await sheet.getByLabel(he.addMeal.carbsField, { exact: true }).fill('');
+  await sheet.getByRole('button', { name: he.addMeal.saveMeal }).click();
+  await expect(card.getByRole('img', { name: he.flour.summary('20', '15.5') })).toBeVisible();
+  // The meal itself has the sum as its carbohydrate (and so does the day).
+  await expect(page.locator('li.card', { hasText: 'כריך ביתי' })).toBeVisible();
+});
+
+test('FLOUR-04: a meal entered earlier gets the split when it is edited, and it is there next time', async ({
+  page,
+}) => {
+  await openApp(page, { seed: { withMealsToday: true } }); // "חביתה וסלט": 12 g of carbohydrate, no split
+  const card = page.getByRole('region', { name: he.flour.title });
+  await expect(card.getByText(he.flour.empty)).toBeVisible();
+
+  await page.getByRole('button', { name: he.today.editMeal('חביתה וסלט') }).click();
+  let sheet = page.getByRole('dialog', { name: he.addMeal.editTitle });
+  await expect(sheet.getByLabel(he.addMeal.refinedCarbsField, { exact: true })).toHaveValue('');
+  await sheet.getByLabel(he.addMeal.refinedCarbsField, { exact: true }).fill('5');
+  await sheet.getByLabel(he.addMeal.wholeCarbsField, { exact: true }).fill('7');
+  await sheet.getByRole('button', { name: he.addMeal.saveMeal }).click();
+  await expect(card.getByRole('img', { name: he.flour.summary('5', '7') })).toBeVisible();
+
+  await page.getByRole('button', { name: he.today.editMeal('חביתה וסלט') }).click();
+  sheet = page.getByRole('dialog', { name: he.addMeal.editTitle });
+  await expect(sheet.getByLabel(he.addMeal.refinedCarbsField, { exact: true })).toHaveValue('5');
+  await expect(sheet.getByLabel(he.addMeal.wholeCarbsField, { exact: true })).toHaveValue('7');
+});
+
 test('DRAFT-01: a click beside the sheet does not hide a meal being typed; closing keeps it, and it can be dropped', async ({
   page,
 }) => {

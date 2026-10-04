@@ -80,6 +80,8 @@ export function savedMealItems(
     kcal: number;
     macros: Macros | null;
     addedSugarG: number | null;
+    refinedCarbsG?: number | null;
+    wholeCarbsG?: number | null;
     items: readonly FoodEntry[];
   },
   entryId: string,
@@ -92,6 +94,8 @@ export function savedMealItems(
       kcal: meal.kcal,
       macros: meal.macros,
       addedSugarG: meal.addedSugarG,
+      refinedCarbsG: meal.refinedCarbsG ?? null,
+      wholeCarbsG: meal.wholeCarbsG ?? null,
     }),
   ];
 }

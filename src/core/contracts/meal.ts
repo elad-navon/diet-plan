@@ -24,7 +24,7 @@ export const MEAL_LIMITS = {
 
 export const WEIGHT_LIMITS = { minKg: 30, maxKg: 350, jumpConfirmKg: 3 } as const;
 
-export type InputField = 'name' | 'kcal' | 'macros' | 'sugar' | 'eatenAt' | 'weight';
+export type InputField = 'name' | 'kcal' | 'macros' | 'sugar' | 'grain' | 'eatenAt' | 'weight';
 
 export type InputErrorCode =
   | 'name_required'
@@ -37,6 +37,10 @@ export type InputErrorCode =
   | 'macro_out_of_range'
   | 'sugar_invalid'
   | 'sugar_out_of_range'
+  | 'grain_invalid'
+  | 'grain_out_of_range'
+  | 'grain_exceeds_carbs'
+  | 'grain_needs_carbs'
   | 'time_in_future'
   | 'time_too_old'
   | 'weight_invalid'
@@ -172,6 +176,44 @@ export function validateAddedSugarInput(
     return { ok: false, errors: [{ field: 'sugar', code: 'sugar_out_of_range' }] };
   }
   return { ok: true, value: { addedSugarG: round1(value) }, warnings: [] };
+}
+
+/**
+ * The carbohydrate of a meal typed by hand, split by the person into white flour and whole grains (grams, one
+ * decimal each, 0 to 500; either may be left out). The two are parts of the meal's carbohydrate, so together they
+ * cannot be more than it, and without carbohydrate there is nothing to split.
+ */
+export function validateGrainCarbsInput(input: {
+  refinedCarbsG?: number | null;
+  wholeCarbsG?: number | null;
+  /** The carbohydrate of the whole meal; null when no macros were given. */
+  carbsG: number | null;
+}): Validation<{ refinedCarbsG: number | null; wholeCarbsG: number | null }> {
+  const refined = input.refinedCarbsG ?? null;
+  const whole = input.wholeCarbsG ?? null;
+  const fail = (code: InputErrorCode): Validation<never> => ({
+    ok: false,
+    errors: [{ field: 'grain', code }],
+  });
+  if (refined === null && whole === null) {
+    return { ok: true, value: { refinedCarbsG: null, wholeCarbsG: null }, warnings: [] };
+  }
+  for (const value of [refined, whole]) {
+    if (value === null) continue;
+    if (!Number.isFinite(value)) return fail('grain_invalid');
+    if (value < 0 || value > MEAL_LIMITS.macroMaxG) return fail('grain_out_of_range');
+  }
+  if (input.carbsG === null) return fail('grain_needs_carbs');
+  const tenths = (value: number | null): number => Math.round((value ?? 0) * 10);
+  if (tenths(refined) + tenths(whole) > tenths(input.carbsG)) return fail('grain_exceeds_carbs');
+  return {
+    ok: true,
+    value: {
+      refinedCarbsG: refined === null ? null : round1(refined),
+      wholeCarbsG: whole === null ? null : round1(whole),
+    },
+    warnings: [],
+  };
 }
 
 /** Validates a favorite (a meal without a time). */

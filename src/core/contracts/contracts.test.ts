@@ -5,6 +5,7 @@ import {
   macroKcalMismatch,
   parseDecimalInput,
   validateFavoriteInput,
+  validateGrainCarbsInput,
   validateMealInput,
   validateWeightInput,
   type InputError,
@@ -179,5 +180,45 @@ describe('weigh-ins (E2E-08)', () => {
     expect(fine.ok && fine.warnings).toEqual([]);
     const first = validateWeightInput({ kg: 71 }, null);
     expect(first.ok && first.warnings).toEqual([]);
+  });
+});
+
+describe("the split of a meal's carbohydrate into white flour and whole grains", () => {
+  it('is optional: nothing typed is nothing kept, with or without macros', () => {
+    for (const carbsG of [null, 40]) {
+      const result = validateGrainCarbsInput({ carbsG });
+      expect(result.ok && result.value).toEqual({ refinedCarbsG: null, wholeCarbsG: null });
+    }
+  });
+
+  it('keeps what was typed to one decimal; one part alone is fine', () => {
+    const both = validateGrainCarbsInput({ refinedCarbsG: 10.04, wholeCarbsG: 20.26, carbsG: 40 });
+    expect(both.ok && both.value).toEqual({ refinedCarbsG: 10, wholeCarbsG: 20.3 });
+    const one = validateGrainCarbsInput({ wholeCarbsG: 25, carbsG: 40 });
+    expect(one.ok && one.value).toEqual({ refinedCarbsG: null, wholeCarbsG: 25 });
+  });
+
+  it('accepts 0 and the whole of the carbohydrate, and refuses more than it', () => {
+    expect(validateGrainCarbsInput({ refinedCarbsG: 0, wholeCarbsG: 40, carbsG: 40 }).ok).toBe(
+      true,
+    );
+    expect(
+      codesOf(validateGrainCarbsInput({ refinedCarbsG: 20, wholeCarbsG: 20.1, carbsG: 40 })),
+    ).toEqual(['grain_exceeds_carbs']);
+  });
+
+  it('refuses impossible numbers and a split without carbohydrate', () => {
+    expect(codesOf(validateGrainCarbsInput({ refinedCarbsG: -1, carbsG: 40 }))).toEqual([
+      'grain_out_of_range',
+    ]);
+    expect(codesOf(validateGrainCarbsInput({ wholeCarbsG: 501, carbsG: 600 }))).toEqual([
+      'grain_out_of_range',
+    ]);
+    expect(codesOf(validateGrainCarbsInput({ wholeCarbsG: Number.NaN, carbsG: 40 }))).toEqual([
+      'grain_invalid',
+    ]);
+    expect(codesOf(validateGrainCarbsInput({ wholeCarbsG: 10, carbsG: null }))).toEqual([
+      'grain_needs_carbs',
+    ]);
   });
 });

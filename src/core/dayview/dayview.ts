@@ -19,6 +19,9 @@ export interface MealRecord extends MealForRecommendation {
   deletedAt?: Instant | null;
   /** Added sugar of the meal in grams; absent or null when not known. */
   addedSugarG?: number | null;
+  /** A meal typed by hand: the part of its carbohydrate the person split into white flour and whole grains. */
+  refinedCarbsG?: number | null;
+  wholeCarbsG?: number | null;
 }
 
 /**

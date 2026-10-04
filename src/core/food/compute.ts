@@ -29,6 +29,9 @@ export interface FoodEntry {
   fiberG?: number;
   /** A food typed by hand without its macros (the three macro fields are then 0, not real values). */
   noMacros?: true;
+  /** A food typed by hand: how its carbohydrate splits into white flour and whole grains (grams), when typed. */
+  refinedCarbsG?: number;
+  wholeCarbsG?: number;
 }
 
 /** Ids of foods typed by hand inside a meal start with this; they are not in the food database. */
@@ -47,6 +50,9 @@ export function manualEntry(input: {
   kcal: number;
   macros: { proteinG: number; carbsG: number; fatG: number } | null;
   addedSugarG: number | null;
+  /** The part of its carbohydrate typed as white flour and as whole grains; leave out when not typed. */
+  refinedCarbsG?: number | null;
+  wholeCarbsG?: number | null;
 }): FoodEntry {
   return {
     foodId: `${MANUAL_FOOD_PREFIX}${input.id}`,
@@ -58,6 +64,8 @@ export function manualEntry(input: {
     fatG: input.macros?.fatG ?? 0,
     ...(input.addedSugarG !== null ? { addedSugarG: input.addedSugarG } : {}),
     ...(input.macros === null ? { noMacros: true as const } : {}),
+    ...(input.refinedCarbsG != null ? { refinedCarbsG: input.refinedCarbsG } : {}),
+    ...(input.wholeCarbsG != null ? { wholeCarbsG: input.wholeCarbsG } : {}),
   };
 }
 

@@ -419,3 +419,68 @@ describe('added sugar of a favorite (a meal typed by hand, remembered)', () => {
     expect((await repos.favorites.list())[0]?.addedSugarG).toBeNull();
   });
 });
+
+describe('white flour and whole grain typed for a meal', () => {
+  const macros = { proteinG: 10, carbsG: 40, fatG: 5 };
+
+  it('is kept with the meal, and "not typed" (null) when absent', async () => {
+    const split = await repos.meals.add(
+      newMeal({ id: 'a', macros, refinedCarbsG: 10.04, wholeCarbsG: 25 }),
+    );
+    const plain = await repos.meals.add(newMeal({ id: 'b', macros }));
+    expect(split).toMatchObject({ refinedCarbsG: 10, wholeCarbsG: 25 });
+    expect(plain).toMatchObject({ refinedCarbsG: null, wholeCarbsG: null });
+  });
+
+  it('can be added to a meal entered earlier, changed, and cleared', async () => {
+    await repos.meals.add(newMeal({ id: 'a', macros }));
+    const filled = await repos.meals.update('a', 1, { refinedCarbsG: 15, wholeCarbsG: 20 });
+    expect(filled).toMatchObject({ refinedCarbsG: 15, wholeCarbsG: 20 });
+    // An edit that does not mention them leaves them alone.
+    expect(await repos.meals.update('a', 2, { kcal: 300 })).toMatchObject({
+      refinedCarbsG: 15,
+      wholeCarbsG: 20,
+    });
+    const cleared = await repos.meals.update('a', 3, { refinedCarbsG: null, wholeCarbsG: null });
+    expect(cleared).toMatchObject({ refinedCarbsG: null, wholeCarbsG: null });
+  });
+
+  it('is refused when the two together are more than the carbohydrate, or there is none', async () => {
+    await expect(
+      repos.meals.add(newMeal({ macros, refinedCarbsG: 30, wholeCarbsG: 20 })),
+    ).rejects.toMatchObject({ code: 'invalid' });
+    await expect(repos.meals.add(newMeal({ wholeCarbsG: 5 }))).rejects.toMatchObject({
+      code: 'invalid',
+    });
+    await expect(repos.meals.add(newMeal({ macros, wholeCarbsG: -1 }))).rejects.toMatchObject({
+      code: 'invalid',
+    });
+    await repos.meals.add(newMeal({ id: 'a', macros }));
+    // Lowering the carbohydrate below the split that stays is refused too.
+    await repos.meals.update('a', 1, { refinedCarbsG: 30 });
+    await expect(
+      repos.meals.update('a', 2, { macros: { proteinG: 10, carbsG: 20, fatG: 5 } }),
+    ).rejects.toMatchObject({ code: 'invalid' });
+  });
+
+  it('a retry with a different split under the same id is a conflict', async () => {
+    await repos.meals.add(newMeal({ id: 'a', macros, wholeCarbsG: 5 }));
+    await expect(
+      repos.meals.add(newMeal({ id: 'a', macros, wholeCarbsG: 9 })),
+    ).rejects.toMatchObject({ code: 'id_conflict' });
+  });
+
+  it('is kept with a favorite too', async () => {
+    const favorite = await repos.favorites.add({
+      id: 'f',
+      name: 'לחם עם גבינה',
+      kcal: 300,
+      macros,
+      items: [],
+      refinedCarbsG: 12,
+      wholeCarbsG: 18,
+    });
+    expect(favorite).toMatchObject({ refinedCarbsG: 12, wholeCarbsG: 18 });
+    expect((await repos.favorites.list())[0]).toMatchObject({ refinedCarbsG: 12, wholeCarbsG: 18 });
+  });
+});

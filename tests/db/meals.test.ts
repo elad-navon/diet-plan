@@ -691,3 +691,83 @@ describe('added sugar of a meal', () => {
     expect(await read({ added_sugar_g: null }, 3)).toBeNull();
   });
 });
+
+describe('white flour and whole grain typed for a meal', () => {
+  type Split = { refined_carbs_g: string | null; whole_carbs_g: string | null };
+  const SELECT = 'select refined_carbs_g::text, whole_carbs_g::text';
+
+  it('are stored with one decimal, may be absent, and come back with the meal', async () => {
+    const user = await db.newUserWithProfile();
+    const split = await db
+      .as(user)
+      .query<Split>(`${SELECT} from public.add_meal($1::jsonb)`, [
+        JSON.stringify(
+          mealPayload(await hoursAgo(2), { refined_carbs_g: 10.04, whole_carbs_g: 20.26 }),
+        ),
+      ]);
+    expect(split[0]).toEqual({ refined_carbs_g: '10.0', whole_carbs_g: '20.3' });
+    const plain = await db
+      .as(user)
+      .query<Split>(`${SELECT} from public.add_meal($1::jsonb)`, [
+        JSON.stringify(mealPayload(await hoursAgo(2))),
+      ]);
+    expect(plain[0]).toEqual({ refined_carbs_g: null, whole_carbs_g: null });
+  });
+
+  it('are parts of the carbohydrate: together not more than it, and never without it', async () => {
+    const user = await db.newUserWithProfile();
+    const add = async (overrides: Record<string, unknown>) =>
+      failureOf(
+        db
+          .as(user)
+          .query('select * from public.add_meal($1::jsonb)', [
+            JSON.stringify(mealPayload(await hoursAgo(2), overrides)),
+          ]),
+      );
+    // The sample meal has 55 g of carbohydrate.
+    expect(await add({ refined_carbs_g: 30, whole_carbs_g: 25 })).toBe('');
+    expect(await add({ refined_carbs_g: 30, whole_carbs_g: 25.1 })).toMatch(
+      /violates check constraint/,
+    );
+    expect(await add({ whole_carbs_g: -1 })).toMatch(/violates check constraint/);
+    expect(await add({ whole_carbs_g: 501, carbs_g: 500 })).toMatch(/violates check constraint/);
+    const noMacros = { protein_g: null, carbs_g: null, fat_g: null };
+    expect(await add({ ...noMacros, whole_carbs_g: 5 })).toMatch(/violates check constraint/);
+    expect(await add(noMacros)).toBe('');
+  });
+
+  it('are part of what makes a retry "the same request"', async () => {
+    const user = await db.newUserWithProfile();
+    const payload = mealPayload(await hoursAgo(2), { whole_carbs_g: 5 });
+    await addMeal(user, payload);
+    expect(await failureOf(addMeal(user, { ...payload, whole_carbs_g: 9 }))).toMatch(/id_conflict/);
+    await expect(addMeal(user, payload)).resolves.toBeDefined();
+  });
+
+  it('can be added to a meal entered earlier, changed, cleared and left alone by an edit', async () => {
+    const user = await db.newUserWithProfile();
+    const meal = await addMeal(user, mealPayload(await hoursAgo(2)));
+    const read = async (patch: object, version: number) =>
+      (
+        await db
+          .as(user)
+          .query<Split>(`${SELECT} from public.update_meal($1, $2, $3::jsonb)`, [
+            meal.id,
+            version,
+            JSON.stringify(patch),
+          ])
+      )[0];
+    expect(await read({ refined_carbs_g: 20, whole_carbs_g: 30 }, 1)).toEqual({
+      refined_carbs_g: '20.0',
+      whole_carbs_g: '30.0',
+    });
+    expect(await read({ kcal: 400 }, 2)).toEqual({
+      refined_carbs_g: '20.0',
+      whole_carbs_g: '30.0',
+    });
+    expect(await read({ whole_carbs_g: null }, 3)).toEqual({
+      refined_carbs_g: '20.0',
+      whole_carbs_g: null,
+    });
+  });
+});

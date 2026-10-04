@@ -1,6 +1,7 @@
 import {
   MEAL_LIMITS,
   validateAddedSugarInput,
+  validateGrainCarbsInput,
   validateFavoriteInput,
   validateMealInput,
   validateWeightInput,
@@ -124,6 +125,12 @@ export function createSupabaseRepositories(options: {
           }
           const sugar = validateAddedSugarInput(input.addedSugarG);
           if (!sugar.ok) throw invalid(sugar.errors);
+          const grain = validateGrainCarbsInput({
+            refinedCarbsG: input.refinedCarbsG,
+            wholeCarbsG: input.wholeCarbsG,
+            carbsG: checked.value.macros?.carbsG ?? null,
+          });
+          if (!grain.ok) throw invalid(grain.errors);
           return mealFromRow(
             await rpcRow('add_meal', {
               p: {
@@ -135,6 +142,8 @@ export function createSupabaseRepositories(options: {
                 ...macroColumns(checked.value.macros),
                 items: input.items,
                 added_sugar_g: sugar.value.addedSugarG,
+                refined_carbs_g: grain.value.refinedCarbsG,
+                whole_carbs_g: grain.value.wholeCarbsG,
                 source: input.source,
                 food_db_version: input.foodDbVersion ?? null,
               },
@@ -170,6 +179,21 @@ export function createSupabaseRepositories(options: {
             const sugar = validateAddedSugarInput(patch.addedSugarG);
             if (!sugar.ok) throw invalid(sugar.errors);
             body['added_sugar_g'] = sugar.value.addedSugarG;
+          }
+          if (patch.refinedCarbsG !== undefined || patch.wholeCarbsG !== undefined) {
+            // The meal's carbohydrate is only known here when it is part of the same change; the server checks the
+            // rest (the two parts are never more than the carbohydrate).
+            const grain = validateGrainCarbsInput({
+              refinedCarbsG: patch.refinedCarbsG,
+              wholeCarbsG: patch.wholeCarbsG,
+              carbsG:
+                patch.macros === undefined
+                  ? MEAL_LIMITS.macroMaxG
+                  : (checked.value.macros?.carbsG ?? null),
+            });
+            if (!grain.ok) throw invalid(grain.errors);
+            body['refined_carbs_g'] = grain.value.refinedCarbsG;
+            body['whole_carbs_g'] = grain.value.wholeCarbsG;
           }
           if (patch.eatenAt !== undefined) body['eaten_at'] = formatInstant(patch.eatenAt);
           return mealFromRow(
@@ -239,6 +263,12 @@ export function createSupabaseRepositories(options: {
           if (!checked.ok) throw invalid(checked.errors);
           const sugar = validateAddedSugarInput(input.addedSugarG);
           if (!sugar.ok) throw invalid(sugar.errors);
+          const grain = validateGrainCarbsInput({
+            refinedCarbsG: input.refinedCarbsG,
+            wholeCarbsG: input.wholeCarbsG,
+            carbsG: checked.value.macros?.carbsG ?? null,
+          });
+          if (!grain.ok) throw invalid(grain.errors);
           const row: Row = {
             id: input.id,
             name: checked.value.name,
@@ -247,6 +277,10 @@ export function createSupabaseRepositories(options: {
             items: input.items,
             // Only when there is one, so a server that has not had the latest update still takes a favorite without sugar.
             ...(sugar.value.addedSugarG !== null ? { added_sugar_g: sugar.value.addedSugarG } : {}),
+            ...(grain.value.refinedCarbsG !== null
+              ? { refined_carbs_g: grain.value.refinedCarbsG }
+              : {}),
+            ...(grain.value.wholeCarbsG !== null ? { whole_carbs_g: grain.value.wholeCarbsG } : {}),
             food_db_version: input.foodDbVersion ?? null,
           };
           try {

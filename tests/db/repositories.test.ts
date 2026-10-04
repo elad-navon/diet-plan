@@ -219,6 +219,30 @@ describe('meals', () => {
     expect(cleared.addedSugarG).toBeNull();
   });
 
+  it('keeps the white flour and whole grain typed for a meal, also when added to an earlier meal', async () => {
+    const { repos } = await newUserRepos();
+    const split = await repos.meals.add(newMeal({ refinedCarbsG: 1.04, wholeCarbsG: 0.5 }));
+    expect(split).toMatchObject({ refinedCarbsG: 1, wholeCarbsG: 0.5 });
+    const earlier = await repos.meals.add(newMeal());
+    expect(earlier).toMatchObject({ refinedCarbsG: null, wholeCarbsG: null });
+    const edited = await repos.meals.update(earlier.id, 1, {
+      macros: { proteinG: 20, carbsG: 40, fatG: 25 },
+      refinedCarbsG: 15,
+      wholeCarbsG: 20,
+    });
+    expect(edited).toMatchObject({ refinedCarbsG: 15, wholeCarbsG: 20 });
+    const kept = await repos.meals.update(earlier.id, 2, { kcal: 300 });
+    expect(kept).toMatchObject({ refinedCarbsG: 15, wholeCarbsG: 20 });
+  });
+
+  it('refuses a split that does not fit in the carbohydrate before sending it', async () => {
+    const { repos } = await newUserRepos();
+    expect(
+      await codeOf(repos.meals.add(newMeal({ refinedCarbsG: 2, wholeCarbsG: 1 }))), // the meal has 2 g
+    ).toBe('invalid');
+    expect(await codeOf(repos.meals.add(newMeal({ wholeCarbsG: -1 })))).toBe('invalid');
+  });
+
   it('refuses an impossible added sugar before sending it', async () => {
     const { repos } = await newUserRepos();
     expect(await codeOf(repos.meals.add(newMeal({ addedSugarG: -1 })))).toBe('invalid');
@@ -391,6 +415,21 @@ describe('favorites', () => {
     await expect(repos.favorites.add({ ...favorite(), addedSugarG: 501 })).rejects.toMatchObject({
       code: 'invalid',
     });
+  });
+
+  it('keeps the split of a favorite typed by hand, and "not typed" when there is none', async () => {
+    const { repos } = await newUserRepos();
+    const typed = { ...favorite(), refinedCarbsG: 3, wholeCarbsG: 4.44 };
+    const added = await repos.favorites.add(typed);
+    expect(added).toMatchObject({ refinedCarbsG: 3, wholeCarbsG: 4.4 });
+    expect((await repos.favorites.list())[0]).toMatchObject({ refinedCarbsG: 3, wholeCarbsG: 4.4 });
+    expect(await repos.favorites.add(favorite())).toMatchObject({
+      refinedCarbsG: null,
+      wholeCarbsG: null,
+    });
+    await expect(
+      repos.favorites.add({ ...favorite(), refinedCarbsG: 9, wholeCarbsG: 9 }), // the favorite has 8 g
+    ).rejects.toMatchObject({ code: 'invalid' });
   });
 
   it("someone else's id cannot be taken over", async () => {
