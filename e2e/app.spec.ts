@@ -495,12 +495,39 @@ test('CHART-08: each meal is a numbered marker on the line, and the list says wh
   for (const [index, number] of ['1', '2', '3'].entries()) {
     await expect(rows.nth(index)).toContainText(number);
   }
+  if (isMobile) {
+    // each meal has a whole row of its own: never two side by side
+    const list = await chart.getByRole('list', { name: he.today.mealsListLabel }).boundingBox();
+    for (const index of [0, 1, 2]) {
+      const box = await rows.nth(index).boundingBox();
+      expect(Math.abs((box?.width ?? 0) - (list?.width ?? 1e6))).toBeLessThan(2);
+    }
+  }
   // the numbers on the line are the same 1, 2, 3
   await expect(chart.locator('svg[role="img"] text', { hasText: /^[123]$/ })).toHaveText([
     '1',
     '2',
     '3',
   ]);
+});
+
+test('CHART-09: the word "now" sits half way, in height, between the legend and the top line of the grid', async ({
+  page,
+}) => {
+  await openApp(page, { seed: { withMealsToday: true } });
+  const chart = page.getByRole('figure', { name: he.today.chartTitle });
+  const drawing = chart.locator('svg[role="img"]');
+  const now = drawing.locator('text', { hasText: new RegExp(`^${he.today.now}$`) });
+  await expect(now).toBeVisible();
+  await page.waitForTimeout(400); // the drawing and the legend have settled
+  const [legend, word, topLine] = await Promise.all([
+    chart.getByRole('list', { name: 'מקרא' }).boundingBox(),
+    now.boundingBox(),
+    drawing.locator('line[stroke="var(--faint)"]').last().boundingBox(), // the highest number on the scale
+  ]);
+  const middle = ((legend?.y ?? 0) + (legend?.height ?? 0) + (topLine?.y ?? 0)) / 2;
+  const wordMiddle = (word?.y ?? 0) + (word?.height ?? 0) / 2;
+  expect(Math.abs(wordMiddle - middle)).toBeLessThan(3);
 });
 
 test.describe('the phone layout', () => {

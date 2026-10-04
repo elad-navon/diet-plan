@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useDesktop } from '../../app/use-media-query';
 import { type DayChartModel } from '../../core/dayview';
 import { type Tz } from '../../core/time';
@@ -73,6 +73,30 @@ export function DayChart({ model, tz, corridorNow }: DayChartProps) {
   const PAD = roomy ? DESKTOP_PAD : PHONE_PAD;
   const W = roomy ? box.w : PHONE_W;
   const H = roomy ? box.h : PHONE_H;
+
+  // Where the bottom of the legend is, in the drawing's own units (above the drawing on a phone, so negative): the
+  // word "now" sits half way between it and the daily target line.
+  const legendRef = useRef<HTMLUListElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [legendBottom, setLegendBottom] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const legend = legendRef.current;
+    const svg = svgRef.current;
+    if (!legend || !svg) return;
+    const measure = (): void => {
+      const drawn = svg.getBoundingClientRect();
+      if (drawn.width === 0) return;
+      const bottom = (legend.getBoundingClientRect().bottom - drawn.top) / (drawn.width / W);
+      setLegendBottom((current) =>
+        current !== null && Math.abs(current - bottom) < 0.25 ? current : bottom,
+      );
+    };
+    measure();
+    const watcher = new ResizeObserver(measure);
+    watcher.observe(legend);
+    watcher.observe(svg);
+    return () => watcher.disconnect();
+  }, [W]);
   const PLOT_W = W - PAD.left - PAD.right;
   const PLOT_H = H - PAD.top - PAD.bottom;
   const fontSize = roomy ? 13 : 11;
@@ -121,6 +145,15 @@ export function DayChart({ model, tz, corridorNow }: DayChartProps) {
   })();
 
   const targetY = y(model.targetKcal);
+  // The word "now": half way, in height, between the legend and the top line of the grid (the highest number on the
+  // scale, 2,000 for example), and never on the target line. Just under the top of the drawing until the legend has
+  // been measured, or if there is no room between the two.
+  const topGridY = y(Math.max(...yTicks(model.yMax, roomy)));
+  const nowCenter =
+    legendBottom !== null && legendBottom < topGridY
+      ? Math.max((legendBottom + topGridY) / 2, fontSize * 0.8)
+      : PAD.top - 4 - fontSize * 0.35;
+  const nowBaseline = Math.min(nowCenter + fontSize * 0.35, topGridY - 6, targetY - 6);
   const summary = he.today.chartSummary(
     formatInt(model.totalKcal),
     formatInt(model.targetKcal),
@@ -144,6 +177,7 @@ export function DayChart({ model, tz, corridorNow }: DayChartProps) {
         </figcaption>
 
         <ul
+          ref={legendRef}
           className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted [text-shadow:0_1px_8px_var(--text-halo)] lg:mb-0 lg:me-6 xl:me-14"
           aria-label="מקרא"
         >
@@ -178,6 +212,7 @@ export function DayChart({ model, tz, corridorNow }: DayChartProps) {
 
       <div ref={boxRef} className="lg:absolute lg:inset-0">
         <svg
+          ref={svgRef}
           viewBox={`0 0 ${W} ${H}`}
           role="img"
           aria-labelledby={titleId}
@@ -322,7 +357,7 @@ export function DayChart({ model, tz, corridorNow }: DayChartProps) {
               <line
                 x1={x(model.now.minute)}
                 x2={x(model.now.minute)}
-                y1={PAD.top}
+                y1={nowBaseline + 4}
                 y2={baseline}
                 stroke="var(--muted)"
                 strokeWidth="1"
@@ -331,7 +366,7 @@ export function DayChart({ model, tz, corridorNow }: DayChartProps) {
               />
               <text
                 x={x(model.now.minute)}
-                y={PAD.top - 4}
+                y={nowBaseline}
                 textAnchor="middle"
                 fontSize={fontSize}
                 fill="var(--muted)"
@@ -424,10 +459,7 @@ export function DayChart({ model, tz, corridorNow }: DayChartProps) {
       </div>
 
       {model.meals.length > 0 && (
-        <ol
-          aria-label={he.today.mealsListLabel}
-          className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] gap-x-4 gap-y-2 lg:hidden"
-        >
+        <ol aria-label={he.today.mealsListLabel} className="mt-3 space-y-2 lg:hidden">
           {model.meals.map((meal, index) => (
             <li key={meal.id} className="flex min-w-0 items-baseline gap-2 text-base">
               {numbered && (
