@@ -67,6 +67,12 @@ function greeting(now: number, tz: string): string {
 }
 
 const CLOSED: SheetState = { open: false, editing: null, prefill: null };
+
+/** Back to the top of the page, without a slide for someone who asked for less motion. */
+function scrollToTop(): void {
+  const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.scrollTo({ top: 0, behavior: calm ? 'auto' : 'smooth' });
+}
 const round1 = (value: number): number => Math.round(value * 10) / 10;
 
 export function TodayPage() {
@@ -88,14 +94,13 @@ function TodayContent() {
 
   const plans = usePlans().data ?? [];
   const todayMeals = useMealsOfDay(today).data;
-  // On a computer the week sits on the day screen, so its meals are loaded there (a phone does not need them).
+  // The week sits at the bottom of the day screen (on a phone and on a computer), so its meals are loaded.
   const desktop = useDesktop();
   const weekFrom = addDays(today, -6);
-  const weekMeals = useMealsRange(weekFrom, today, desktop).data;
-  // Clicking a day in the week shows that day on the whole screen (a computer only). Null means today.
+  const weekMeals = useMealsRange(weekFrom, today).data;
+  // Pressing a day in the week shows that day on the whole screen. Null means today.
   const [picked, setPicked] = useState<LocalDate | null>(null);
-  const date: LocalDate =
-    desktop && picked !== null && picked >= weekFrom && picked < today ? picked : today;
+  const date: LocalDate = picked !== null && picked >= weekFrom && picked < today ? picked : today;
   const isToday = date === today;
   const storedMeals = isToday ? todayMeals : weekMeals?.filter((meal) => meal.localDate === date);
   const foodDb = useFoodDb().data;
@@ -192,9 +197,11 @@ function TodayContent() {
     }
   }
 
-  const weekRange = desktop
-    ? summarizeRange({ from: weekFrom, to: today, plans, meals: weekMeals ?? [] })
-    : null;
+  // A phone shows the week once its meals have loaded (not an empty week first); a computer shows it at once.
+  const weekRange =
+    desktop || weekMeals !== undefined
+      ? summarizeRange({ from: weekFrom, to: today, plans, meals: weekMeals ?? [] })
+      : null;
   // Meals have the same numbers in the list as on the chart (a long day has plain dots there instead).
   const mealNumbers =
     chart && chart.meals.length <= MAX_NUMBERED_MEALS
@@ -245,6 +252,12 @@ function TodayContent() {
           <span aria-hidden="true">·</span>
           <span>{formatDayTitle(date, tz)}</span>
         </h1>
+        {/* A phone has no room for it beside the title: it sits under it while an earlier day is shown. */}
+        {!isToday && (
+          <Button className="mt-2 lg:hidden" onClick={() => setPicked(null)}>
+            <Icon name="calendar" size={18} /> {he.today.backToToday}
+          </Button>
+        )}
         <div className="hidden items-center gap-2 lg:flex">
           {!isToday && (
             <Button onClick={() => setPicked(null)}>
@@ -345,7 +358,11 @@ function TodayContent() {
               tz={tz}
               today={today}
               selected={date}
-              onSelect={(day) => setPicked(day === today ? null : day)}
+              onSelect={(day) => {
+                setPicked(day === today ? null : day);
+                // The week is at the bottom of a phone's screen, and the day it opens is at the top.
+                scrollToTop();
+              }}
             />
           </div>
         )}

@@ -14,8 +14,8 @@ interface WeekCardProps {
 }
 
 /**
- * The last seven days on the day screen of a computer: calories per day as bars, each against that day's own
- * target (the thin line across the bar). A day with entries can be clicked, and then the whole screen shows that
+ * The last seven days at the bottom of the day screen: calories per day as bars, each against that day's own
+ * target (the thin line across the bar). A day with entries can be pressed, and then the whole screen shows that
  * day; the day on screen has a bar of another color, and a little wider, and today has a small dot under it. A day without
  * entries is a small ring. The calories have a scale on the left, with a faint line at each step, and the time
  * runs left to right, as in the other charts.
@@ -45,7 +45,11 @@ export function WeekCard({ range, tz, today, selected, onSelect }: WeekCardProps
         </CardTitle>
       </div>
 
-      <div className="relative min-h-0 flex-1" style={{ direction: 'ltr' }}>
+      {/* A phone has no height to share out, so the bars get one of their own; a computer's card fills its cell. */}
+      <div
+        className="relative h-48 flex-none lg:h-auto lg:min-h-0 lg:flex-1"
+        style={{ direction: 'ltr' }}
+      >
         <div className="absolute inset-0 grid grid-cols-[2.6rem_minmax(0,1fr)] gap-x-1.5">
           {/* the scale: the numbers on the left, a faint line behind the bars at each of them */}
           <div aria-hidden="true" className="grid grid-rows-[minmax(0,1fr)_1.75rem]">

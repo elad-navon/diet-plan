@@ -503,6 +503,48 @@ test('CHART-08: each meal is a numbered marker on the line, and the list says wh
   ]);
 });
 
+test.describe('the phone layout', () => {
+  test.skip(({ isMobile }) => !isMobile, 'a computer has its own layout');
+
+  test('PHONE-01: the week is at the bottom of the day, and a day in it opens on the whole screen', async ({
+    page,
+  }) => {
+    await openApp(page, { seed: { withMealsToday: true } });
+    const week = page.getByRole('region', { name: he.today.weekTitle });
+    const meals = page.getByRole('region', { name: he.today.mealsTitle });
+    await expect(week).toBeVisible();
+    // it comes after the meals of the day
+    const [mealsBox, weekBox] = await Promise.all([meals.boundingBox(), week.boundingBox()]);
+    expect((weekBox?.y ?? 0) > (mealsBox?.y ?? 1e6)).toBe(true);
+    // the days of the last week with meals are there, with the average
+    await expect(week.getByText(/ממוצע: .* קק"ל \(\d+ ימים\)/)).toBeVisible();
+    await expect(week.getByText('1,370', { exact: true })).toBeVisible(); // yesterday: 320 + 620 + 430
+    // no sideways scroll
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      page.viewportSize()?.width ?? 0,
+    );
+    await expect(meals).toContainText('חביתה וסלט'); // today's meal
+
+    // Pressing yesterday brings its meals to the screen, from the top.
+    await week.getByRole('button', { name: /1 באוק/ }).click();
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('1 באוקטובר');
+    await expect(page.getByText(he.today.viewingPast)).toBeVisible();
+    await expect(meals).toContainText('קוטג׳ ולחם');
+    await expect(meals).not.toContainText('חביתה וסלט');
+    await expect(week.getByRole('button', { name: /1 באוק/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(5);
+
+    // "back to today" is right under the title.
+    await page.getByRole('button', { name: he.today.backToToday }).click();
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('2 באוקטובר');
+    await expect(meals).toContainText('חביתה וסלט');
+    await expect(page.getByRole('button', { name: he.today.backToToday })).toHaveCount(0);
+  });
+});
+
 test.describe('the computer layout', () => {
   test.skip(({ isMobile }) => isMobile, 'a phone keeps its own layout');
 
