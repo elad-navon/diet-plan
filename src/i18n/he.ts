@@ -158,7 +158,7 @@ export const he = {
     mealsListLabel: 'הארוחות של היום',
     colKcal: 'קלוריות',
     ingredients: (meal: string) => `המרכיבים של ${meal}`,
-    nextMeal: 'הארוחה הבאה',
+    nextMeal: 'הצעות לארוחה הבאה',
     nextAround: (time: string) => `בערך ב-${time}`,
     nextUpTo: (kcal: string) => `עד כ-${kcal} קק"ל`,
     optionalSnack: 'נשנוש קל (לא חובה)',
