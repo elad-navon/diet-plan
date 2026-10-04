@@ -43,7 +43,6 @@ export function WeekCard({ range, tz, today, selected, onSelect }: WeekCardProps
         <CardTitle id="week-title" icon="week" tone="mint" className="text-lg font-bold">
           {he.today.weekTitle}
         </CardTitle>
-        <p className="text-sm text-muted">{he.today.weekHint}</p>
       </div>
 
       <div className="relative min-h-0 flex-1" style={{ direction: 'ltr' }}>

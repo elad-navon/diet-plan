@@ -25,7 +25,7 @@ import {
 import { type Recommendation, type Suggestion } from '../../core/recommend';
 import { DEFAULT_SCHEDULE } from '../../core/schedule';
 import { addDays, localDateOf, localTimeOf, type LocalDate } from '../../core/time';
-import { DataError, type StoredMeal } from '../../data';
+import { DataError, type FavoriteRecord, type StoredMeal } from '../../data';
 import { dataErrorMessage } from '../../i18n/data-errors';
 import { formatDayTitle } from '../../i18n/format';
 import { he } from '../../i18n/he';
@@ -36,8 +36,11 @@ import { Icon } from '../../ui/Icon';
 import { Sheet } from '../../ui/Sheet';
 import { useToast } from '../../ui/Toast';
 import { AddMealSheet, type MealPrefill } from '../meals/AddMealSheet';
+import { savedMealPrefill } from '../meals/prefill';
+import { SavedMealsSheet } from '../meals/SavedMealsSheet';
 import { LoadGate } from '../shell/LoadGate';
 import { useRequiredProfile } from '../shell/ProfileGate';
+import { AddMealMenu } from './AddMealMenu';
 import { CalorieRing } from './CalorieRing';
 import { DayChart, MAX_NUMBERED_MEALS } from './DayChart';
 import { FlourCard } from './FlourCard';
@@ -121,6 +124,8 @@ function TodayContent() {
   const [sheet, setSheet] = useState<SheetState>(CLOSED);
   // A meal is deleted only after it is confirmed in a window of its own (there is no undo).
   const [toDelete, setToDelete] = useState<StoredMeal | null>(null);
+  // The list of saved meals opens from the add button; picking one opens it in the new-meal window.
+  const [savedOpen, setSavedOpen] = useState(false);
 
   const plan = resolvePlanForDate(plans, date);
   const view = buildDayView({ date, now, tz, plans, meals, candidates: ideas });
@@ -172,21 +177,9 @@ function TodayContent() {
     });
   }
 
-  function eatAgain(meal: StoredMeal): void {
-    // "I ate this again" is about today, also when the meal was picked from an earlier day.
-    setPicked(null);
-    openNew({
-      name: meal.name,
-      kcal: meal.kcal,
-      macros:
-        meal.proteinG !== null && meal.carbsG !== null && meal.fatG !== null
-          ? { proteinG: meal.proteinG, carbsG: meal.carbsG, fatG: meal.fatG }
-          : null,
-      items: meal.items,
-      addedSugarG: meal.addedSugarG,
-      slot: meal.slot,
-      source: 'copy',
-    });
+  function pickSavedMeal(favorite: FavoriteRecord): void {
+    setSavedOpen(false);
+    openNew(savedMealPrefill(favorite));
   }
 
   async function remove(meal: StoredMeal): Promise<void> {
@@ -214,7 +207,7 @@ function TodayContent() {
   const hero = (
     <section
       aria-label={he.today.ringRemaining}
-      className={`hero relative isolate flex flex-col items-center justify-center gap-4 overflow-hidden panel-dark px-5 py-6 lg:min-h-0 lg:gap-3 lg:px-4 lg:py-4 ${wideTop ? '' : 'lg:col-start-1 lg:row-start-1'}`}
+      className={`hero relative isolate flex flex-col items-center justify-center gap-4 overflow-hidden panel-dark px-5 py-6 lg:min-h-0 lg:gap-2 lg:px-4 lg:py-3 ${wideTop ? '' : 'lg:col-start-1 lg:row-start-1'}`}
     >
       <CardBackdrop name="calories" />
       <CalorieRing consumed={view.summary.kcal} target={view.target?.kcalTarget ?? null} />
@@ -240,24 +233,29 @@ function TodayContent() {
   return (
     <div className="space-y-4 lg:flex lg:h-full lg:flex-col lg:space-y-0 lg:gap-3.5">
       <header className="lg:flex lg:flex-none lg:items-center lg:justify-between">
-        <div>
-          <p className="flex items-center gap-1.5 text-base text-muted">
-            {!isToday && <Icon name="eye" size={16} />}
-            {isToday ? greeting(now, tz) : he.today.viewingPast}
-          </p>
-          <h1 className="text-3xl font-bold tracking-tight lg:text-2xl">
-            {formatDayTitle(date, tz)}
-          </h1>
-        </div>
+        {/* The greeting (or "viewing an earlier day") and the date, on one line in one type. The size follows the
+            width of the screen, so the line never wraps; an earlier day has a longer label and an icon. */}
+        <h1
+          className={`flex items-center gap-2 whitespace-nowrap font-semibold tracking-tight ${
+            isToday ? 'text-[clamp(0.9rem,4.6vw,1.75rem)]' : 'text-[clamp(0.9rem,4.1vw,1.75rem)]'
+          }`}
+        >
+          {!isToday && <Icon name="eye" size={16} />}
+          <span>{isToday ? greeting(now, tz) : he.today.viewingPast}</span>
+          <span aria-hidden="true">·</span>
+          <span>{formatDayTitle(date, tz)}</span>
+        </h1>
         <div className="hidden items-center gap-2 lg:flex">
           {!isToday && (
             <Button onClick={() => setPicked(null)}>
               <Icon name="calendar" size={18} /> {he.today.backToToday}
             </Button>
           )}
-          <Button variant="primary" onClick={() => openNew()}>
-            <Icon name="plus" size={18} /> {he.today.addMeal}
-          </Button>
+          <AddMealMenu
+            variant="button"
+            onNew={() => openNew()}
+            onSaved={() => setSavedOpen(true)}
+          />
         </div>
       </header>
 
@@ -330,7 +328,6 @@ function TodayContent() {
               tz={tz}
               onEdit={(meal) => setSheet({ open: true, editing: meal, prefill: null })}
               onDelete={setToDelete}
-              onAgain={eatAgain}
               {...(mealNumbers ? { numbers: mealNumbers } : {})}
             />
           </div>
@@ -354,14 +351,7 @@ function TodayContent() {
         )}
       </div>
 
-      <button
-        type="button"
-        aria-label={he.today.addMeal}
-        onClick={() => openNew()}
-        className="fixed bottom-[calc(6.25rem+env(safe-area-inset-bottom))] end-4 z-30 flex size-14 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent-2 text-on-accent shadow-[0_12px_28px_-8px_color-mix(in_srgb,var(--accent)_80%,transparent)] transition active:scale-95 lg:hidden"
-      >
-        <Icon name="plus" size={28} />
-      </button>
+      <AddMealMenu variant="fab" onNew={() => openNew()} onSaved={() => setSavedOpen(true)} />
 
       <Sheet
         open={toDelete !== null}
@@ -377,6 +367,12 @@ function TodayContent() {
         </div>
       </Sheet>
 
+      <SavedMealsSheet
+        open={savedOpen}
+        onClose={() => setSavedOpen(false)}
+        onPick={pickSavedMeal}
+      />
+
       <AddMealSheet
         open={sheet.open}
         onClose={() => setSheet(CLOSED)}
@@ -386,8 +382,17 @@ function TodayContent() {
         schedule={plan?.schedule ?? DEFAULT_SCHEDULE}
         editing={sheet.editing}
         prefill={sheet.prefill}
-        onSaved={(_, kind) =>
-          toast.show({ message: kind === 'added' ? he.today.saved : he.today.updated })
+        onSaved={(_, kind, extra) =>
+          toast.show({
+            message:
+              extra?.savedMeal === 'saved'
+                ? he.today.savedAndKept
+                : extra?.savedMeal === 'failed'
+                  ? he.today.savedNotKept
+                  : kind === 'added'
+                    ? he.today.saved
+                    : he.today.updated,
+          })
         }
       />
     </div>

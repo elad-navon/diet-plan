@@ -70,6 +70,8 @@
   --text-halo: transparent;
   --row-hover: rgb(8 145 178 / 0.1);
   --tile-bg: rgb(8 120 160 / 0.07);
+  --menu-bg: #ffffff;
+  --menu-ring: rgb(8 120 160 / 0.3);
   --tone-cyan: #0891b2;
   --tone-blue: #1d6fd6;
   --tone-mint: #0f9f72;
@@ -145,6 +147,8 @@
     --week-glow: rgb(0 217 255 / 0.6);
     --row-hover: rgb(0 217 255 / 0.09);
     --tile-bg: rgb(0 217 255 / 0.07);
+    --menu-bg: #17394f;
+    --menu-ring: rgb(0 220 255 / 0.55);
     --tone-cyan: #00d9ff;
     --tone-blue: #3b9bff;
     --tone-mint: #20e6a0;
@@ -220,6 +224,8 @@
   --week-glow: rgb(0 217 255 / 0.6);
   --row-hover: rgb(0 217 255 / 0.09);
   --tile-bg: rgb(0 217 255 / 0.07);
+  --menu-bg: #17394f;
+  --menu-ring: rgb(0 220 255 / 0.55);
   --tone-cyan: #00d9ff;
   --tone-blue: #3b9bff;
   --tone-mint: #20e6a0;

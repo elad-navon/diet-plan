@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { he } from '../src/i18n/he';
-import { openApp } from './helpers';
+import { openApp, openNewMeal } from './helpers';
 
 /** Automated accessibility scan of every main screen, light and dark (docs/TEST_PLAN.md A11Y-01). */
 
@@ -34,7 +34,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
     test('add-meal sheet', async ({ page }) => {
       await openApp(page, { seed: {} });
-      await page.getByRole('button', { name: he.today.addMeal }).first().click();
+      await openNewMeal(page);
       const sheet = page.getByRole('dialog', { name: he.addMeal.title });
       await expect(sheet).toBeVisible();
       expect(await scan(page)).toEqual([]);
@@ -67,7 +67,8 @@ test('keyboard: the add-meal sheet traps focus, closes on Escape and returns foc
   await openApp(page, { seed: {} });
   const opener = page.getByRole('button', { name: he.today.addMeal }).first();
   await opener.focus();
-  await opener.press('Enter');
+  await opener.press('Enter'); // opens the short list: the first choice is a new meal
+  await page.getByRole('button', { name: he.today.addNewMeal }).press('Enter');
   const sheet = page.getByRole('dialog', { name: he.addMeal.title });
   await expect(sheet).toBeVisible();
 

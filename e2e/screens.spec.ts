@@ -1,6 +1,6 @@
 import { test, type Page } from '@playwright/test';
 import { he } from '../src/i18n/he';
-import { openApp } from './helpers';
+import { openApp, openNewMeal } from './helpers';
 
 /**
  * Screenshots for human review: `SCREENSHOTS=1 npx playwright test e2e/screens.spec.ts`.
@@ -70,7 +70,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
     test('add meal sheet', async ({ page }) => {
       await openApp(page, { seed: {}, time: '2026-10-02T11:40:00+03:00' });
-      await page.getByRole('button', { name: he.today.addMeal }).first().click();
+      await openNewMeal(page);
       await page.getByLabel(he.addMeal.searchLabel).fill('קוטג');
       await page.waitForTimeout(400);
       await shot(page, `sheet-search-${scheme}`);

@@ -144,7 +144,7 @@ export function DayChart({ model, tz, corridorNow }: DayChartProps) {
         </figcaption>
 
         <ul
-          className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted [text-shadow:0_1px_8px_var(--text-halo)] lg:mb-0"
+          className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted [text-shadow:0_1px_8px_var(--text-halo)] lg:mb-0 lg:me-6 xl:me-14"
           aria-label="מקרא"
         >
           <li className="flex items-center gap-1.5">

@@ -36,7 +36,10 @@ const draftSchema = z.object({
   /** When the form was last open (a moment), and which day it was adding to. */
   savedAt: number,
   date: z.string(),
-  mode: z.enum(['search', 'manual', 'favorites']),
+  // The third tab ("favorites") is gone: a draft left on it opens on the search.
+  mode: z
+    .enum(['search', 'manual', 'favorites'])
+    .transform((mode) => (mode === 'favorites' ? 'search' : mode)),
   items: z.array(foodEntry),
   name: z.string(),
   kcalText: z.string(),

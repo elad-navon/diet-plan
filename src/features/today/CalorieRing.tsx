@@ -33,7 +33,8 @@ export function CalorieRing({ consumed, target }: CalorieRingProps) {
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className="relative size-[184px] lg:size-[clamp(7rem,18vh,11.5rem)]">
+      {/* The writing inside is sized by the ring (container units), so the number and its label always fit within it. */}
+      <div className="@container relative size-[184px] lg:size-[clamp(7rem,18vh,11.5rem)]">
         <svg
           width={SIZE}
           height={SIZE}
@@ -77,16 +78,16 @@ export function CalorieRing({ consumed, target }: CalorieRingProps) {
           aria-hidden="true"
           className="absolute inset-0 flex flex-col items-center justify-center"
         >
-          <span className="text-5xl font-bold leading-none tracking-tight tabular-nums [text-shadow:0_0_26px_var(--ring-glow)] lg:text-[clamp(1.75rem,5.4vh,3rem)]">
+          <span className="text-[25cqw] font-bold leading-none tracking-tight tabular-nums [text-shadow:0_0_26px_var(--ring-glow)]">
             <bdi>{formatInt(counted)}</bdi>
           </span>
-          <span className="mt-1 text-base opacity-90">
+          <span className="mt-[2.5cqw] text-[9cqw] leading-tight opacity-90">
             {target === null ? he.kcal : over ? he.today.ringOver : he.today.ringRemaining}
           </span>
         </div>
       </div>
       {target !== null && (
-        <p className="text-base opacity-90">
+        <p className="max-w-full rounded-full bg-[rgb(4_16_28/0.68)] px-3.5 py-1 text-center text-base font-semibold text-ink ring-1 ring-[var(--status-ring)] backdrop-blur-sm lg:px-3 lg:py-0.5 lg:text-[clamp(0.65rem,0.95vw,0.95rem)]">
           {he.today.ringEaten(formatInt(consumed), formatInt(target))}
         </p>
       )}

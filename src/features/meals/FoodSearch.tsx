@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { searchFoods, type FoodRecord } from '../../core/food';
-import { useFoodDb, useFoodUsage } from '../../app/data-hooks';
+import { useFoodDb, useFoodUsage, useRemoveFavorite } from '../../app/data-hooks';
 import { formatDecimal, formatInt, he } from '../../i18n/he';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
@@ -23,6 +23,8 @@ const MAX_FREQUENT = 8;
 /** Search the national nutrition database in Hebrew; foods the user eats often come first. */
 export function FoodSearch({ onPick, favorites, onPickFavorite, onManual }: FoodSearchProps) {
   const [text, setText] = useState('');
+  const removeFavorite = useRemoveFavorite();
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
   const database = useFoodDb();
   const usage = useFoodUsage().data;
   const loaded = database.data;
@@ -83,23 +85,57 @@ export function FoodSearch({ onPick, favorites, onPickFavorite, onManual }: Food
           <h3 className="text-base font-semibold text-muted">{he.addMeal.myFoods}</h3>
           <ul className="divide-y divide-faint overflow-hidden rounded-2xl bg-surface-2">
             {mine.map((favorite) => (
-              <li key={favorite.id}>
-                <button
-                  type="button"
-                  onClick={() => onPickFavorite(favorite.id)}
-                  className="flex min-h-14 w-full items-center justify-between gap-3 px-4 py-2 text-start transition hover:bg-faint/60"
-                >
-                  <span className="min-w-0">
-                    <span className="block break-words text-base font-medium">{favorite.name}</span>
-                    <span className="block text-sm text-muted">
-                      <bdi>{formatInt(favorite.kcal)}</bdi> {he.kcal}
-                      {favorite.addedSugarG !== null &&
-                        favorite.addedSugarG > 0 &&
-                        ` · ${he.sugar.mealTotal(formatDecimal(favorite.addedSugarG))}`}
+              <li key={favorite.id} className="flex items-center">
+                {confirmRemoveId === favorite.id ? (
+                  <span className="flex min-h-14 flex-1 flex-wrap items-center justify-between gap-2 px-4 py-2">
+                    <span className="min-w-0 break-words text-base">
+                      {favorite.name} · {he.addMeal.removeFavoriteAsk}
+                    </span>
+                    <span className="flex shrink-0 gap-1">
+                      <Button
+                        onClick={() => {
+                          setConfirmRemoveId(null);
+                          removeFavorite.mutate(favorite.id);
+                        }}
+                      >
+                        {he.addMeal.removeFavoriteYes}
+                      </Button>
+                      <Button variant="ghost" onClick={() => setConfirmRemoveId(null)}>
+                        {he.cancel}
+                      </Button>
                     </span>
                   </span>
-                  <Icon name="star" />
-                </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => onPickFavorite(favorite.id)}
+                      className="flex min-h-14 min-w-0 flex-1 items-center justify-between gap-3 px-4 py-2 text-start transition hover:bg-faint/60"
+                    >
+                      <span className="min-w-0">
+                        <span className="block break-words text-base font-medium">
+                          {favorite.name}
+                        </span>
+                        <span className="block text-sm text-muted">
+                          <bdi>{formatInt(favorite.kcal)}</bdi> {he.kcal}
+                          {favorite.addedSugarG !== null &&
+                            favorite.addedSugarG > 0 &&
+                            ` · ${he.sugar.mealTotal(formatDecimal(favorite.addedSugarG))}`}
+                        </span>
+                      </span>
+                      <Icon name="star" />
+                    </button>
+                    <Button
+                      icon
+                      variant="ghost"
+                      className="me-1 shrink-0"
+                      aria-label={he.addMeal.removeFavorite(favorite.name)}
+                      onClick={() => setConfirmRemoveId(favorite.id)}
+                    >
+                      <Icon name="trash" />
+                    </Button>
+                  </>
+                )}
               </li>
             ))}
           </ul>

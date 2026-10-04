@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { he } from '../src/i18n/he';
-import { TODAY, openApp } from './helpers';
+import { TODAY, openApp, openNewMeal } from './helpers';
 
 /** The critical user journeys (docs/TEST_PLAN.md E2E-01 ... E2E-12) that exist so far. */
 
@@ -52,7 +52,7 @@ test('E2E-02: add a meal from the food database, then see the day update', async
   await openApp(page, { seed: {} });
   await expect(remaining(page)).toHaveAttribute('aria-label', /1,390/);
 
-  await page.getByRole('button', { name: he.today.addMeal }).first().click();
+  await openNewMeal(page);
   const sheet = page.getByRole('dialog', { name: he.addMeal.title });
   await sheet.getByLabel(he.addMeal.searchLabel).fill('ביצה');
   await sheet
@@ -75,7 +75,7 @@ test('E2E-02: add a meal from the food database, then see the day update', async
 
 test('E2E-04: add a manual meal and see validation', async ({ page }) => {
   await openApp(page, { seed: {} });
-  await page.getByRole('button', { name: he.today.addMeal }).first().click();
+  await openNewMeal(page);
   const sheet = page.getByRole('dialog', { name: he.addMeal.title });
   await sheet.getByText(he.addMeal.tabManual, { exact: true }).click();
 
@@ -98,7 +98,7 @@ test('E2E-04b: a food typed by hand can be added to a meal that already has food
   page,
 }) => {
   await openApp(page, { seed: {} });
-  await page.getByRole('button', { name: he.today.addMeal }).first().click();
+  await openNewMeal(page);
   const sheet = page.getByRole('dialog', { name: he.addMeal.title });
   await sheet.getByLabel(he.addMeal.searchLabel).fill('ביצה');
   await sheet
@@ -147,7 +147,7 @@ test('SUGAR-01: the day shows added sugar in its bands, and a typed value moves 
   await expect(meter('0')).toBeVisible();
   await expect(page.getByText(he.sugar.band.very_low).first()).toBeVisible();
 
-  await page.getByRole('button', { name: he.today.addMeal }).first().click();
+  await openNewMeal(page);
   const sheet = page.getByRole('dialog', { name: he.addMeal.title });
   await sheet.getByText(he.addMeal.tabManual, { exact: true }).click();
   await sheet.getByLabel(he.addMeal.name).fill('עוגיות');
@@ -164,7 +164,7 @@ test('SUGAR-02: a food from the database brings its added sugar into the meal an
   page,
 }) => {
   await openApp(page, { seed: {} });
-  await page.getByRole('button', { name: he.today.addMeal }).first().click();
+  await openNewMeal(page);
   const sheet = page.getByRole('dialog', { name: he.addMeal.title });
   await sheet.getByLabel(he.addMeal.searchLabel).fill('מיץ תפוחים');
   // The list says how much added sugar there is in 100 g before the food is even chosen.
@@ -185,7 +185,7 @@ test('SUGAR-02: a food from the database brings its added sugar into the meal an
 
 test('SUGAR-03: whole fruit does not count as added sugar', async ({ page }) => {
   await openApp(page, { seed: {} });
-  await page.getByRole('button', { name: he.today.addMeal }).first().click();
+  await openNewMeal(page);
   const sheet = page.getByRole('dialog', { name: he.addMeal.title });
   await sheet.getByLabel(he.addMeal.searchLabel).fill('בננה');
   await expect(sheet.getByText(he.sugar.none100).first()).toBeVisible();
@@ -233,7 +233,7 @@ test('FLOUR-02: a food says whether it is white flour or whole grain, and what t
 }) => {
   await openApp(page, { seed: {} });
   await expect(page.getByText(he.flour.empty)).toBeVisible();
-  await page.getByRole('button', { name: he.today.addMeal }).first().click();
+  await openNewMeal(page);
   const sheet = page.getByRole('dialog', { name: he.addMeal.title });
   await sheet.getByLabel(he.addMeal.searchLabel).fill('לחם לבן');
   await expect(sheet.getByText(new RegExp(he.flour.tag.refined)).first()).toBeVisible();
@@ -248,7 +248,7 @@ test('DRAFT-01: a click beside the sheet does not hide a meal being typed; closi
   page,
 }) => {
   await openApp(page, { seed: {} });
-  const open = () => page.getByRole('button', { name: he.today.addMeal }).first().click();
+  const open = () => openNewMeal(page);
   const sheet = page.getByRole('dialog', { name: he.addMeal.title });
 
   await open();
@@ -277,7 +277,7 @@ test('DRAFT-02: foods already added to a meal are still there after closing, unt
   page,
 }) => {
   await openApp(page, { seed: {} });
-  const open = () => page.getByRole('button', { name: he.today.addMeal }).first().click();
+  const open = () => openNewMeal(page);
   const sheet = page.getByRole('dialog', { name: he.addMeal.title });
 
   await open();
@@ -308,7 +308,7 @@ test('REMEMBER-01: a meal typed by hand is found by name next time, with its num
   page,
 }) => {
   await openApp(page, { seed: {} });
-  const open = () => page.getByRole('button', { name: he.today.addMeal }).first().click();
+  const open = () => openNewMeal(page);
   const sheet = page.getByRole('dialog', { name: he.addMeal.title });
 
   await open();
@@ -324,7 +324,7 @@ test('REMEMBER-01: a meal typed by hand is found by name next time, with its num
   await open();
   await sheet.getByLabel(he.addMeal.searchLabel).fill('פרו');
   await expect(sheet.getByText(he.addMeal.myFoods)).toBeVisible();
-  const row = sheet.getByRole('button', { name: /יוגורט פרו של דנונה/ });
+  const row = sheet.getByRole('button', { name: /^יוגורט פרו של דנונה/ });
   await expect(row).toContainText(he.sugar.mealTotal('7'));
   await row.click();
   await expect(sheet.getByLabel(he.addMeal.name)).toHaveValue('יוגורט פרו של דנונה');
@@ -336,7 +336,7 @@ test('REMEMBER-02: it can be switched off, a same-name entry replaces the old on
   page,
 }) => {
   await openApp(page, { seed: {} });
-  const open = () => page.getByRole('button', { name: he.today.addMeal }).first().click();
+  const open = () => openNewMeal(page);
   const sheet = page.getByRole('dialog', { name: he.addMeal.title });
   const typeManual = async (name: string, kcal: string, remember: boolean) => {
     await open();
@@ -360,19 +360,21 @@ test('REMEMBER-02: it can be switched off, a same-name entry replaces the old on
   await expect(remembered).toHaveCount(1);
   await expect(remembered).toContainText('260');
 
-  // The favorites tab lists it, and asks before removing it.
-  await sheet.getByText(he.addMeal.tabFavorites, { exact: true }).click();
+  // There is no list of its own for remembered foods: it is removed where it is found, after asking.
+  await sheet.getByRole('button', { name: he.addMeal.removeFavorite('עוגיות בית') }).click();
+  await sheet.getByRole('button', { name: he.cancel }).click(); // keeps it
+  await expect(remembered).toHaveCount(1);
   await sheet.getByRole('button', { name: he.addMeal.removeFavorite('עוגיות בית') }).click();
   await sheet.getByRole('button', { name: he.addMeal.removeFavoriteYes }).click();
-  await expect(sheet.getByText(he.addMeal.tabFavorites, { exact: true })).toHaveCount(0);
-  await expect(sheet.getByLabel(he.addMeal.searchLabel)).toBeVisible();
+  await expect(sheet.getByText(he.addMeal.myFoods)).toHaveCount(0);
+  await expect(remembered).toHaveCount(0);
 });
 
 test('REMEMBER-03: a food typed by hand into a meal of foods can be remembered, and joins the next meal', async ({
   page,
 }) => {
   await openApp(page, { seed: {} });
-  const open = () => page.getByRole('button', { name: he.today.addMeal }).first().click();
+  const open = () => openNewMeal(page);
   const sheet = page.getByRole('dialog', { name: he.addMeal.title });
   const addEgg = async () => {
     await sheet.getByLabel(he.addMeal.searchLabel).fill('ביצה');
@@ -565,7 +567,7 @@ test('DAY-01: before 02:00 it is still the day before, and a meal added then bel
   await expect(page.getByRole('heading', { level: 1 })).toContainText('2 באוקטובר');
   await expect(remaining(page)).toHaveAttribute('aria-label', /1,390/);
 
-  await page.getByRole('button', { name: he.today.addMeal }).first().click();
+  await openNewMeal(page);
   const sheet = page.getByRole('dialog', { name: he.addMeal.title });
   await sheet.getByText(he.addMeal.tabManual, { exact: true }).click();
   await expect(sheet.getByLabel(he.addMeal.time)).toHaveValue('01:00');
@@ -606,7 +608,7 @@ test('E2E-05: deleting a meal asks first, and there is no undo afterwards', asyn
 
 test('INT-05: pressing save twice quickly creates only one meal', async ({ page }) => {
   await openApp(page, { seed: {} });
-  await page.getByRole('button', { name: he.today.addMeal }).first().click();
+  await openNewMeal(page);
   const sheet = page.getByRole('dialog', { name: he.addMeal.title });
   await sheet.getByText(he.addMeal.tabManual, { exact: true }).click();
   await sheet.getByLabel(he.addMeal.name).fill('פרי');
@@ -661,14 +663,113 @@ test('E2E-03: edit a meal and the day updates', async ({ page }) => {
   await expect(remaining(page)).toHaveAttribute('aria-label', /1,040/); // 1,390 - 350
 });
 
-test('"I ate this again" opens the meal ready to confirm', async ({ page }) => {
-  await openApp(page, { seed: { withMealsToday: true } });
-  await page.getByRole('button', { name: he.today.againMeal('חביתה וסלט') }).click();
-  const sheet = page.getByRole('dialog', { name: he.addMeal.title });
-  await expect(sheet.getByLabel(he.addMeal.name)).toHaveValue('חביתה וסלט');
-  await expect(sheet.getByLabel(he.addMeal.kcalField)).toHaveValue('280');
-  await sheet.getByRole('button', { name: he.addMeal.saveMeal }).click();
-  await expect(remaining(page)).toHaveAttribute('aria-label', /830/); // 1,390 - 2 x 280
+test.describe('saved meals', () => {
+  /** Adds a meal typed by hand, with "save this meal" ticked. */
+  async function addAndSave(page: Page, name: string, kcal: string): Promise<void> {
+    await openNewMeal(page);
+    const sheet = page.getByRole('dialog', { name: he.addMeal.title });
+    await sheet.getByText(he.addMeal.tabManual, { exact: true }).click();
+    await sheet.getByLabel(he.addMeal.name).fill(name);
+    await sheet.getByLabel(he.addMeal.kcalField).fill(kcal);
+    await sheet.getByLabel(he.addMeal.saveMealToggle).check();
+    await sheet.getByRole('button', { name: he.addMeal.saveMeal }).click();
+    await expect(page.getByText(he.today.savedAndKept)).toBeVisible();
+  }
+
+  async function openSavedMeals(page: Page) {
+    await page.getByRole('button', { name: he.today.addMeal }).first().click();
+    await page.getByRole('button', { name: he.today.addSavedMeal }).click();
+    return page.getByRole('dialog', { name: he.saved.title });
+  }
+
+  test('SAVED-01: "ate this again" is gone, and the add button offers a new meal or a saved one', async ({
+    page,
+  }) => {
+    await openApp(page, { seed: { withMealsToday: true } });
+    await expect(page.getByRole('button', { name: /אכלתי שוב/ })).toHaveCount(0);
+
+    const add = page.getByRole('button', { name: he.today.addMeal }).first();
+    await expect(add).toHaveAttribute('aria-expanded', 'false');
+    await add.click();
+    await expect(add).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByRole('button', { name: he.today.addNewMeal })).toBeVisible();
+    await expect(page.getByRole('button', { name: he.today.addSavedMeal })).toBeVisible();
+    await page.keyboard.press('Escape'); // closes the list again
+    await expect(page.getByRole('button', { name: he.today.addNewMeal })).toHaveCount(0);
+    await expect(add).toBeFocused();
+  });
+
+  test('SAVED-02: a saved meal opens ready to confirm, and the window has no tabs or search', async ({
+    page,
+  }) => {
+    await openApp(page, { seed: {} });
+    await addAndSave(page, 'ארוחת צהריים של שבת', '600');
+    await expect(remaining(page)).toHaveAttribute('aria-label', /790/); // 1,390 - 600
+
+    const saved = await openSavedMeals(page);
+    await expect(saved.getByText('ארוחת צהריים של שבת')).toBeVisible();
+    // only the saved meals: no tabs, no search box, no foods eaten lately
+    await expect(saved.getByText(he.addMeal.tabSearch, { exact: true })).toHaveCount(0);
+    await expect(saved.getByLabel(he.addMeal.searchLabel)).toHaveCount(0);
+
+    await saved.getByRole('button', { name: he.saved.useAria('ארוחת צהריים של שבת') }).click();
+    const sheet = page.getByRole('dialog', { name: he.addMeal.title });
+    await expect(sheet.getByLabel(he.addMeal.name)).toHaveValue('ארוחת צהריים של שבת');
+    await expect(sheet.getByLabel(he.addMeal.kcalField)).toHaveValue('600');
+    await sheet.getByRole('button', { name: he.addMeal.saveMeal }).click();
+    await expect(page.getByText(he.today.saved, { exact: true })).toBeVisible();
+    await expect(remaining(page)).toHaveAttribute('aria-label', /190/); // 1,390 - 2 x 600
+  });
+
+  test('SAVED-03: a meal of foods is saved with its foods, and saving the same name again replaces it', async ({
+    page,
+  }) => {
+    await openApp(page, { seed: {} });
+    await openNewMeal(page);
+    const sheet = page.getByRole('dialog', { name: he.addMeal.title });
+    await sheet.getByLabel(he.addMeal.searchLabel).fill('ביצה');
+    await sheet
+      .getByRole('button', { name: /ביצה שלמה בלי קליפה/ })
+      .first()
+      .click();
+    await sheet.getByLabel(he.addMeal.count).fill('2'); // 142 kcal
+    await sheet.getByRole('button', { name: he.addMeal.addToMeal }).click();
+    await sheet.getByLabel(he.addMeal.saveMealToggle).check();
+    await sheet.getByRole('button', { name: he.addMeal.saveMeal }).click();
+    await expect(page.getByText(he.today.savedAndKept)).toBeVisible();
+
+    const saved = await openSavedMeals(page);
+    await saved.getByRole('button', { name: he.saved.useAria('ביצה שלמה בלי קליפה') }).click();
+    // it comes back with its foods, not as one line of numbers
+    const again = page.getByRole('dialog', { name: he.addMeal.title });
+    await expect(again.getByRole('heading', { name: he.addMeal.items })).toBeVisible();
+    await expect(again.getByText(/142/).first()).toBeVisible();
+    // saving it once more under the same name keeps a single saved meal
+    await again.getByLabel(he.addMeal.saveMealToggle).check();
+    await again.getByRole('button', { name: he.addMeal.saveMeal }).click();
+    await expect(page.getByText(he.today.savedAndKept)).toBeVisible();
+    const list = await openSavedMeals(page);
+    await expect(list.getByRole('listitem')).toHaveCount(1);
+  });
+
+  test('SAVED-04: deleting a saved meal asks first; the list says so when it is empty', async ({
+    page,
+  }) => {
+    await openApp(page, { seed: {} });
+    const empty = await openSavedMeals(page);
+    await expect(empty.getByText(he.saved.empty)).toBeVisible();
+    await empty.getByRole('button', { name: he.close }).click();
+
+    await addAndSave(page, 'שייק בוקר', '300');
+    const saved = await openSavedMeals(page);
+    const trash = saved.getByRole('button', { name: he.saved.remove('שייק בוקר') });
+    await trash.click();
+    await saved.getByRole('button', { name: he.cancel }).click(); // keeps it
+    await expect(saved.getByText('שייק בוקר')).toBeVisible();
+    await trash.click();
+    await saved.getByRole('button', { name: he.saved.removeYes }).click();
+    await expect(saved.getByText(he.saved.empty)).toBeVisible();
+  });
 });
 
 test('E2E-06: a suggestion can be added with one confirmation', async ({ page, isMobile }) => {

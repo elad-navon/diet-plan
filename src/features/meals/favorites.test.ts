@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { type FavoriteRecord } from '../../data';
-import { favoriteKey, matchFavorites, sameManualFavorites } from './favorites';
+import { manualEntry } from '../../core/food';
+import {
+  favoriteKey,
+  isSavedMeal,
+  matchFavorites,
+  sameManualFavorites,
+  sameSavedMeals,
+  savedMealItems,
+  savedMeals,
+} from './favorites';
+import { savedMealPrefill } from './prefill';
 
 const favorite = (
   id: string,
@@ -64,5 +74,56 @@ describe('remembered meals typed by hand', () => {
       'עוגיות',
     );
     expect(found.map((f) => f.id)).toEqual(['a', 'b']);
+  });
+});
+
+describe('saved meals', () => {
+  const food = manualEntry({ id: 'a', name: 'טוסט', kcal: 200, macros: null, addedSugarG: null });
+  const meals = [
+    favorite('1', 'מזון בודד'), // no foods: a food remembered by name, not a meal
+    favorite('2', 'טוסט וקפה', { items: [food], useCount: 1, lastUsedAt: 1000 }),
+    favorite('3', 'סלט טונה', { items: [food], useCount: 5, lastUsedAt: 2000 }),
+    favorite('4', 'אומלט', { items: [food], useCount: 9, lastUsedAt: null }),
+  ];
+
+  it('are the favorites that hold foods', () => {
+    expect(meals.map(isSavedMeal)).toEqual([false, true, true, true]);
+  });
+
+  it('come with the most recently used first, then the most used', () => {
+    expect(savedMeals(meals).map((meal) => meal.id)).toEqual(['3', '2', '4']);
+  });
+
+  it('are found again by name, ignoring spaces and case, but never the single foods', () => {
+    expect(sameSavedMeals(meals, '  סלט   טונה ').map((meal) => meal.id)).toEqual(['3']);
+    expect(sameSavedMeals(meals, 'מזון בודד')).toEqual([]);
+  });
+
+  it('keep the foods of a meal of foods, and turn a meal typed by hand into one entry typed by hand', () => {
+    const base = { name: 'ארוחת צהריים', kcal: 600, macros: null, addedSugarG: 4 };
+    expect(savedMealItems({ ...base, items: [food] }, 'x')).toEqual([food]);
+    const [entry, ...rest] = savedMealItems({ ...base, items: [] }, 'x');
+    expect(rest).toEqual([]);
+    expect(entry).toMatchObject({ name: 'ארוחת צהריים', kcal: 600, addedSugarG: 4 });
+  });
+
+  it('come back as they were saved: foods as foods, a meal typed by hand as the by-hand fields', () => {
+    const base = { name: 'ארוחת צהריים', kcal: 600, macros: null, addedSugarG: 4 };
+    const typed = favorite('5', base.name, {
+      kcal: 600,
+      addedSugarG: 4,
+      items: savedMealItems({ ...base, items: [] }, 'x'),
+    });
+    expect(savedMealPrefill(typed)).toEqual({
+      name: 'ארוחת צהריים',
+      kcal: 600,
+      macros: null,
+      addedSugarG: 4,
+      source: 'favorite',
+      favoriteId: '5',
+    });
+    const withFoods = savedMealPrefill(meals[1] as ReturnType<typeof favorite>);
+    expect(withFoods.items).toEqual([food]);
+    expect(withFoods.favoriteId).toBe('2');
   });
 });

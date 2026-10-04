@@ -1,4 +1,5 @@
 import { type Page } from '@playwright/test';
+import { he } from '../src/i18n/he';
 import { type StoredMeal, type StoredPlan, type WeightRecord } from '../src/data';
 import { computePlan, type PlanInputs } from '../src/core/nutrition';
 import { DEFAULT_SCHEDULE } from '../src/core/schedule';
@@ -219,4 +220,10 @@ export async function openApp(
     );
   }
   await page.goto(options.path ?? '/today');
+}
+
+/** Opens the "new meal" window: the add button opens a short list, and its first choice is a new meal. */
+export async function openNewMeal(page: Page): Promise<void> {
+  await page.getByRole('button', { name: he.today.addMeal }).first().click();
+  await page.getByRole('button', { name: he.today.addNewMeal }).click();
 }

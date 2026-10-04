@@ -56,6 +56,13 @@ describe('the meal being added is kept when the sheet is closed', () => {
     expect(loadMealDraft({ date: DATE, now: NOW + 60_000 })).toEqual(draft());
   });
 
+  it('opens a draft left on the removed third tab on the search', () => {
+    // An older version of the form could be closed on a "favorites" tab; that tab no longer exists.
+    const stored = { ...draft(), mode: 'favorites' };
+    sessionStorage.setItem('meal-draft-v1', JSON.stringify(stored));
+    expect(loadMealDraft({ date: DATE, now: NOW + 60_000 })?.mode).toBe('search');
+  });
+
   it('keeps foods too', () => {
     const withFood = draft({
       mode: 'search',

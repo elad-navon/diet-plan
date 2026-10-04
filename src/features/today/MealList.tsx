@@ -12,7 +12,6 @@ interface MealListProps {
   tz: Tz;
   onEdit: (meal: StoredMeal) => void;
   onDelete: (meal: StoredMeal) => void;
-  onAgain: (meal: StoredMeal) => void;
   /** The number each meal has on the day chart (computer layout: the same number is shown here). */
   numbers?: ReadonlyMap<string, number>;
 }
@@ -21,10 +20,10 @@ interface MealListProps {
 const ACTION = 'lg:min-h-9 lg:min-w-9';
 
 /**
- * The day's meals, newest last, each with the three things you do to a meal: edit, delete, eat again.
+ * The day's meals, newest last, each with the two things you do to a meal: edit and delete.
  * On a computer the same list is a compact column of rows, numbered like the meals on the chart.
  */
-export function MealList({ meals, tz, onEdit, onDelete, onAgain, numbers }: MealListProps) {
+export function MealList({ meals, tz, onEdit, onDelete, numbers }: MealListProps) {
   if (meals.length === 0) {
     return <p className="card p-5 text-muted lg:shadow-none lg:p-0">{he.today.noMealsYet}</p>;
   }
@@ -93,15 +92,6 @@ export function MealList({ meals, tz, onEdit, onDelete, onAgain, numbers }: Meal
                 onClick={() => onEdit(meal)}
               >
                 <Icon name="pencil" />
-              </Button>
-              <Button
-                icon
-                variant="ghost"
-                className={ACTION}
-                aria-label={he.today.againMeal(meal.name)}
-                onClick={() => onAgain(meal)}
-              >
-                <Icon name="repeat" />
               </Button>
               <Button
                 icon

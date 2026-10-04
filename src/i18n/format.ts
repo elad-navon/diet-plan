@@ -12,13 +12,14 @@ import { formatDecimal, he } from './he';
 
 const WEEKDAY_INITIALS = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'] as const;
 
-/** "יום שישי, 2 באוקטובר" for a local date. */
+/** "יום שישי, 2 באוקטובר 2026" for a local date. */
 export function formatDayTitle(date: LocalDate, tz: Tz): string {
   const noon = wallToInstant(date, '12:00', tz);
   return new Intl.DateTimeFormat('he-IL', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
+    year: 'numeric',
     timeZone: tz,
   }).format(noon);
 }
