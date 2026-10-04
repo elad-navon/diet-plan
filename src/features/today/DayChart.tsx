@@ -470,14 +470,16 @@ export function DayChart({ model, tz, corridorNow }: DayChartProps) {
                   {index + 1}
                 </span>
               )}
-              <span className="min-w-0 break-words">
-                {meal.name}{' '}
-                <span className="text-sm text-muted">
-                  <bdi>{clockAtMinute(model.date, meal.minute, tz)}</bdi>
-                </span>
+              <span className="shrink-0 text-sm text-muted">
+                <bdi>{clockAtMinute(model.date, meal.minute, tz)}</bdi>
               </span>
+              <span className="min-w-0 break-words">{meal.name}</span>
               <span className="ms-auto shrink-0 font-semibold">
-                <bdi>{formatInt(meal.kcal)}</bdi>
+                <bdi>{formatInt(meal.kcal)}</bdi>{' '}
+                <span aria-hidden="true" className="text-sm font-normal text-muted">
+                  {he.kcalLetter}
+                </span>
+                <span className="sr-only">{he.kcal}</span>
               </span>
             </li>
           ))}
