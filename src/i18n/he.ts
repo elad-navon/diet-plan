@@ -56,11 +56,11 @@ export const he = {
 
   notes: {
     target_reached: 'הגעת בדיוק ליעד היומי.',
-    skipped_meals: 'חלק מהתקציב היומי לא נוצל. אין צורך להשלים הכול – אפשר פשוט לאכול ארוחה רגילה.',
     excess_large: 'הסכום היומי גבוה מאוד. כדאי לבדוק שהארוחות נרשמו נכון.',
     below_safe_floor:
       'אכלת היום פחות מהמינימום המומלץ. אם זה לא מכוון, כדאי לאכול ארוחה מסודרת. אם זה נמשך, כדאי להתייעץ עם איש מקצוע.',
     no_suggestions_fit: 'אין כרגע רעיון שמתאים לתקציב. אפשר להוסיף ארוחה ידנית.',
+    little_left: 'נשארו מעט מדי קלוריות להיום להצעת ארוחות.',
   } satisfies Record<RecommendationNote, string>,
 
   sugar: {
@@ -162,7 +162,7 @@ export const he = {
     nextMeal: 'הצעות לארוחה הבאה',
     nextAround: (time: string) => `בערך ב-${time}`,
     nextUpTo: (kcal: string) => `עד כ-${kcal} קק"ל`,
-    optionalSnack: 'נשנוש קל (לא חובה)',
+    optionalSnack: 'ארוחה נוספת (לא חובה)',
     noMealsYet: 'עוד לא נרשמה ארוחה היום.',
     addFirst: 'הוסף את הארוחה הראשונה',
     mealsTitle: 'הארוחות של היום',

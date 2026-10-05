@@ -19,15 +19,8 @@ export const RECOMMEND_CONFIG = {
   toleranceFraction: 0.06,
   /** A slot counts as done once this share of its planned calories was eaten. */
   slotDoneFraction: 0.5,
-  /** A single meal never gets more than min(capFactor x planned, capFractionOfTarget x target). */
-  capFactor: 1.5,
-  capFractionOfTarget: 0.45,
   /** Below this there is nothing worth suggesting. */
   minRecommendKcal: 150,
-  /** After the last window, an optional snack is at most this share of the target. */
-  lightSnackMaxFraction: 0.2,
-  /** Unallocated budget above this share of the target triggers the `skipped_meals` note. */
-  skippedNoteFraction: 0.25,
   /** Intake above this multiple of the target triggers the `excess_large` note. */
   excessLargeFactor: 1.5,
   suggestionCount: 3,
@@ -124,20 +117,30 @@ export function recommendNext(input: RecommendInput): Recommendation {
       kcalInSlot(window.id) < cfg.slotDoneFraction * window.weight * kcalTarget,
   );
 
-  const budgets: SlotBudget[] = [];
-  if (remainingKcal > 0 && open.length > 0) {
-    const totalPlanned = sum(open.map((window) => window.weight * kcalTarget));
-    for (const window of open) {
+  // What is left is shared between the meals still ahead, by their planned size.
+  const share = (pool: readonly SlotWindow[]): SlotBudget[] => {
+    const totalPlanned = sum(pool.map((window) => window.weight * kcalTarget));
+    return pool.map((window) => {
       const plannedKcal = window.weight * kcalTarget;
-      const cap = Math.min(cfg.capFactor * plannedKcal, cfg.capFractionOfTarget * kcalTarget);
-      budgets.push({
+      return {
         slot: window.id,
         plannedKcal,
-        budgetKcal: Math.min(cap, (plannedKcal / totalPlanned) * remainingKcal),
+        budgetKcal: (plannedKcal / totalPlanned) * remainingKcal,
         windowStart: window.startInstant,
         windowEnd: window.endInstant,
         suggestedAt: Math.min(Math.max(roundUp(now), window.startInstant), window.endInstant),
-      });
+      };
+    });
+  };
+  let budgets: SlotBudget[] = [];
+  if (remainingKcal > 0 && open.length > 0) {
+    let pool = open;
+    budgets = share(pool);
+    // A meal whose share is too small to suggest anything is skipped, and its share goes to the meals after it:
+    // 200 kcal left with a snack and a dinner ahead is a dinner of 200, not two meals of 67 and 133 and no advice.
+    while (budgets.length > 1 && (budgets[0]?.budgetKcal ?? 0) < cfg.minRecommendKcal) {
+      pool = pool.slice(1);
+      budgets = share(pool);
     }
   }
   const allocatedKcal = sum(budgets.map((budget) => budget.budgetKcal));
@@ -170,9 +173,11 @@ export function recommendNext(input: RecommendInput): Recommendation {
       suggestions,
     };
     if (suggestions.length === 0) notes.push('no_suggestions_fit');
-  } else if (afterLastWindow && remainingKcal >= cfg.minRecommendKcal) {
-    // The day's windows are over but a meaningful amount is left: offer an optional light snack only.
-    const budgetKcal = Math.min(remainingKcal, cfg.lightSnackMaxFraction * kcalTarget);
+  } else if ((afterLastWindow || budgets.length === 0) && remainingKcal >= cfg.minRecommendKcal) {
+    // No meal of the plan is still ahead (the day's windows are over, or the ones left were eaten) but a meaningful
+    // amount is left: offer an optional extra meal with all of it. Neither the number of meals in a day nor the size
+    // of one is limited: for some people a single meal is where most of the day's calories are.
+    const budgetKcal = remainingKcal;
     const context: ScoringContext = { slot: null, budgetKcal, remainingKcal, proteinBehind };
     next = {
       slot: null,
@@ -183,10 +188,10 @@ export function recommendNext(input: RecommendInput): Recommendation {
     };
   }
 
+  // Too little left to suggest anything (the end of the day has its own message): say so, so the card is not silent.
+  if (next === null && remainingKcal > 0 && status !== 'day_complete') notes.push('little_left');
+
   if (consumedKcal === kcalTarget) notes.push('target_reached');
-  if (remainingKcal > 0 && unallocatedKcal >= cfg.skippedNoteFraction * kcalTarget) {
-    notes.push('skipped_meals');
-  }
   if (consumedKcal > cfg.excessLargeFactor * kcalTarget) notes.push('excess_large');
   if (
     status === 'day_complete' &&

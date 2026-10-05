@@ -148,12 +148,12 @@ describe('R3: over the daily target (REC-04)', () => {
 });
 
 describe('R4: end of day (REC-05)', () => {
-  it('after the last window an optional light snack is capped, never a meal', () => {
+  it('after the last window an optional extra meal gets what is left (a meal is not capped)', () => {
     const result = run('21:30', [meal('08:30', 450), meal('13:00', 540), meal('19:30', 510)]);
     expect(result.status).toBe('day_complete');
     expect(result.next?.slot).toBeNull();
     expect(result.next?.optional).toBe(true);
-    expect(result.next?.budgetKcal).toBeCloseTo(300, 6); // min(300 left, 20% of 1800)
+    expect(result.next?.budgetKcal).toBeCloseTo(300, 6); // all that is left
     for (const suggestion of result.next?.suggestions ?? []) {
       expect(suggestion.kcal).toBeLessThanOrEqual(300 + 1e-6);
     }
@@ -169,19 +169,65 @@ describe('R4: end of day (REC-05)', () => {
     const result = run('22:00', [meal('08:30', 300)]);
     expect(result.status).toBe('day_complete');
     expect(result.notes).toContain('below_safe_floor');
-    expect(result.next?.budgetKcal).toBeCloseTo(360, 6); // capped at 20% of the target
+    expect(result.next?.budgetKcal).toBeCloseTo(1500, 6); // all that is left: a late big meal is allowed
+  });
+});
+
+describe('R4b: what is left is too small for the next meal', () => {
+  // 200 kcal left at 15:30, with a snack (16:00) and a dinner (19:00) still ahead. A meal of 11:00 that belongs to no
+  // slot keeps the snack window open.
+  const eaten = [meal('08:30', 600), meal('13:00', 700), meal('11:00', 300, { slot: 'other' })];
+
+  it('skips a meal whose share is below the minimum and gives its share to the next one', () => {
+    const result = run('15:30', eaten);
+    expect(result.remainingKcal).toBe(200);
+    expect(result.next?.slot).toBe('dinner');
+    expect(result.next?.budgetKcal).toBeCloseTo(200, 6); // not 133 (the dinner's share with the snack)
+    expect(result.next?.suggestedAt).toBe(at('19:00'));
+    expect(result.next?.suggestions.length).toBeGreaterThan(0);
+    expect(result.notes).not.toContain('little_left');
+  });
+
+  it('still shares what is left when every share is big enough', () => {
+    const result = run('08:00', []);
+    expect(result.budgets.map((b) => b.slot)).toEqual(['breakfast', 'lunch', 'snack', 'dinner']);
+  });
+
+  it('says so when less than the minimum is left and the day is not over', () => {
+    const result = run('15:30', [...eaten, meal('14:45', 100, { slot: 'other' })]);
+    expect(result.remainingKcal).toBe(100);
+    expect(result.next).toBeNull();
+    expect(result.notes).toContain('little_left');
+  });
+
+  it('does not limit the number of meals: with calories left and every meal of the plan eaten, a light snack is offered', () => {
+    // Dinner (planned 540) is more than half eaten, so no window is open at 20:00 - yet 510 kcal are left.
+    const result = run('20:00', [meal('08:30', 450), meal('13:00', 540), meal('19:30', 300)]);
+    expect(result.remainingKcal).toBe(510);
+    expect(result.next?.optional).toBe(true);
+    expect(result.next?.slot).toBeNull();
+    expect(result.next?.budgetKcal).toBeCloseTo(510, 6); // all that is left
+    expect(result.next?.suggestions.length).toBeGreaterThan(0);
+    expect(result.notes).not.toContain('little_left');
+  });
+
+  it('adds no "little left" note when the day is over (it has its own message) or the target is passed', () => {
+    const over = run('21:30', [meal('08:30', 450), meal('13:00', 540), meal('19:30', 710)]);
+    expect(over.notes).not.toContain('little_left');
+    const past = run('15:30', [meal('08:30', 900), meal('13:00', 1000)]);
+    expect(past.status).toBe('over_budget');
+    expect(past.notes).not.toContain('little_left');
   });
 });
 
 describe('R5: two meals skipped (REC-07)', () => {
   const result = run('18:30', []);
 
-  it('caps dinner and does not push the user to catch up', () => {
+  it('gives dinner everything that is left: a main meal may hold most of the day, there is no cap', () => {
     expect(result.status).toBe('behind');
     expect(result.budgets.map((b) => b.slot)).toEqual(['dinner']);
-    expect(budgetOf(result, 'dinner')).toBeCloseTo(810, 6); // min(1.5 x 540, 45% of 1800)
-    expect(result.unallocatedKcal).toBeCloseTo(990, 6);
-    expect(result.notes).toContain('skipped_meals');
+    expect(budgetOf(result, 'dinner')).toBeCloseTo(1800, 6);
+    expect(result.unallocatedKcal).toBeCloseTo(0, 6);
   });
 });
 
@@ -307,12 +353,7 @@ describe('property: never recommends the impossible (REC-06)', () => {
           expect(result.unallocatedKcal).toBeGreaterThanOrEqual(0);
           for (const budget of result.budgets) {
             expect(budget.budgetKcal).toBeGreaterThanOrEqual(0);
-            expect(budget.budgetKcal).toBeLessThanOrEqual(
-              Math.min(
-                RECOMMEND_CONFIG.capFactor * budget.plannedKcal,
-                RECOMMEND_CONFIG.capFractionOfTarget * kcalTarget,
-              ) + 1e-6,
-            );
+            expect(budget.budgetKcal).toBeLessThanOrEqual(remaining + 1e-6);
             expect(budget.windowEnd).toBeGreaterThan(dayBegin + nowMinute * 60_000);
           }
           expect(result.status === 'over_budget').toBe(result.consumedKcal > kcalTarget);

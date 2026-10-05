@@ -55,14 +55,14 @@ export type DayStatus = 'on_track' | 'behind' | 'ahead' | 'over_budget' | 'day_c
 export type RecommendationNote =
   /** Eaten exactly the target. */
   | 'target_reached'
-  /** A large part of today's budget is left unallocated because meals were skipped - never "make up for it". */
-  | 'skipped_meals'
   /** Far above the target; worth double-checking the entries. */
   | 'excess_large'
   /** The day is over and intake was below the safe minimum - neutral note, never praise. */
   | 'below_safe_floor'
   /** A meal is due but no idea in the library fits its budget. */
-  | 'no_suggestions_fit';
+  | 'no_suggestions_fit'
+  /** Less than the minimum worth suggesting is left for the day (and the day is not over). */
+  | 'little_left';
 
 export interface SlotBudget {
   slot: SlotId;
