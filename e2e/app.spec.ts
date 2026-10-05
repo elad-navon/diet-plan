@@ -216,16 +216,12 @@ test('a meal saved earlier with empty macros, because of a hand-typed food, gets
   await expect(page.locator('li.card', { hasText: 'מיץ וחטיף' })).toContainText(he.today.protein);
 });
 
-test('FLOUR-01: the day tells white flour from whole grain and suggests what to try instead', async ({
-  page,
-  isMobile,
-}) => {
+test('FLOUR-01: the day tells white flour from whole grain', async ({ page }) => {
   await openApp(page, { seed: { withBreadMealsToday: true } });
   const card = page.getByRole('region', { name: he.flour.title });
   await expect(card.getByRole('img', { name: he.flour.summary('44.7', '30') })).toBeVisible();
-  // a phone shows what to try instead right away; a computer keeps it one click away
-  if (!isMobile) await card.locator('summary', { hasText: he.flour.swapTitle }).click();
-  await expect(card.getByText(he.flour.swap.bread).locator('visible=true')).toBeVisible();
+  // the card does not suggest what to eat instead (that hint is only in the food editor)
+  await expect(card.getByText(he.flour.swap.bread)).toHaveCount(0);
 });
 
 test('FLOUR-02: a food says whether it is white flour or whole grain, and what to try instead', async ({

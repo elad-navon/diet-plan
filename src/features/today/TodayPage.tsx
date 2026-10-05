@@ -333,17 +333,21 @@ function TodayContent() {
 
         <section
           aria-labelledby="meals-title"
-          className="space-y-2 lg:card lg:col-start-3 lg:row-start-2 lg:flex lg:min-h-0 lg:flex-col lg:space-y-0 lg:p-4"
+          className="relative isolate space-y-2 lg:card lg:col-start-3 lg:row-start-2 lg:flex lg:min-h-0 lg:flex-col lg:space-y-0 lg:overflow-hidden lg:p-4 lg:panel-dark"
         >
+          {/* The picture is for the card of a computer; a phone has no card around the list (each meal is one). */}
+          <div className="hidden lg:contents">
+            <CardBackdrop name="meals" />
+          </div>
           <CardTitle
             id="meals-title"
             icon="utensils"
             tone="cyan"
-            className="text-xl font-bold lg:mb-2 lg:flex-none lg:text-lg"
+            className="text-xl font-bold lg:mb-6 lg:flex-none lg:text-lg"
           >
             {he.today.mealsTitle}
           </CardTitle>
-          <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+          <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:scroll-right lg:pr-3">
             <MealList
               meals={activeMeals}
               tz={tz}

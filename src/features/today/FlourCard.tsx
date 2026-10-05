@@ -33,9 +33,9 @@ function Amount({ label, grams, swatch }: AmountProps) {
 const REFINED_SWATCH = 'bg-warning/50';
 const WHOLE_SWATCH = 'bg-good/40';
 
-/** White flour and whole grain today, side by side by the carbohydrate of each; with what to try instead of the white. */
+/** White flour and whole grain today, side by side by the carbohydrate of each. */
 export function FlourCard({ grain }: FlourCardProps) {
-  const { refinedCarbsG, wholeCarbsG, swaps } = grain;
+  const { refinedCarbsG, wholeCarbsG } = grain;
   const total = refinedCarbsG + wholeCarbsG;
   const refinedPercent = total > 0 ? (refinedCarbsG / total) * 100 : 0;
   const label = he.flour.summary(formatDecimal(refinedCarbsG), formatDecimal(wholeCarbsG));
@@ -70,30 +70,6 @@ export function FlourCard({ grain }: FlourCardProps) {
               <div className={WHOLE_SWATCH} style={{ width: `${100 - refinedPercent}%` }} />
             </div>
           </div>
-        </>
-      )}
-
-      {swaps.length > 0 && (
-        <>
-          {/* A phone shows what to try instead right away; a computer keeps it one click away to save room. */}
-          <div className="mt-3 rounded-xl bg-surface-2 p-3 text-base lg:hidden">
-            <p className="font-semibold">{he.flour.swapTitle}</p>
-            <ul className="mt-1 list-disc space-y-0.5 ps-5">
-              {swaps.map((kind) => (
-                <li key={kind}>{he.flour.swap[kind]}</li>
-              ))}
-            </ul>
-          </div>
-          <details className="mt-1 hidden text-sm lg:block">
-            <summary className="min-h-11 cursor-pointer py-2 font-medium text-accent">
-              {he.flour.swapTitle}
-            </summary>
-            <ul className="list-disc space-y-0.5 ps-5">
-              {swaps.map((kind) => (
-                <li key={kind}>{he.flour.swap[kind]}</li>
-              ))}
-            </ul>
-          </details>
         </>
       )}
 

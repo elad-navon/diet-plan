@@ -76,7 +76,7 @@ export function Sheet({
           </Button>
         </div>
         {/* scroll-pb: a field focused or scrolled to clears the sticky save bar some forms end with. */}
-        <div className="min-h-0 flex-1 scroll-pb-24 overflow-y-auto overscroll-contain px-5 py-4">
+        <div className="min-h-0 flex-1 scroll-pb-24 overflow-y-auto overscroll-contain scroll-right px-5 py-4">
           {open && children}
         </div>
         {footer && (

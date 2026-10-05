@@ -383,10 +383,23 @@
 }
 
 /*
+ * In a right-to-left page a vertical scroll bar sits on the left. A scrolling area that should have it on the right
+ * is left-to-right itself, and what is inside it is right-to-left again.
+ */
+@utility scroll-right {
+  direction: ltr;
+  & > * {
+    direction: rtl;
+  }
+}
+
+/*
  * A card with a dark picture behind it keeps its text, lines and chart colors light-on-dark, also in the light theme
  * (used as lg:panel-dark, on a computer only). In the dark theme these are the same values as the theme's own.
  */
 @utility panel-dark {
+  /* dark scroll bars and form controls inside, also in the light theme */
+  color-scheme: dark;
   color: var(--ink);
   --text-halo: rgb(3 12 22 / 0.85);
   --ink: #f5f8fa;
@@ -424,4 +437,8 @@
   --tone-mint: #20e6a0;
   --tone-green: #19d879;
   --tone-violet: #9b7bff;
+  --week-bar: rgb(255 255 255 / 0.85);
+  --week-bar-now: rgb(25 130 210 / 0.8);
+  --week-bar-chosen: linear-gradient(180deg, #5be4ff, #168bff);
+  --week-glow: rgb(0 217 255 / 0.6);
 }

@@ -25,6 +25,14 @@ afterAll(async () => {
   await db.close();
 });
 
+/** A calendar date in the user's zone (midnight to midnight), relative to the server's calendar today. */
+async function calendarDay(offset: number, tz = 'Asia/Jerusalem'): Promise<string> {
+  const [row] = await db.admin.query<{ d: string }>(
+    `select ((now() at time zone '${tz}')::date + ${offset})::text as d`,
+  );
+  return row?.d ?? '';
+}
+
 /** A date in the user's zone, relative to the server's today (the day of eating runs from 02:00 to 02:00). */
 async function day(offset: number, tz = 'Asia/Jerusalem'): Promise<string> {
   const [row] = await db.admin.query<{ d: string }>(
@@ -65,8 +73,13 @@ describe('profile', () => {
 
   it('refuses anyone under 18 (day of the 18th birthday counts as adult)', async () => {
     const user = await db.newUser();
-    const turns18Today = (await day(0)).replace(/^\d{4}/, (year) => String(Number(year) - 18));
-    const turns18Tomorrow = (await day(1)).replace(/^\d{4}/, (year) => String(Number(year) - 18));
+    // Age is counted on the calendar date, not on the day of eating.
+    const turns18Today = (await calendarDay(0)).replace(/^\d{4}/, (year) =>
+      String(Number(year) - 18),
+    );
+    const turns18Tomorrow = (await calendarDay(1)).replace(/^\d{4}/, (year) =>
+      String(Number(year) - 18),
+    );
     await expect(
       db
         .as(user)
@@ -296,7 +309,8 @@ describe('weigh-ins', () => {
       `(((now() at time zone 'Asia/Jerusalem')::date - 1) + time '23:30') at time zone 'Asia/Jerusalem'`,
     );
     const entry = await weigh(user, 71.4, lateEvening);
-    expect(entry.local_date).toBe(await day(-1));
+    // 23:30 on the calendar day before today is still that day of eating (the day turns over at 02:00).
+    expect(entry.local_date).toBe(await calendarDay(-1));
     expect(entry.weight_kg).toBe('71.4');
   });
 

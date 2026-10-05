@@ -57,7 +57,7 @@ export function AppShell() {
         )}
         <main
           id="main"
-          className="flex-1 px-4 pb-32 pt-5 lg:min-h-0 lg:overflow-y-auto lg:px-5 lg:pb-5 lg:pt-4"
+          className="flex-1 px-4 pb-32 pt-5 lg:min-h-0 lg:overflow-y-auto lg:scroll-right lg:px-5 lg:pb-5 lg:pt-4"
         >
           {fullWidth ? (
             <Outlet />

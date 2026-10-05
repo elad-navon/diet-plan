@@ -1,6 +1,7 @@
 import { type DaySummary } from '../../core/dayview';
 import { ADDED_SUGAR_BANDS, sugarBand, type SugarBand } from '../../core/food';
 import { formatDecimal, he } from '../../i18n/he';
+import { CardBackdrop } from '../../ui/art/CardBackdrop';
 import { CardTitle } from '../../ui/CardTitle';
 import { Icon, type IconName } from '../../ui/Icon';
 
@@ -29,7 +30,11 @@ export function SugarCard({ summary }: SugarCardProps) {
   );
 
   return (
-    <section aria-labelledby="sugar-title" className="card p-5 lg:p-4">
+    <section
+      aria-labelledby="sugar-title"
+      className="card relative isolate overflow-hidden panel-dark p-5 lg:p-4"
+    >
+      <CardBackdrop name="sugar" />
       <CardTitle id="sugar-title" icon="cube" tone="blue" className="text-xl font-bold lg:text-lg">
         {he.sugar.title}
       </CardTitle>
@@ -47,12 +52,12 @@ export function SugarCard({ summary }: SugarCardProps) {
 
       <div role="img" aria-label={label} className="relative mt-4 pb-6 lg:mt-3">
         <div className="flex h-3 overflow-hidden rounded-full">
-          <div className="bg-good/30" style={{ width: `${percent(veryLowMaxG)}%` }} />
+          <div className="bg-good/55" style={{ width: `${percent(veryLowMaxG)}%` }} />
           <div
-            className="bg-warning/40"
+            className="bg-warning/60"
             style={{ width: `${percent(okMaxG) - percent(veryLowMaxG)}%` }}
           />
-          <div className="bg-serious/40" style={{ width: `${100 - percent(okMaxG)}%` }} />
+          <div className="bg-serious/60" style={{ width: `${100 - percent(okMaxG)}%` }} />
         </div>
         <span
           aria-hidden="true"

@@ -2,6 +2,7 @@ import { type RangeSummary } from '../../core/dayview';
 import { type LocalDate, type Tz } from '../../core/time';
 import { formatDayMonth, weekdayInitial } from '../../i18n/format';
 import { formatInt, he } from '../../i18n/he';
+import { CardBackdrop } from '../../ui/art/CardBackdrop';
 import { CardTitle } from '../../ui/CardTitle';
 
 interface WeekCardProps {
@@ -37,8 +38,9 @@ export function WeekCard({ range, tz, today, selected, onSelect }: WeekCardProps
   return (
     <section
       aria-labelledby="week-title"
-      className="card relative flex flex-col overflow-hidden p-4"
+      className="card relative isolate flex flex-col overflow-hidden panel-dark p-4"
     >
+      <CardBackdrop name="week" />
       <div className="mb-2 flex flex-none items-baseline justify-between gap-3">
         <CardTitle id="week-title" icon="week" tone="mint" className="text-lg font-bold">
           {he.today.weekTitle}

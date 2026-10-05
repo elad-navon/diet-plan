@@ -3,6 +3,7 @@ import { type Recommendation, type Suggestion } from '../../core/recommend';
 import { type Tz } from '../../core/time';
 import { formatClock, ingredientLine } from '../../i18n/format';
 import { formatDecimal, formatInt, he } from '../../i18n/he';
+import { CardBackdrop } from '../../ui/art/CardBackdrop';
 import { Button } from '../../ui/Button';
 import { CardTitle } from '../../ui/CardTitle';
 import { Icon } from '../../ui/Icon';
@@ -31,24 +32,30 @@ export function NextMealCard({
   const { next, status, remainingKcal, notes } = recommendation;
   const title = next?.optional ? he.today.optionalSnack : he.today.nextMeal;
 
-  const body = (
-    <div className="mt-1">
+  // The line that says what and when (it stays in view on a computer) and the suggestions under it (they scroll).
+  const intro = (
+    <>
       {status === 'over_budget' && (
         <p className="text-base">{he.today.overMessage(formatInt(-remainingKcal))}</p>
       )}
       {status === 'day_complete' && !next && (
         <p className="text-base">{he.today.completeMessage}</p>
       )}
+      {next && (
+        // The line stops short of the left corner, where the picture of the plate is.
+        <p className="pe-[6.5rem] text-base text-muted">
+          {next.slot && <span className="font-semibold text-ink">{he.slotMeal[next.slot]} · </span>}
+          {he.today.nextAround(formatClock(next.suggestedAt, tz))} ·{' '}
+          {he.today.nextUpTo(formatInt(next.budgetKcal))}
+        </p>
+      )}
+    </>
+  );
 
+  const list = (
+    <>
       {next && (
         <>
-          <p className="text-base text-muted">
-            {next.slot && (
-              <span className="font-semibold text-ink">{he.slotMeal[next.slot]} · </span>
-            )}
-            {he.today.nextAround(formatClock(next.suggestedAt, tz))} ·{' '}
-            {he.today.nextUpTo(formatInt(next.budgetKcal))}
-          </p>
           {next.suggestions.length > 0 && (
             <ul className="mt-3 space-y-2">
               {next.suggestions.map((suggestion) => {
@@ -108,12 +115,16 @@ export function NextMealCard({
           {he.today.addMeal}
         </Button>
       )}
-    </div>
+    </>
   );
 
   if (alwaysOpen) {
     return (
-      <section aria-labelledby="next-title" className="card flex flex-col p-4">
+      <section
+        aria-labelledby="next-title"
+        className="card relative isolate flex flex-col overflow-hidden panel-dark p-4"
+      >
+        <CardBackdrop name="next" />
         <CardTitle
           id="next-title"
           icon="clock"
@@ -122,24 +133,32 @@ export function NextMealCard({
         >
           {title}
         </CardTitle>
-        <div className="min-h-0 flex-1 overflow-y-auto">{body}</div>
+        <div className="mt-1 flex-none">{intro}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto scroll-right pr-3">{list}</div>
       </section>
     );
   }
 
   return (
-    <section aria-labelledby="next-title" className="card p-5">
+    <section
+      aria-labelledby="next-title"
+      className="card relative isolate overflow-hidden panel-dark p-5"
+    >
+      <CardBackdrop name="next" />
       {/* Closed by default: the suggestions are there when asked for, not in the way of the day. */}
       <details className="group">
         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
           <CardTitle id="next-title" icon="clock" tone="mint" className="text-xl font-bold">
             {title}
           </CardTitle>
-          <span className="shrink-0 text-muted transition group-open:rotate-180">
+          <span className="me-12 grid size-9 shrink-0 place-items-center rounded-full text-muted transition group-open:rotate-180">
             <Icon name="chevron-down" />
           </span>
         </summary>
-        {body}
+        <div className="mt-1">
+          {intro}
+          {list}
+        </div>
       </details>
     </section>
   );
