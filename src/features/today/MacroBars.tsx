@@ -53,7 +53,11 @@ export function MacroBars({ target, macroState, summary }: MacroBarsProps) {
                   <bdi>{formatInt(eaten)}</bdi>
                 </p>
                 <p className="text-sm text-muted">
-                  {goal !== null ? he.today.macroGoal(formatInt(goal)) : he.gramsShort}
+                  {goal === null
+                    ? he.gramsShort
+                    : eaten > goal
+                      ? he.today.macroAbove(formatInt(eaten - goal))
+                      : he.today.macroGoal(formatInt(goal))}
                 </p>
               </div>
               {goal !== null && (
