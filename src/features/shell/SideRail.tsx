@@ -74,9 +74,9 @@ export function SideRail() {
       <img
         src={`${import.meta.env.BASE_URL}icons/icon.svg`}
         alt={he.appName}
-        width={40}
-        height={40}
-        className="size-10"
+        width={48}
+        height={48}
+        className="size-12"
       />
       <img
         src={avatarUrl}

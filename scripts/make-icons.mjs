@@ -42,6 +42,8 @@ const png = [
 ];
 // The favicon, rendered separately at each size (no blurry downscaling).
 const faviconSizes = [16, 32, 48];
+// The browser tab and the side bar show the apple bigger: it fills the square almost to the edges.
+const TIGHT = 1.12;
 
 const browser = await chromium.launch();
 const page = await browser.newPage();
@@ -55,10 +57,11 @@ async function render(markup, size) {
 
 for (const job of png) writeFileSync(job.file, await render(job.svg, job.size));
 const favicons = [];
-for (const size of faviconSizes) favicons.push({ size, data: await render(svg(), size) });
+for (const size of faviconSizes)
+  favicons.push({ size, data: await render(svg({ scale: TIGHT }), size) });
 await browser.close();
 
-writeFileSync('public/icons/icon.svg', svg());
+writeFileSync('public/icons/icon.svg', svg({ scale: TIGHT }));
 
 // A .ico file is a small header followed by the PNG images (supported by every current browser).
 const header = Buffer.alloc(6);
