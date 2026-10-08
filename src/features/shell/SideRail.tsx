@@ -55,7 +55,7 @@ function ThemeToggle() {
 }
 
 /**
- * The side bar of the computer layout: my picture on top, the three screens, and the light/dark switch at the bottom,
+ * The side bar of the computer layout: the app's apple and my picture on top, the three screens, and the light/dark switch at the bottom,
  * over a tall picture of basil, tomatoes and avocado. The picture is dark, so the bar keeps its light-on-dark colors
  * in the light theme too (the same `panel-dark` as the cards that have a picture), under a thin veil for the labels.
  */
@@ -70,6 +70,13 @@ export function SideRail() {
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 -z-10 bg-[rgb(4_14_26/0.38)]"
+      />
+      <img
+        src={`${import.meta.env.BASE_URL}icons/icon.svg`}
+        alt={he.appName}
+        width={40}
+        height={40}
+        className="size-10"
       />
       <img
         src={avatarUrl}

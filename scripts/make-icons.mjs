@@ -1,69 +1,46 @@
 // Renders the app icons and the favicon with the browser that Playwright already installs.
-//  - The home-screen icons (192/512) are the owner's illustration (scripts/icon-art.png: a clipboard,
-//    vegetables and a tape measure) on a TRANSPARENT background. There is no "maskable" icon on purpose: Android
-//    would put it on an opaque tile. The iPhone icon (apple-touch-icon) is on white, because iOS fills any
-//    transparent pixel with black.
-//  - The browser-tab icon (favicon.ico, icon.svg) is a simple plate with a fork and a knife, because the
-//    illustration has too much detail to read at 16-32 px.
+// Every icon is the same green apple: a solid shape with no holes, so it reads at 16 px as well as on a home screen.
+//  - The browser-tab icon (favicon.ico, icon.svg) and the home-screen icons (192/512) are on a TRANSPARENT
+//    background. There is no "maskable" icon on purpose: Android would put it on an opaque tile.
+//  - The iPhone icon (apple-touch-icon) is on white, because iOS fills any transparent pixel with black.
+//  - icon.svg is also the logo at the top of the side bar (SideRail).
 // Run once after changing a design: node scripts/make-icons.mjs
 //
 // Writes: public/icons/{icon.svg,icon-192.png,icon-512.png,apple-touch-icon.png}, public/favicon.ico
-import { readFileSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { chromium } from '@playwright/test';
 
-const BLUE = '#3b82f6';
+const GREEN = '#22c55e';
+const DARK_GREEN = '#15803d';
+const BROWN = '#7c4a1e';
 const WHITE = '#ffffff';
 
-/** The plate, fork and knife. `bold` = thicker strokes so it stays readable at 16-32 px. */
-function cutlery(bold) {
-  const t = bold ? 20 : 12; // fork tines
-  const h = bold ? 30 : 18; // handles
-  const tines = bold ? [106, 138] : [104, 122, 140];
-  const plateInner = bold ? 52 : 60;
-  return `
-    <circle cx="256" cy="256" r="94" fill="${WHITE}"/>
-    <circle cx="256" cy="256" r="${plateInner}" fill="${BLUE}"/>
-    <g stroke="${WHITE}" stroke-linecap="round" fill="none">
-      <path d="${tines.map((x) => `M${x} 146 V214`).join(' ')}" stroke-width="${t}"/>
-      <path d="M${tines[0]} 214 Q122 246 ${tines[tines.length - 1]} 214" stroke-width="${t}"/>
-      <path d="M122 236 V372" stroke-width="${h}"/>
-      <path d="M392 372 V262" stroke-width="${h}"/>
-    </g>
-    <path d="M392 146 C436 176 436 246 392 266 Z" fill="${WHITE}"/>`;
-}
+/** The apple: body, stem and leaf. */
+const APPLE = `
+  <path d="M256 150 C200 100 70 120 70 270 C70 390 160 480 215 480 C238 480 245 466 256 466 C267 466 274 480 297 480 C352 480 442 390 442 270 C442 120 312 100 256 150 Z" fill="${GREEN}"/>
+  <path d="M256 150 C256 110 264 75 290 45" stroke="${BROWN}" stroke-width="26" stroke-linecap="round" fill="none"/>
+  <path d="M276 100 C300 40 370 30 400 48 C380 100 316 115 276 100 Z" fill="${DARK_GREEN}"/>`;
 
-/** `rounded` = rounded corners; `scale` shrinks the drawing toward the middle (room for masks). */
-const svg = ({
-  rounded,
-  scale = 1,
-  bold = false,
-}) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <rect width="512" height="512" ${rounded ? 'rx="112"' : ''} fill="${BLUE}"/>
-  <g transform="translate(256 256) scale(${scale}) translate(-256 -256)">${cutlery(bold)}</g>
-</svg>`;
-
-const ART = `data:image/png;base64,${readFileSync(new URL('./icon-art.png', import.meta.url)).toString('base64')}`;
-
-/** The illustration centred; `scale` = how much of the width it fills; `background` null = transparent. */
-const artIcon = ({
-  background,
-  scale,
-}) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+/** The apple centred; `scale` shrinks it toward the middle; `background` null = transparent. */
+const svg = ({ background = null, scale = 1 } = {}) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   ${background ? `<rect width="512" height="512" fill="${background}"/>` : ''}
-  <image href="${ART}" x="${(512 * (1 - scale)) / 2}" y="${(512 * (1 - scale)) / 2}" width="${512 * scale}" height="${512 * scale}"/>
-</svg>`;
+  <g transform="translate(256 256) scale(${scale}) translate(-256 -256)">${APPLE}
+  </g>
+</svg>
+`;
 
 const png = [
-  { file: 'public/icons/icon-192.png', size: 192, svg: artIcon({ background: null, scale: 0.94 }) },
-  { file: 'public/icons/icon-512.png', size: 512, svg: artIcon({ background: null, scale: 0.94 }) },
+  { file: 'public/icons/icon-192.png', size: 192, svg: svg({ scale: 0.94 }) },
+  { file: 'public/icons/icon-512.png', size: 512, svg: svg({ scale: 0.94 }) },
   // iOS rounds the corners itself and turns transparent pixels black, so this one sits on white.
   {
     file: 'public/icons/apple-touch-icon.png',
     size: 180,
-    svg: artIcon({ background: WHITE, scale: 0.8 }),
+    svg: svg({ background: WHITE, scale: 0.75 }),
   },
 ];
-// The favicon: bold strokes, rendered separately at each size (no blurry downscaling).
+// The favicon, rendered separately at each size (no blurry downscaling).
 const faviconSizes = [16, 32, 48];
 
 const browser = await chromium.launch();
@@ -78,11 +55,10 @@ async function render(markup, size) {
 
 for (const job of png) writeFileSync(job.file, await render(job.svg, job.size));
 const favicons = [];
-for (const size of faviconSizes)
-  favicons.push({ size, data: await render(svg({ rounded: true, bold: true }), size) });
+for (const size of faviconSizes) favicons.push({ size, data: await render(svg(), size) });
 await browser.close();
 
-writeFileSync('public/icons/icon.svg', svg({ rounded: true, bold: true }));
+writeFileSync('public/icons/icon.svg', svg());
 
 // A .ico file is a small header followed by the PNG images (supported by every current browser).
 const header = Buffer.alloc(6);
