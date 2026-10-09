@@ -42,6 +42,8 @@ export function MacroBars({ target, macroState, summary }: MacroBarsProps) {
           const eaten = summary.macros[key];
           const goal = target?.[key] ?? null;
           const percent = goal ? Math.min(100, Math.round((eaten / goal) * 100)) : 0;
+          // Compare the whole grams on screen, so 53.3 against 53 never reads "above by 0".
+          const extra = goal === null ? 0 : Math.round(eaten) - Math.round(goal);
           return (
             <li
               key={key}
@@ -55,9 +57,11 @@ export function MacroBars({ target, macroState, summary }: MacroBarsProps) {
                 <p className="text-sm text-muted">
                   {goal === null
                     ? he.gramsShort
-                    : eaten > goal
-                      ? he.today.macroAbove(formatInt(eaten - goal))
-                      : he.today.macroGoal(formatInt(goal))}
+                    : extra > 0
+                      ? he.today.macroAbove(formatInt(extra))
+                      : extra === 0
+                        ? he.today.macroOnTarget
+                        : he.today.macroGoal(formatInt(goal))}
                 </p>
               </div>
               {goal !== null && (

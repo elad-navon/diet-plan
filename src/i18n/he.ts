@@ -139,6 +139,8 @@ export const he = {
     noTarget: 'אין עדיין יעד ליום הזה',
     macros: 'מאקרו',
     macroGoal: (goal: string) => `מתוך ${goal}\u00A0ג'`,
+    /** The day's amount, rounded, is exactly its target. */
+    macroOnTarget: 'בדיוק ביעד',
     /** Once the day's amount is past its target: how far past, with no warning tone. */
     macroAbove: (extra: string) => `מעל ב-${extra}\u00A0ג'`,
     protein: 'חלבון',
