@@ -201,6 +201,7 @@ export function favoriteFromRow(row: Row): FavoriteRecord {
     refinedCarbsG: numberOrNull(row, 'refined_carbs_g'),
     wholeCarbsG: numberOrNull(row, 'whole_carbs_g'),
     ...(foodDbVersion !== null ? { foodDbVersion } : {}),
+    sortOrder: numberOrNull(row, 'sort_order'),
     useCount: number(row, 'use_count'),
     lastUsedAt: instantOrNull(row, 'last_used_at'),
     version: number(row, 'version'),

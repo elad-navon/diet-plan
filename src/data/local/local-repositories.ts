@@ -450,6 +450,7 @@ export function createLocalRepositories(options: {
             refinedCarbsG: grain.value.refinedCarbsG,
             wholeCarbsG: grain.value.wholeCarbsG,
             ...(input.foodDbVersion !== undefined ? { foodDbVersion: input.foodDbVersion } : {}),
+            ...(input.sortOrder != null ? { sortOrder: input.sortOrder } : {}),
             useCount: 0,
             lastUsedAt: null,
             version: 1,
@@ -472,6 +473,15 @@ export function createLocalRepositories(options: {
               ? { ...f, useCount: f.useCount + 1, lastUsedAt: clock.now(), version: f.version + 1 }
               : f,
           );
+          store.save(doc);
+        }),
+      reorder: (ids) =>
+        run(() => {
+          const doc = store.load();
+          doc.favorites = doc.favorites.map((f) => {
+            const place = ids.indexOf(f.id);
+            return place < 0 ? f : { ...f, sortOrder: place + 1, version: f.version + 1 };
+          });
           store.save(doc);
         }),
     },

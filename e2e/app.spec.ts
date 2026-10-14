@@ -928,6 +928,61 @@ test.describe('saved meals', () => {
     await saved.getByRole('button', { name: he.saved.removeYes }).click();
     await expect(saved.getByText(he.saved.empty)).toBeVisible();
   });
+
+  test('SAVED-05: several saved meals are ticked and added together as one meal', async ({
+    page,
+  }) => {
+    await openApp(page, { seed: {} });
+    await addAndSave(page, 'כוס קפה', '60');
+    await addAndSave(page, '2 פרוסות', '150');
+    await expect(remaining(page)).toHaveAttribute('aria-label', /1,180/); // 1,390 - 210
+
+    const saved = await openSavedMeals(page);
+    await expect(saved.getByRole('button', { name: he.saved.addTogether })).toHaveCount(0);
+    await saved.getByRole('checkbox', { name: he.saved.select('כוס קפה') }).check();
+    await saved.getByRole('checkbox', { name: he.saved.select('2 פרוסות') }).check();
+    await expect(saved.getByText(he.saved.selected(2, '210'))).toBeVisible();
+    await saved.getByRole('button', { name: he.saved.addTogether }).click();
+
+    const sheet = page.getByRole('dialog', { name: he.addMeal.title });
+    await expect(sheet.getByText('כוס קפה', { exact: true })).toBeVisible();
+    await expect(sheet.getByText('2 פרוסות', { exact: true })).toBeVisible();
+    await sheet.getByRole('button', { name: he.addMeal.saveMeal }).click();
+    await expect(page.getByText(he.today.saved, { exact: true })).toBeVisible();
+    await expect(remaining(page)).toHaveAttribute('aria-label', /970/); // 1,180 - 210
+  });
+
+  test('SAVED-06: saved meals can be sorted by hand, and the order stays', async ({ page }) => {
+    await openApp(page, { seed: {} });
+    await addAndSave(page, 'ארוחה א', '100');
+    await addAndSave(page, 'ארוחה ב', '200');
+    await addAndSave(page, 'ארוחה ג', '300');
+
+    const saved = await openSavedMeals(page);
+    const names = () => saved.getByRole('listitem').locator('.break-words').allTextContents();
+    expect(await names()).toEqual(['ארוחה א', 'ארוחה ב', 'ארוחה ג']); // none used yet: by name
+    await saved.getByRole('button', { name: he.saved.sort }).click();
+    await expect(saved.getByRole('button', { name: he.saved.moveUp('ארוחה א') })).toBeDisabled();
+    await saved.getByRole('button', { name: he.saved.moveUp('ארוחה ג') }).click();
+    await expect.poll(names).toEqual(['ארוחה א', 'ארוחה ג', 'ארוחה ב']);
+    await saved.getByRole('button', { name: he.saved.moveUp('ארוחה ג') }).click();
+    await expect.poll(names).toEqual(['ארוחה ג', 'ארוחה א', 'ארוחה ב']);
+    await saved.getByRole('button', { name: he.saved.sortDone }).click();
+    await saved.getByRole('button', { name: he.close }).click();
+
+    // Using a meal no longer moves it to the top once the list was sorted by hand.
+    const again = await openSavedMeals(page);
+    await again.getByRole('button', { name: he.saved.useAria('ארוחה ב') }).click();
+    await page
+      .getByRole('dialog', { name: he.addMeal.title })
+      .getByRole('button', { name: he.addMeal.saveMeal })
+      .click();
+    await expect(page.getByText(he.today.saved, { exact: true })).toBeVisible();
+    const list = await openSavedMeals(page);
+    await expect
+      .poll(() => list.getByRole('listitem').locator('.break-words').allTextContents())
+      .toEqual(['ארוחה ג', 'ארוחה א', 'ארוחה ב']);
+  });
 });
 
 test('E2E-06: a suggestion can be added with one confirmation', async ({ page, isMobile }) => {

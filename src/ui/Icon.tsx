@@ -6,6 +6,7 @@ export type IconName =
   | 'check'
   | 'clock'
   | 'arrow-up'
+  | 'arrow-down'
   | 'alert'
   | 'pencil'
   | 'trash'
@@ -38,6 +39,7 @@ const PATHS: Record<IconName, ReactNode> = {
     </>
   ),
   'arrow-up': <path d="M12 19V6M6 11l6-6 6 6" />,
+  'arrow-down': <path d="M12 5v13M6 13l6 6 6-6" />,
   alert: (
     <>
       <circle cx="12" cy="12" r="8.5" />

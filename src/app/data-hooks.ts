@@ -4,6 +4,7 @@ import { type MealCandidate } from '../core/recommend';
 import { type LocalDate } from '../core/time';
 import {
   DataError,
+  type FavoriteRecord,
   type MealPatch,
   type NewFavorite,
   type NewMeal,
@@ -208,6 +209,28 @@ export function useMarkFavoriteUsed() {
   return useMutation({
     mutationFn: (id: string) => repos.favorites.markUsed(id),
     onSuccess: () => invalidate(keys.favorites),
+  });
+}
+
+/**
+ * The person moves a saved meal up or down: the list shows the new order at once, and goes back to what the
+ * server holds if it could not be saved there.
+ */
+export function useReorderFavorites() {
+  const { repos } = useServices();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: readonly string[]) => repos.favorites.reorder(ids),
+    onMutate: async (ids) => {
+      await queryClient.cancelQueries({ queryKey: keys.favorites });
+      queryClient.setQueryData<FavoriteRecord[]>(keys.favorites, (current) =>
+        current?.map((favorite) => {
+          const place = ids.indexOf(favorite.id);
+          return place < 0 ? favorite : { ...favorite, sortOrder: place + 1 };
+        }),
+      );
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.favorites }),
   });
 }
 

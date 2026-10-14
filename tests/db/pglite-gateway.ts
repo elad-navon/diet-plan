@@ -67,6 +67,9 @@ export function createPgliteGateway(session: Session): ServerGateway {
       const keys = Object.keys(args);
       const params = keys.map((key) => {
         const value = args[key];
+        // An array for an array parameter (uuid[]) goes as a Postgres array, as PostgREST does; other objects as JSON.
+        const type = info.types[info.names.indexOf(key)] ?? '';
+        if (Array.isArray(value) && type.endsWith('[]')) return value as unknown[];
         return typeof value === 'object' && value !== null ? JSON.stringify(value) : value;
       });
       const call = keys

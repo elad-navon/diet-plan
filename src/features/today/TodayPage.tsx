@@ -25,7 +25,7 @@ import {
 import { type Recommendation, type Suggestion } from '../../core/recommend';
 import { DEFAULT_SCHEDULE } from '../../core/schedule';
 import { addDays, localDateOf, localTimeOf, type LocalDate } from '../../core/time';
-import { DataError, type FavoriteRecord, type StoredMeal } from '../../data';
+import { DataError, type StoredMeal } from '../../data';
 import { dataErrorMessage } from '../../i18n/data-errors';
 import { formatDayTitle } from '../../i18n/format';
 import { he } from '../../i18n/he';
@@ -36,7 +36,6 @@ import { Icon } from '../../ui/Icon';
 import { Sheet } from '../../ui/Sheet';
 import { useToast } from '../../ui/Toast';
 import { AddMealSheet, type MealPrefill } from '../meals/AddMealSheet';
-import { savedMealPrefill } from '../meals/prefill';
 import { SavedMealsSheet } from '../meals/SavedMealsSheet';
 import { LoadGate } from '../shell/LoadGate';
 import { useRequiredProfile } from '../shell/ProfileGate';
@@ -190,9 +189,9 @@ function TodayContent() {
     });
   }
 
-  function pickSavedMeal(favorite: FavoriteRecord): void {
+  function pickSavedMeal(prefill: MealPrefill): void {
     setSavedOpen(false);
-    openNew(savedMealPrefill(favorite));
+    openNew(prefill);
   }
 
   async function remove(meal: StoredMeal): Promise<void> {

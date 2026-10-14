@@ -211,6 +211,16 @@ export const he = {
     remove: (name: string) => `מחיקת ${name} מהארוחות השמורות`,
     removeAsk: 'למחוק מהרשימה?',
     removeYes: 'מחק',
+    select: (name: string) => `סימון ${name}`,
+    selectHint: 'אפשר לסמן כמה ארוחות ולהוסיף אותן יחד כארוחה אחת.',
+    selected: (count: number, kcal: string) => `נבחרו ${count} ארוחות · ${kcal} קק"ל`,
+    addTogether: 'הוסף כארוחה אחת',
+    tooManyItems: (max: number) => `יחד יש בהן יותר מ-${max} פריטים. בחר פחות ארוחות.`,
+    sort: 'מיון ידני',
+    sortDone: 'סיום מיון',
+    sortHint: 'הזז ארוחה למעלה או למטה. הסדר נשמר.',
+    moveUp: (name: string) => `הזזת ${name} למעלה`,
+    moveDown: (name: string) => `הזזת ${name} למטה`,
   },
 
   addMeal: {

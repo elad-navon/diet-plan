@@ -432,6 +432,21 @@ describe('favorites', () => {
     ).rejects.toMatchObject({ code: 'invalid' });
   });
 
+  it('keeps the order given by hand, and cannot reorder the favorites of someone else', async () => {
+    const { repos } = await newUserRepos();
+    const { repos: other } = await newUserRepos();
+    const [a, b] = [favorite(), favorite()];
+    await repos.favorites.add(a);
+    await repos.favorites.add({ ...b, sortOrder: 5 });
+    expect((await repos.favorites.list()).map((f) => f.sortOrder).sort()).toEqual([5, null]);
+    await repos.favorites.reorder([b.id, a.id]);
+    const places = () =>
+      repos.favorites.list().then((list) => list.map((f) => [f.id, f.sortOrder]));
+    expect(Object.fromEntries(await places())).toEqual({ [a.id]: 2, [b.id]: 1 });
+    await other.favorites.reorder([a.id, b.id]); // not theirs: nothing changes
+    expect(Object.fromEntries(await places())).toEqual({ [a.id]: 2, [b.id]: 1 });
+  });
+
   it("someone else's id cannot be taken over", async () => {
     const { repos: owner } = await newUserRepos();
     const { repos: other } = await newUserRepos();

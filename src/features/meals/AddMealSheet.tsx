@@ -571,6 +571,10 @@ function MealForm({
       }
       // The saved meal that was opened counts as used (before it can be replaced by the one saved now).
       if (favoriteId) await markUsed.mutateAsync(favoriteId).catch(() => undefined);
+      // Several saved meals added together: each of them counts as used.
+      for (const id of prefill?.favoriteIds ?? []) {
+        await markUsed.mutateAsync(id).catch(() => undefined);
+      }
       const kept = saveMeal ? ((await keepAsSavedMeal(result)) ? 'saved' : 'failed') : null;
       savedRef.current = true;
       clearMealDraft();
@@ -640,6 +644,8 @@ function MealForm({
         refinedCarbsG: result.refinedCarbsG,
         wholeCarbsG: result.wholeCarbsG,
         ...(database.data ? { foodDbVersion: database.data.db.version } : {}),
+        // Saved again under the same name: it keeps the place it was given in the list.
+        sortOrder: sameSavedMeals(favorites, result.name)[0]?.sortOrder ?? null,
       });
       // The new one first: if that fails, the earlier one is still there.
       for (const earlier of sameSavedMeals(favorites, result.name)) {

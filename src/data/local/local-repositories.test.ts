@@ -287,6 +287,18 @@ describe('favorites', () => {
       code: 'limit_reached',
     });
   });
+
+  it('keeps the order the saved meals were put in by hand', async () => {
+    const fav = { name: 'ארוחה', kcal: 250, macros: null, items: [] };
+    await repos.favorites.add({ ...fav, id: 'a' });
+    await repos.favorites.add({ ...fav, id: 'b' });
+    await repos.favorites.add({ ...fav, id: 'c', sortOrder: 7 });
+    await repos.favorites.reorder(['b', 'a']);
+    const places = Object.fromEntries(
+      (await repos.favorites.list()).map((f) => [f.id, f.sortOrder]),
+    );
+    expect(places).toEqual({ a: 2, b: 1, c: 7 });
+  });
 });
 
 describe('export and reset', () => {

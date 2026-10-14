@@ -85,6 +85,8 @@ export interface FavoriteRecord {
   refinedCarbsG?: number | null;
   wholeCarbsG?: number | null;
   foodDbVersion?: string;
+  /** The place given by hand in the list of saved meals (1 = top); absent or null = never placed by hand. */
+  sortOrder?: number | null;
   useCount: number;
   lastUsedAt: Instant | null;
   version: number;
@@ -172,6 +174,8 @@ export interface FavoriteRepository {
   add(favorite: NewFavorite): Promise<FavoriteRecord>;
   remove(id: string): Promise<void>;
   markUsed(id: string): Promise<void>;
+  /** Puts these favorites in this order, the first at the top (the person's own order of the saved meals). */
+  reorder(ids: readonly string[]): Promise<void>;
 }
 
 export interface Repositories {

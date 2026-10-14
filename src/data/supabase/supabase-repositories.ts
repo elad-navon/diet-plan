@@ -282,6 +282,8 @@ export function createSupabaseRepositories(options: {
               : {}),
             ...(grain.value.wholeCarbsG !== null ? { whole_carbs_g: grain.value.wholeCarbsG } : {}),
             food_db_version: input.foodDbVersion ?? null,
+            // Only when there is one, so a server without the order column still takes a new favorite.
+            ...(input.sortOrder != null ? { sort_order: input.sortOrder } : {}),
           };
           try {
             return favoriteFromRow(await gateway.insert('favorites', row));
@@ -302,6 +304,10 @@ export function createSupabaseRepositories(options: {
       markUsed: (id) =>
         guard(async () => {
           await gateway.rpc('mark_favorite_used', { p_id: id });
+        }),
+      reorder: (ids) =>
+        guard(async () => {
+          await gateway.rpc('reorder_favorites', { p_ids: [...ids] });
         }),
     },
 

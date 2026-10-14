@@ -5,12 +5,13 @@ import {
   favoriteKey,
   isSavedMeal,
   matchFavorites,
+  movedSavedMeal,
   sameManualFavorites,
   sameSavedMeals,
   savedMealItems,
   savedMeals,
 } from './favorites';
-import { savedMealPrefill } from './prefill';
+import { combinedMealsPrefill, savedMealPrefill } from './prefill';
 
 const favorite = (
   id: string,
@@ -148,5 +149,83 @@ describe('saved meals', () => {
     const withFoods = savedMealPrefill(meals[1] as ReturnType<typeof favorite>);
     expect(withFoods.items).toEqual([food]);
     expect(withFoods.favoriteId).toBe('2');
+  });
+});
+
+describe('saved meals sorted by hand', () => {
+  const egg = manualEntry({ id: 'e', name: 'ביצה', kcal: 70, macros: null, addedSugarG: null });
+  const meal = (id: string, overrides: Partial<FavoriteRecord> = {}) =>
+    favorite(id, `ארוחה ${id}`, { items: [egg], ...overrides });
+
+  it('follow the order given by hand; meals never placed come first, the latest used on top', () => {
+    const list = [
+      meal('a', { sortOrder: 2 }),
+      meal('b', { sortOrder: 1 }),
+      meal('c', { sortOrder: null, lastUsedAt: 5 }),
+      meal('d'),
+    ];
+    expect(savedMeals(list).map((m) => m.id)).toEqual(['c', 'd', 'b', 'a']);
+  });
+
+  it('move one place up or down, and stay put at either end', () => {
+    const list = [meal('a'), meal('b'), meal('c')];
+    expect(movedSavedMeal(list, 'b', -1)).toEqual(['b', 'a', 'c']);
+    expect(movedSavedMeal(list, 'b', 1)).toEqual(['a', 'c', 'b']);
+    expect(movedSavedMeal(list, 'a', -1)).toEqual(['a', 'b', 'c']);
+    expect(movedSavedMeal(list, 'c', 1)).toEqual(['a', 'b', 'c']);
+  });
+});
+
+describe('several saved meals added together', () => {
+  const coffee = manualEntry({
+    id: 'c',
+    name: 'כוס קפה',
+    kcal: 60,
+    macros: { proteinG: 3, carbsG: 5, fatG: 3 },
+    addedSugarG: 5,
+  });
+  const bread = {
+    foodId: '123',
+    name: 'לחם מלא',
+    grams: 60,
+    unit: 'פרוסה',
+    count: 2,
+    kcal: 150,
+    proteinG: 6,
+    carbsG: 27,
+    fatG: 1.5,
+    addedSugarG: 0,
+  };
+
+  it('become one meal with all their foods, under both names', () => {
+    const prefill = combinedMealsPrefill([
+      favorite('1', 'כוס קפה', { items: [coffee] }),
+      favorite('2', '2 פרוסות', { items: [bread], foodDbVersion: 'v1' }),
+    ]);
+    expect(prefill).toMatchObject({
+      name: 'כוס קפה + 2 פרוסות',
+      kcal: 210,
+      macros: { proteinG: 9, carbsG: 32, fatG: 4.5 },
+      addedSugarG: 5,
+      items: [coffee, bread],
+      source: 'favorite',
+      favoriteIds: ['1', '2'],
+    });
+    expect(prefill?.favoriteId).toBeUndefined();
+  });
+
+  it('one meal alone comes back the way it was saved; none gives nothing', () => {
+    const one = favorite('1', 'כוס קפה', { items: [coffee] });
+    expect(combinedMealsPrefill([one])).toEqual(savedMealPrefill(one));
+    expect(combinedMealsPrefill([])).toBeNull();
+  });
+
+  it('keep the joined name within the limit', () => {
+    const long = 'א'.repeat(50);
+    const prefill = combinedMealsPrefill([
+      favorite('1', long, { items: [coffee] }),
+      favorite('2', long, { items: [bread] }),
+    ]);
+    expect(prefill?.name.length).toBe(80);
   });
 });

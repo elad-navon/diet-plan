@@ -50,16 +50,35 @@ export function sameManualFavorites(
  */
 export const isSavedMeal = (favorite: FavoriteRecord): boolean => favorite.items.length > 0;
 
-/** The saved meals, the one used most recently first, then the one used most, then by name. */
+/**
+ * The saved meals in the person's own order (moved up and down by hand). The ones never placed by hand - all of
+ * them until the list is first sorted, and a meal saved after that - come first: the one used most recently,
+ * then the one used most, then by name.
+ */
 export function savedMeals(favorites: readonly FavoriteRecord[]): FavoriteRecord[] {
   return favorites
     .filter(isSavedMeal)
     .sort(
       (a, b) =>
+        (a.sortOrder ?? 0) - (b.sortOrder ?? 0) ||
         (b.lastUsedAt ?? 0) - (a.lastUsedAt ?? 0) ||
         b.useCount - a.useCount ||
         a.name.localeCompare(b.name, 'he'),
     );
+}
+
+/** The ids of the saved meals after one of them moves one place up (-1) or down (+1); the same list at an end. */
+export function movedSavedMeal(
+  meals: readonly FavoriteRecord[],
+  id: string,
+  step: -1 | 1,
+): string[] {
+  const ids = meals.map((meal) => meal.id);
+  const from = ids.indexOf(id);
+  const to = from + step;
+  if (from < 0 || to < 0 || to >= ids.length) return ids;
+  [ids[from], ids[to]] = [ids[to] as string, ids[from] as string];
+  return ids;
 }
 
 /** The saved meals under the same name: saving a meal again replaces them (the latest values win). */
