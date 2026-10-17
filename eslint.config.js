@@ -40,6 +40,9 @@ export default defineConfig([
     'playwright-report',
     'test-results',
     'supabase/functions',
+    // Android app: the native project and the built APKs (no app source lives there).
+    'android',
+    'release',
     // Deliberate rule violations used by tests/lint-rules.test.ts (which lints them with ignore:false).
     '**/__lint-fixtures__/**',
   ]),

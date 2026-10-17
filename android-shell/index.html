@@ -1,0 +1,81 @@
+<!doctype html>
+<!--
+  The only page packaged inside the Android app (capacitor.config.json: webDir, server.errorPath).
+  The app itself is the live website; this shows only when it can't be reached (no connection on
+  the very first launch - after that the website's service worker opens it offline).
+-->
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>יומן תזונה</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f3f4f8;
+        --ink: #1f2937;
+        --muted: #4b5563;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0c0e14;
+          --ink: #f3f4f6;
+          --muted: #9ca3af;
+        }
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: system-ui, sans-serif;
+      }
+      main {
+        min-height: 100%;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 24px;
+        text-align: center;
+      }
+      h1 {
+        margin: 0;
+        font-size: 1.4rem;
+      }
+      p {
+        margin: 0;
+        color: var(--muted);
+        max-width: 22rem;
+        line-height: 1.5;
+      }
+      button {
+        margin-top: 8px;
+        min-height: 48px;
+        padding: 0 28px;
+        border: 0;
+        border-radius: 12px;
+        background: #3b82f6;
+        color: #ffffff;
+        font: inherit;
+        font-size: 1.05rem;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>אין חיבור ליומן התזונה</h1>
+      <p>האפליקציה נטענת מהאתר, והוא לא זמין כרגע. כדאי לבדוק את החיבור לאינטרנט ולנסות שוב.</p>
+      <button type="button" id="retry">לנסות שוב</button>
+    </main>
+    <script>
+      document.getElementById('retry').addEventListener('click', () => {
+        window.location.href = 'https://elad-navon.github.io/diet-plan/';
+      });
+    </script>
+  </body>
+</html>
