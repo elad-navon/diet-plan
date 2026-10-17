@@ -1,5 +1,8 @@
 // Renders the app icons and the favicon with the browser that Playwright already installs.
-// Every icon is the same drawing: a plate between a fork and a knife, in white on a transparent background.
+// Every icon is the same drawing: a filled plate with a fork and a knife cut out of it, on a transparent
+// background.
+// It is round on purpose: launcher icon packs with round tiles cut off anything wider (the earlier plate
+// between a fork and a knife lost both at the edges).
 //  - icon.svg is the logo at the top of the side bar (SideRail, always on the dark rail): plain white.
 //  - The browser tab: favicon.svg follows the browser's theme (white on a dark tab, the app's blue on a
 //    light one); favicon.ico, for browsers without SVG icons, is blue, which reads on both.
@@ -7,7 +10,7 @@
 //    purpose: Android would put it on an opaque tile.
 //  - The iPhone icon (apple-touch-icon) is on the app's blue, because iOS fills any transparent pixel with
 //    black.
-//  - The Android app (android/, when it exists): the launcher icon is the white plate on a transparent
+//  - The Android app (android/, when it exists): the launcher icon is the plate in GREEN on a transparent
 //    background, as large as a launcher shows it safely; the launch screen is the white plate on blue.
 // Run once after changing a design: node scripts/make-icons.mjs
 //
@@ -19,18 +22,28 @@ import { chromium } from '@playwright/test';
 
 const BLUE = '#3b82f6';
 const WHITE = '#ffffff';
+// The Android launcher icon's color: launcher icon packs often put icons on a white tile, where a white
+// plate disappears; green shows on white and dark alike.
+const GREEN = '#16a34a';
 
-/** The plate, fork and knife on a 64-unit grid, drawn in `color`. */
+/**
+ * A filled plate in `color` on a 64-unit grid, with the fork and knife cut out of it (a mask), so
+ * whatever is behind the icon shows through them.
+ */
 const FORK = `<g fill="none" stroke-linecap="round"><path d="M-4 -24v10a4 4 0 0 0 8 0v-10" stroke-width="2.6"/><line x1="0" y1="-24" x2="0" y2="-12" stroke-width="2.6"/><line x1="0" y1="-9" x2="0" y2="24" stroke-width="3.6"/></g>`;
 const KNIFE = `<g><path d="M1.8 -24c-5 3-6.5 12-6.5 21h6.5z" stroke="none"/><line x1="0" y1="-3" x2="0" y2="24" stroke-width="3.6" stroke-linecap="round"/></g>`;
-const glyph = (color) => `<g fill="${color}" stroke="${color}">
-    <circle cx="32" cy="32" r="15.5" fill="none" stroke-width="3.6"/>
-    <circle cx="32" cy="32" r="9.5" fill="none" stroke-width="2.4"/>
-    <g transform="translate(8.5 32) scale(0.9)">${FORK}</g>
-    <g transform="translate(55.5 32) scale(0.9)">${KNIFE}</g>
-  </g>`;
-// Just the drawing (stroke ends included), so it can be centred and sized exactly.
-const BOX = { x: 3.7, y: 9.2, w: 53.4, h: 46 };
+const glyph = (color) => `<defs>
+    <mask id="cutlery" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
+      <rect width="64" height="64" fill="#fff"/>
+      <g fill="#000" stroke="#000">
+        <g transform="translate(26.5 32) scale(0.56)">${FORK}</g>
+        <g transform="translate(37.5 32) scale(0.56)">${KNIFE}</g>
+      </g>
+    </mask>
+  </defs>
+  <circle cx="32" cy="32" r="24.8" fill="${color}" mask="url(#cutlery)"/>`;
+// Just the drawing (the plate's outer edge), so it can be centred and sized exactly.
+const BOX = { x: 7.2, y: 7.2, w: 49.6, h: 49.6 };
 
 /**
  * A width x height image: an optional background (`full` square, `rounded` square) and the drawing
@@ -54,10 +67,10 @@ const svg = ({ width, height = width, size, color = WHITE, background = null }) 
 const TIGHT = 0.98;
 
 // The browser tab icon follows the browser's light/dark theme.
-const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${BOX.x - 1} ${BOX.y - 4.7} ${BOX.w + 2} ${BOX.w + 2}" width="64" height="64">
+const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${BOX.x - 1} ${BOX.y - 1} ${BOX.w + 2} ${BOX.h + 2}" width="64" height="64">
   <style>
-    g { color: ${BLUE}; }
-    @media (prefers-color-scheme: dark) { g { color: ${WHITE}; } }
+    svg { color: ${BLUE}; }
+    @media (prefers-color-scheme: dark) { svg { color: ${WHITE}; } }
   </style>
   ${glyph('currentColor')}
 </svg>
@@ -97,12 +110,12 @@ if (existsSync(RES)) {
       {
         file: `${RES}/mipmap-${density}/ic_launcher.png`,
         size: 48 * scale,
-        svg: svg({ width: 48 * scale, size: 0.92 }),
+        svg: svg({ width: 48 * scale, size: 0.78, color: GREEN }),
       },
       {
         file: `${RES}/mipmap-${density}/ic_launcher_round.png`,
         size: 48 * scale,
-        svg: svg({ width: 48 * scale, size: 0.92 }),
+        svg: svg({ width: 48 * scale, size: 0.78, color: GREEN }),
       },
     );
   }
