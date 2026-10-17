@@ -1,67 +1,167 @@
 // Renders the app icons and the favicon with the browser that Playwright already installs.
-// Every icon is the same green apple: a solid shape with no holes, so it reads at 16 px as well as on a home screen.
-//  - The browser-tab icon (favicon.ico, icon.svg) and the home-screen icons (192/512) are on a TRANSPARENT
-//    background. There is no "maskable" icon on purpose: Android would put it on an opaque tile.
-//  - The iPhone icon (apple-touch-icon) is on white, because iOS fills any transparent pixel with black.
-//  - icon.svg is also the logo at the top of the side bar (SideRail).
+// Every icon is the same drawing: a plate between a fork and a knife, in white on a transparent background.
+//  - icon.svg is the logo at the top of the side bar (SideRail, always on the dark rail): plain white.
+//  - The browser tab: favicon.svg follows the browser's theme (white on a dark tab, the app's blue on a
+//    light one); favicon.ico, for browsers without SVG icons, is blue, which reads on both.
+//  - The home-screen icons (192/512) are white on a TRANSPARENT background. There is no "maskable" icon on
+//    purpose: Android would put it on an opaque tile.
+//  - The iPhone icon (apple-touch-icon) is on the app's blue, because iOS fills any transparent pixel with
+//    black.
+//  - The Android app (android/, when it exists): the launcher icon is the white plate on a transparent
+//    background, as large as a launcher shows it safely; the launch screen is the white plate on blue.
 // Run once after changing a design: node scripts/make-icons.mjs
 //
-// Writes: public/icons/{icon.svg,icon-192.png,icon-512.png,apple-touch-icon.png}, public/favicon.ico
-import { writeFileSync } from 'node:fs';
+// Writes: public/icons/{icon.svg,favicon.svg,icon-192.png,icon-512.png,apple-touch-icon.png},
+// public/favicon.ico, and android/app/src/main/res/{mipmap-*,drawable*,values/ic_launcher_background.xml}
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { chromium } from '@playwright/test';
 
-const GREEN = '#22c55e';
-const DARK_GREEN = '#15803d';
-const BROWN = '#7c4a1e';
+const BLUE = '#3b82f6';
 const WHITE = '#ffffff';
 
-/** The apple: body, stem and leaf. */
-const APPLE = `
-  <path d="M256 150 C200 100 70 120 70 270 C70 390 160 480 215 480 C238 480 245 466 256 466 C267 466 274 480 297 480 C352 480 442 390 442 270 C442 120 312 100 256 150 Z" fill="${GREEN}"/>
-  <path d="M256 150 C256 110 264 75 290 45" stroke="${BROWN}" stroke-width="26" stroke-linecap="round" fill="none"/>
-  <path d="M276 100 C300 40 370 30 400 48 C380 100 316 115 276 100 Z" fill="${DARK_GREEN}"/>`;
+/** The plate, fork and knife on a 64-unit grid, drawn in `color`. */
+const FORK = `<g fill="none" stroke-linecap="round"><path d="M-4 -24v10a4 4 0 0 0 8 0v-10" stroke-width="2.6"/><line x1="0" y1="-24" x2="0" y2="-12" stroke-width="2.6"/><line x1="0" y1="-9" x2="0" y2="24" stroke-width="3.6"/></g>`;
+const KNIFE = `<g><path d="M1.8 -24c-5 3-6.5 12-6.5 21h6.5z" stroke="none"/><line x1="0" y1="-3" x2="0" y2="24" stroke-width="3.6" stroke-linecap="round"/></g>`;
+const glyph = (color) => `<g fill="${color}" stroke="${color}">
+    <circle cx="32" cy="32" r="15.5" fill="none" stroke-width="3.6"/>
+    <circle cx="32" cy="32" r="9.5" fill="none" stroke-width="2.4"/>
+    <g transform="translate(8.5 32) scale(0.9)">${FORK}</g>
+    <g transform="translate(55.5 32) scale(0.9)">${KNIFE}</g>
+  </g>`;
+// Just the drawing (stroke ends included), so it can be centred and sized exactly.
+const BOX = { x: 3.7, y: 9.2, w: 53.4, h: 46 };
 
-/** The apple centred; `scale` shrinks it toward the middle; `background` null = transparent. */
-const svg = ({ background = null, scale = 1 } = {}) =>
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  ${background ? `<rect width="512" height="512" fill="${background}"/>` : ''}
-  <g transform="translate(256 256) scale(${scale}) translate(-256 -256)">${APPLE}
-  </g>
+/**
+ * A width x height image: an optional background (`full` square, `rounded` square) and the drawing
+ * centred, `size` = its width as a fraction of the shorter side.
+ */
+const svg = ({ width, height = width, size, color = WHITE, background = null }) => {
+  const side = Math.min(width, height);
+  const w = side * size;
+  const h = (w * BOX.h) / BOX.w;
+  const backgrounds = {
+    full: `<rect width="${width}" height="${height}" fill="${BLUE}"/>`,
+  };
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+  ${background ? backgrounds[background] : ''}
+  <svg x="${(width - w) / 2}" y="${(height - h) / 2}" width="${w}" height="${h}" viewBox="${BOX.x} ${BOX.y} ${BOX.w} ${BOX.h}">${glyph(color)}</svg>
+</svg>
+`;
+};
+
+// The browser tab and the side bar show the drawing as big as the square allows.
+const TIGHT = 0.98;
+
+// The browser tab icon follows the browser's light/dark theme.
+const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${BOX.x - 1} ${BOX.y - 4.7} ${BOX.w + 2} ${BOX.w + 2}" width="64" height="64">
+  <style>
+    g { color: ${BLUE}; }
+    @media (prefers-color-scheme: dark) { g { color: ${WHITE}; } }
+  </style>
+  ${glyph('currentColor')}
 </svg>
 `;
 
 const png = [
-  { file: 'public/icons/icon-192.png', size: 192, svg: svg({ scale: 0.94 }) },
-  { file: 'public/icons/icon-512.png', size: 512, svg: svg({ scale: 0.94 }) },
-  // iOS rounds the corners itself and turns transparent pixels black, so this one sits on white.
+  { file: 'public/icons/icon-192.png', size: 192, svg: svg({ width: 192, size: 0.94 }) },
+  { file: 'public/icons/icon-512.png', size: 512, svg: svg({ width: 512, size: 0.94 }) },
+  // iOS rounds the corners itself and turns transparent pixels black, so this one sits on blue.
   {
     file: 'public/icons/apple-touch-icon.png',
     size: 180,
-    svg: svg({ background: WHITE, scale: 0.75 }),
+    svg: svg({ width: 180, size: 0.72, background: 'full' }),
   },
 ];
+
+// The Android app, once android/ exists (npx cap add android).
+const RES = 'android/app/src/main/res';
+if (existsSync(RES)) {
+  // Launcher icon (Android 8+): the drawing alone on the 108dp canvas, over a transparent background -
+  // as large as the 72dp a launcher shows of it allows without its rounded mask cutting the drawing.
+  // Older launchers: the drawing alone.
+  for (const [density, scale] of Object.entries({
+    mdpi: 1,
+    hdpi: 1.5,
+    xhdpi: 2,
+    xxhdpi: 3,
+    xxxhdpi: 4,
+  })) {
+    png.push(
+      {
+        file: `${RES}/mipmap-${density}/ic_launcher_foreground.png`,
+        size: 108 * scale,
+        svg: svg({ width: 108 * scale, size: 0.62 }),
+      },
+      {
+        file: `${RES}/mipmap-${density}/ic_launcher.png`,
+        size: 48 * scale,
+        svg: svg({ width: 48 * scale, size: 0.92 }),
+      },
+      {
+        file: `${RES}/mipmap-${density}/ic_launcher_round.png`,
+        size: 48 * scale,
+        svg: svg({ width: 48 * scale, size: 0.92 }),
+      },
+    );
+  }
+  // Launch screens for Android 11 and older (12+ draws its own from the theme's splash colour and icon).
+  const splashes = {
+    drawable: [480, 320],
+    'drawable-land-mdpi': [480, 320],
+    'drawable-land-hdpi': [800, 480],
+    'drawable-land-xhdpi': [1280, 720],
+    'drawable-land-xxhdpi': [1600, 960],
+    'drawable-land-xxxhdpi': [1920, 1280],
+    'drawable-port-mdpi': [320, 480],
+    'drawable-port-hdpi': [480, 800],
+    'drawable-port-xhdpi': [720, 1280],
+    'drawable-port-xxhdpi': [960, 1600],
+    'drawable-port-xxxhdpi': [1280, 1920],
+  };
+  for (const [dir, [width, height]] of Object.entries(splashes)) {
+    png.push({
+      file: `${RES}/${dir}/splash.png`,
+      width,
+      height,
+      svg: svg({ width, height, size: 0.32, background: 'full' }),
+    });
+  }
+  writeFileSync(
+    `${RES}/values/ic_launcher_background.xml`,
+    `<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">#00000000</color>
+    <color name="splash_background">${BLUE}</color>
+</resources>
+`,
+  );
+}
+
 // The favicon, rendered separately at each size (no blurry downscaling).
 const faviconSizes = [16, 32, 48];
-// The browser tab and the side bar show the apple bigger: it fills the square almost to the edges.
-const TIGHT = 1.12;
 
 const browser = await chromium.launch();
 const page = await browser.newPage();
-async function render(markup, size) {
-  await page.setViewportSize({ width: size, height: size });
+async function render(markup, width, height = width) {
+  await page.setViewportSize({ width, height });
   await page.setContent(
-    `<style>html,body{margin:0;background:transparent}svg{width:${size}px;height:${size}px;display:block}</style>${markup}`,
+    `<style>html,body{margin:0;background:transparent}svg{width:${width}px;height:${height}px;display:block}</style>${markup}`,
   );
   return page.screenshot({ omitBackground: true });
 }
 
-for (const job of png) writeFileSync(job.file, await render(job.svg, job.size));
+for (const job of png) {
+  mkdirSync(dirname(job.file), { recursive: true });
+  writeFileSync(job.file, await render(job.svg, job.width ?? job.size, job.height ?? job.size));
+}
 const favicons = [];
 for (const size of faviconSizes)
-  favicons.push({ size, data: await render(svg({ scale: TIGHT }), size) });
+  favicons.push({ size, data: await render(svg({ width: size, size: TIGHT, color: BLUE }), size) });
 await browser.close();
 
-writeFileSync('public/icons/icon.svg', svg({ scale: TIGHT }));
+writeFileSync('public/icons/icon.svg', svg({ width: 512, size: TIGHT }));
+writeFileSync('public/icons/favicon.svg', faviconSvg);
 
 // A .ico file is a small header followed by the PNG images (supported by every current browser).
 const header = Buffer.alloc(6);

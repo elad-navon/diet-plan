@@ -1,0 +1,9 @@
+{
+  "appId": "com.eladnavon.diet",
+  "appName": "יומן תזונה",
+  "webDir": "android-shell",
+  "server": {
+    "url": "https://elad-navon.github.io/diet-plan/",
+    "errorPath": "index.html"
+  }
+}

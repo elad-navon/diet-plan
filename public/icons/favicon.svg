@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="2.7 4.499999999999999 55.4 55.4" width="64" height="64">
+  <style>
+    g { color: #3b82f6; }
+    @media (prefers-color-scheme: dark) { g { color: #ffffff; } }
+  </style>
+  <g fill="currentColor" stroke="currentColor">
+    <circle cx="32" cy="32" r="15.5" fill="none" stroke-width="3.6"/>
+    <circle cx="32" cy="32" r="9.5" fill="none" stroke-width="2.4"/>
+    <g transform="translate(8.5 32) scale(0.9)"><g fill="none" stroke-linecap="round"><path d="M-4 -24v10a4 4 0 0 0 8 0v-10" stroke-width="2.6"/><line x1="0" y1="-24" x2="0" y2="-12" stroke-width="2.6"/><line x1="0" y1="-9" x2="0" y2="24" stroke-width="3.6"/></g></g>
+    <g transform="translate(55.5 32) scale(0.9)"><g><path d="M1.8 -24c-5 3-6.5 12-6.5 21h6.5z" stroke="none"/><line x1="0" y1="-3" x2="0" y2="24" stroke-width="3.6" stroke-linecap="round"/></g></g>
+  </g>
+</svg>

@@ -30,3 +30,11 @@ data/raw/
 
 # working files for design reviews (icon ideas, previews)
 design/
+
+# Android app: built APKs and signing material (the key and its passwords live in C:\Elad\keys,
+# never here). More rules in android/.gitignore.
+/release/
+*.jks
+*.keystore
+keystore.properties
+*-keystore.properties
