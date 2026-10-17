@@ -77,9 +77,10 @@ const png = [
 // The Android app, once android/ exists (npx cap add android).
 const RES = 'android/app/src/main/res';
 if (existsSync(RES)) {
-  // Launcher icon (Android 8+): the drawing alone on the 108dp canvas, over a transparent background -
-  // as large as the 72dp a launcher shows of it allows without its rounded mask cutting the drawing.
-  // Older launchers: the drawing alone.
+  // The launcher icon (ic_launcher / ic_launcher_round): the drawing alone, transparent. There is
+  // deliberately no adaptive icon (mipmap-anydpi-v26): launcher icon packs draw their own tile and a
+  // dark halo behind adaptive icons they don't know, and leave a plain transparent icon as it is.
+  // ic_launcher_foreground (108dp canvas) is only the Android 12+ launch-screen icon.
   for (const [density, scale] of Object.entries({
     mdpi: 1,
     hdpi: 1.5,
