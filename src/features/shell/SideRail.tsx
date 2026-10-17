@@ -72,7 +72,7 @@ export function SideRail() {
         className="pointer-events-none absolute inset-0 -z-10 bg-[rgb(4_14_26/0.38)]"
       />
       <img
-        src={`${import.meta.env.BASE_URL}icons/icon.svg`}
+        src={`${import.meta.env.BASE_URL}icons/icon.svg?v=2`}
         alt={he.appName}
         width={48}
         height={48}
