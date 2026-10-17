@@ -2,7 +2,7 @@ import { MEAL_LIMITS } from '../../core/contracts';
 import { isManualEntry, sumEntries, type FoodEntry } from '../../core/food';
 import { type Macros } from '../../core/nutrition';
 import { type MealSlot } from '../../core/schedule';
-import { type FavoriteRecord, type MealSource } from '../../data';
+import { type FavoriteRecord, type MealSource, type StoredMeal } from '../../data';
 import { favoriteKey } from './favorites';
 
 /** Values to start the form with (a suggestion, a saved meal). */
@@ -73,5 +73,27 @@ export function combinedMealsPrefill(favorites: readonly FavoriteRecord[]): Meal
     source: 'favorite',
     favoriteIds: favorites.map((favorite) => favorite.id),
     ...(versions.size === 1 && version !== undefined ? { foodDbVersion: version } : {}),
+  };
+}
+
+/**
+ * The form for adding again a meal from another day: the same foods (or the same numbers typed by hand), as a new
+ * meal of today. The time and the meal of the day follow the clock, as for any new meal; all of it can be changed.
+ */
+export function copiedMealPrefill(meal: StoredMeal): MealPrefill {
+  const macros: Macros | null =
+    meal.proteinG !== null && meal.carbsG !== null && meal.fatG !== null
+      ? { proteinG: meal.proteinG, carbsG: meal.carbsG, fatG: meal.fatG }
+      : null;
+  return {
+    name: meal.name,
+    kcal: meal.kcal,
+    macros,
+    addedSugarG: meal.addedSugarG,
+    refinedCarbsG: meal.refinedCarbsG ?? null,
+    wholeCarbsG: meal.wholeCarbsG ?? null,
+    source: 'copy',
+    ...(meal.items.length > 0 ? { items: meal.items } : {}),
+    ...(meal.foodDbVersion !== undefined ? { foodDbVersion: meal.foodDbVersion } : {}),
   };
 }

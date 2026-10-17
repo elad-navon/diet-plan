@@ -985,6 +985,79 @@ test.describe('saved meals', () => {
   });
 });
 
+test.describe('copying a meal from another day', () => {
+  test('COPY-01: the add button lists the meals of earlier days; one opens as a new meal of today, to change first', async ({
+    page,
+  }) => {
+    await openApp(page, { seed: {} });
+    await expect(remaining(page)).toHaveAttribute('aria-label', /1,390/);
+    await page.getByRole('button', { name: he.today.addMeal }).first().click();
+    await page.getByRole('button', { name: he.today.addCopiedMeal }).click();
+    const copy = page.getByRole('dialog', { name: he.copy.title });
+    // yesterday first, then the day before; today's meals are not in it
+    const days = copy.getByRole('heading', { level: 3 });
+    await expect(days).toHaveCount(2);
+    await expect(days.first()).toContainText('1 באוקטובר');
+    await expect(days.last()).toContainText('30 בספטמבר');
+    await expect(copy.getByText('עוף ואורז')).toBeVisible();
+    await expect(copy.getByText('פסטה')).toBeVisible();
+
+    await copy.getByRole('button', { name: /העתקת עוף ואורז/ }).click();
+    await expect(copy).toBeHidden();
+    const sheet = page.getByRole('dialog', { name: he.addMeal.title });
+    await expect(sheet.getByLabel(he.addMeal.name)).toHaveValue('עוף ואורז');
+    await expect(sheet.getByLabel(he.addMeal.kcalField)).toHaveValue('620');
+    // a smaller plate this time
+    await sheet.getByLabel(he.addMeal.kcalField).fill('500');
+    await sheet.getByRole('button', { name: he.addMeal.saveMeal }).click();
+    await expect(page.getByText(he.today.saved, { exact: true })).toBeVisible();
+    await expect(remaining(page)).toHaveAttribute('aria-label', /890/); // 1,390 - 500
+    await expect(page.getByRole('region', { name: he.today.mealsTitle })).toContainText(
+      'עוף ואורז',
+    );
+  });
+
+  test('COPY-02: a meal of an earlier day shown on the screen is copied to today', async ({
+    page,
+  }) => {
+    await openApp(page, { seed: { withMealsToday: true } });
+    const week = page.getByRole('region', { name: he.today.weekTitle });
+    const meals = page.getByRole('region', { name: he.today.mealsTitle });
+    // today's meals have no copy button
+    await expect(
+      meals.getByRole('button', { name: he.today.copyToTodayAria('חביתה וסלט') }),
+    ).toHaveCount(0);
+
+    await week.getByRole('button', { name: /1 באוק/ }).click();
+    await expect(page.getByText(he.today.viewingPast)).toBeVisible();
+    // from the details of the meal
+    await page.getByRole('button', { name: he.today.mealDetails.open('סלט טונה') }).click();
+    await page
+      .getByRole('dialog', { name: 'סלט טונה' })
+      .getByRole('button', { name: he.today.copyToToday })
+      .click();
+    const sheet = page.getByRole('dialog', { name: he.addMeal.title });
+    await expect(sheet.getByLabel(he.addMeal.kcalField)).toHaveValue('430');
+    await sheet.getByRole('button', { name: he.addMeal.saveMeal }).click();
+    await expect(page.getByText(he.today.saved, { exact: true })).toBeVisible();
+    // back on today, with the copy beside today's own meal
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('2 באוקטובר');
+    await expect(meals).toContainText('חביתה וסלט');
+    await expect(meals).toContainText('סלט טונה');
+
+    // and straight from the list of an earlier day
+    await week.getByRole('button', { name: /1 באוק/ }).click();
+    await meals.getByRole('button', { name: he.today.copyToTodayAria('קוטג׳ ולחם') }).click();
+    await page
+      .getByRole('dialog', { name: he.addMeal.title })
+      .getByRole('button', { name: he.addMeal.saveMeal })
+      .click();
+    await expect(page.getByText(he.today.saved, { exact: true })).toBeVisible();
+    await expect(meals).toContainText('קוטג׳ ולחם');
+    await expect(remaining(page)).toHaveAttribute('aria-label', /360/); // 1,390 - 280 - 430 - 320
+  });
+});
+
 test('E2E-06: a suggestion can be added with one confirmation', async ({ page, isMobile }) => {
   await openApp(page, { seed: {}, time: `${TODAY}T11:00:00+03:00` });
   const suggestions = page.getByRole('region', { name: he.today.nextMeal });

@@ -36,6 +36,8 @@ import { Icon } from '../../ui/Icon';
 import { Sheet } from '../../ui/Sheet';
 import { useToast } from '../../ui/Toast';
 import { AddMealSheet, type MealPrefill } from '../meals/AddMealSheet';
+import { CopyMealSheet } from '../meals/CopyMealSheet';
+import { copiedMealPrefill } from '../meals/prefill';
 import { SavedMealsSheet } from '../meals/SavedMealsSheet';
 import { LoadGate } from '../shell/LoadGate';
 import { useRequiredProfile } from '../shell/ProfileGate';
@@ -138,6 +140,8 @@ function TodayContent() {
   const [viewing, setViewing] = useState<StoredMeal | null>(null);
   // The list of saved meals opens from the add button; picking one opens it in the new-meal window.
   const [savedOpen, setSavedOpen] = useState(false);
+  // The meals of earlier days, to copy one to today.
+  const [copyOpen, setCopyOpen] = useState(false);
 
   const plan = resolvePlanForDate(plans, date);
   const view = buildDayView({ date, now, tz, plans, meals, candidates: ideas });
@@ -192,6 +196,15 @@ function TodayContent() {
   function pickSavedMeal(prefill: MealPrefill): void {
     setSavedOpen(false);
     openNew(prefill);
+  }
+
+  /** A meal of another day opens as a new meal of today, to save as it is or change first. */
+  function copyToToday(meal: StoredMeal): void {
+    setCopyOpen(false);
+    setViewing(null);
+    // Back to today, so the window adds the meal there and the copy is seen in the list once it is saved.
+    setPicked(null);
+    openNew(copiedMealPrefill(meal));
   }
 
   async function remove(meal: StoredMeal): Promise<void> {
@@ -275,6 +288,7 @@ function TodayContent() {
             variant="button"
             onNew={() => openNew()}
             onSaved={() => setSavedOpen(true)}
+            onCopy={() => setCopyOpen(true)}
           />
         </div>
       </header>
@@ -353,6 +367,7 @@ function TodayContent() {
               onOpen={setViewing}
               onEdit={(meal) => setSheet({ open: true, editing: meal, prefill: null })}
               onDelete={setToDelete}
+              {...(isToday ? {} : { onCopy: copyToToday })}
               {...(mealNumbers ? { numbers: mealNumbers } : {})}
             />
           </div>
@@ -380,9 +395,20 @@ function TodayContent() {
         )}
       </div>
 
-      <AddMealMenu variant="fab" onNew={() => openNew()} onSaved={() => setSavedOpen(true)} />
+      <AddMealMenu
+        variant="fab"
+        onNew={() => openNew()}
+        onSaved={() => setSavedOpen(true)}
+        onCopy={() => setCopyOpen(true)}
+      />
 
-      <MealDetailsSheet meal={viewing} tz={tz} foods={foodsById} onClose={() => setViewing(null)} />
+      <MealDetailsSheet
+        meal={viewing}
+        tz={tz}
+        foods={foodsById}
+        onClose={() => setViewing(null)}
+        {...(viewing !== null && viewing.localDate !== today ? { onCopy: copyToToday } : {})}
+      />
 
       <Sheet
         open={toDelete !== null}
@@ -402,6 +428,14 @@ function TodayContent() {
         open={savedOpen}
         onClose={() => setSavedOpen(false)}
         onPick={pickSavedMeal}
+      />
+
+      <CopyMealSheet
+        open={copyOpen}
+        onClose={() => setCopyOpen(false)}
+        today={today}
+        tz={tz}
+        onPick={copyToToday}
       />
 
       <AddMealSheet

@@ -9,6 +9,8 @@ import { type Tz } from '../../core/time';
 import { type StoredMeal } from '../../data';
 import { formatClock, formatDayMonth } from '../../i18n/format';
 import { formatDecimal, formatInt, he } from '../../i18n/he';
+import { Button } from '../../ui/Button';
+import { Icon } from '../../ui/Icon';
 import { Sheet } from '../../ui/Sheet';
 import { quantityLabel } from '../meals/quantity-label';
 
@@ -18,13 +20,27 @@ interface MealDetailsSheetProps {
   tz: Tz;
   foods: ReadonlyMap<string, FoodRecord>;
   onClose: () => void;
+  /** A meal of an earlier day can be copied to today (it opens in the new-meal window). */
+  onCopy?: (meal: StoredMeal) => void;
 }
 
-/** A meal with everything it holds, to read: nothing here can be changed (editing is its own button). */
-export function MealDetailsSheet({ meal, tz, foods, onClose }: MealDetailsSheetProps) {
+/**
+ * A meal with everything it holds, to read: nothing here can be changed (editing is its own button). A meal of an
+ * earlier day has one button: copy it to today.
+ */
+export function MealDetailsSheet({ meal, tz, foods, onClose, onCopy }: MealDetailsSheetProps) {
   return (
     <Sheet open={meal !== null} onClose={onClose} title={meal?.name ?? ''}>
       {meal && <MealDetails meal={meal} tz={tz} foods={foods} />}
+      {meal && onCopy && (
+        <Button
+          variant="primary"
+          className="mt-4 w-full justify-center"
+          onClick={() => onCopy(meal)}
+        >
+          <Icon name="repeat" size={18} /> {he.today.copyToToday}
+        </Button>
+      )}
     </Sheet>
   );
 }

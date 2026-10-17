@@ -14,6 +14,8 @@ interface MealListProps {
   onOpen: (meal: StoredMeal) => void;
   onEdit: (meal: StoredMeal) => void;
   onDelete: (meal: StoredMeal) => void;
+  /** An earlier day: each meal also has a button that copies it to today. */
+  onCopy?: (meal: StoredMeal) => void;
   /** The number each meal has on the day chart (computer layout: the same number is shown here). */
   numbers?: ReadonlyMap<string, number>;
 }
@@ -26,7 +28,7 @@ const ACTION = 'lg:min-h-9 lg:min-w-9';
  * edit and delete.
  * On a computer the same list is a compact column of rows, numbered like the meals on the chart.
  */
-export function MealList({ meals, tz, onOpen, onEdit, onDelete, numbers }: MealListProps) {
+export function MealList({ meals, tz, onOpen, onEdit, onDelete, onCopy, numbers }: MealListProps) {
   if (meals.length === 0) {
     return <p className="card p-5 text-muted lg:shadow-none lg:p-0">{he.today.noMealsYet}</p>;
   }
@@ -94,6 +96,17 @@ export function MealList({ meals, tz, onOpen, onEdit, onDelete, numbers }: MealL
               </p>
             </div>
             <div className="relative z-10 mt-1 flex gap-1 lg:mt-0 lg:flex-none lg:gap-0">
+              {onCopy && (
+                <Button
+                  icon
+                  variant="ghost"
+                  className={ACTION}
+                  aria-label={he.today.copyToTodayAria(meal.name)}
+                  onClick={() => onCopy(meal)}
+                >
+                  <Icon name="repeat" />
+                </Button>
+              )}
               <Button
                 icon
                 variant="ghost"

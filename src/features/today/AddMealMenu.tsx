@@ -7,12 +7,14 @@ interface AddMealMenuProps {
   onNew: () => void;
   /** A meal that was saved before: opens the list of saved meals. */
   onSaved: () => void;
+  /** A meal eaten on another day: opens the list of the meals of the last days. */
+  onCopy: () => void;
   /** `button`: the wide button in the header of a computer. `fab`: the round button over a phone's screen. */
   variant: 'button' | 'fab';
 }
 
-/** The "add a meal" button: pressing it opens a small list of the two ways to add one. */
-export function AddMealMenu({ onNew, onSaved, variant }: AddMealMenuProps) {
+/** The "add a meal" button: pressing it opens a small list of the ways to add one. */
+export function AddMealMenu({ onNew, onSaved, onCopy, variant }: AddMealMenuProps) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const listId = useId();
@@ -48,6 +50,10 @@ export function AddMealMenu({ onNew, onSaved, variant }: AddMealMenuProps) {
   function chooseSaved(): void {
     closeMenu();
     onSaved();
+  }
+  function chooseCopy(): void {
+    closeMenu();
+    onCopy();
   }
 
   const fab = variant === 'fab';
@@ -106,6 +112,16 @@ export function AddMealMenu({ onNew, onSaved, variant }: AddMealMenuProps) {
             >
               <Icon name="star" size={20} />
               {he.today.addSavedMeal}
+            </button>
+          </li>
+          <li>
+            <button
+              type="button"
+              onClick={chooseCopy}
+              className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-start text-base font-medium hover:bg-[var(--row-hover)] focus-visible:bg-[var(--row-hover)]"
+            >
+              <Icon name="repeat" size={20} />
+              {he.today.addCopiedMeal}
             </button>
           </li>
         </ul>

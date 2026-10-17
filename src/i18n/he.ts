@@ -192,6 +192,9 @@ export const he = {
     deleted: 'הארוחה נמחקה',
     addNewMeal: 'ארוחה חדשה',
     addSavedMeal: 'ארוחה שמורה',
+    addCopiedMeal: 'העתקה מיום אחר',
+    copyToToday: 'העתק להיום',
+    copyToTodayAria: (name: string) => `העתקת ${name} להיום`,
     savedAndKept: 'הארוחה נשמרה, ונוספה לארוחות השמורות',
     savedNotKept: 'הארוחה נשמרה, אבל לא הצלחנו להוסיף אותה לארוחות השמורות',
     deleteConfirmTitle: 'למחוק את הארוחה?',
@@ -221,6 +224,14 @@ export const he = {
     sortHint: 'הזז ארוחה למעלה או למטה. הסדר נשמר.',
     moveUp: (name: string) => `הזזת ${name} למעלה`,
     moveDown: (name: string) => `הזזת ${name} למטה`,
+  },
+
+  copy: {
+    title: 'העתקה מיום אחר',
+    hint: 'בוחרים ארוחה, והיא נפתחת כארוחה חדשה של היום. אפשר לשנות בה הכול לפני השמירה.',
+    empty: 'אין ארוחות בשבועיים האחרונים.',
+    use: 'העתק',
+    useAria: (name: string, day: string) => `העתקת ${name} מ${day} להיום`,
   },
 
   addMeal: {
