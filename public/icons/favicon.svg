@@ -1,16 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="6.2 6.2 51.6 51.6" width="64" height="64">
-  <style>
-    svg { color: #3b82f6; }
-    @media (prefers-color-scheme: dark) { svg { color: #ffffff; } }
-  </style>
-  <defs>
-    <mask id="cutlery" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
-      <rect width="64" height="64" fill="#fff"/>
-      <g fill="#000" stroke="#000">
-        <g transform="translate(26.5 32) scale(0.56)"><g fill="none" stroke-linecap="round"><path d="M-4 -24v10a4 4 0 0 0 8 0v-10" stroke-width="2.6"/><line x1="0" y1="-24" x2="0" y2="-12" stroke-width="2.6"/><line x1="0" y1="-9" x2="0" y2="24" stroke-width="3.6"/></g></g>
-        <g transform="translate(37.5 32) scale(0.56)"><g><path d="M1.8 -24c-5 3-6.5 12-6.5 21h6.5z" stroke="none"/><line x1="0" y1="-3" x2="0" y2="24" stroke-width="3.6" stroke-linecap="round"/></g></g>
-      </g>
-    </mask>
-  </defs>
-  <circle cx="32" cy="32" r="24.8" fill="currentColor" mask="url(#cutlery)"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="6 5 54 54" width="64" height="64">
+  <rect x="12" y="6" width="42" height="52" rx="5" fill="#ea580c"/>
+  <g fill="#7c2d12" stroke="#7c2d12">
+    <rect x="12" y="6" width="8" height="52" rx="3" stroke="none"/>
+    <g transform="translate(32 32) scale(0.6)"><g fill="none" stroke-linecap="round"><path d="M-4 -24v10a4 4 0 0 0 8 0v-10" stroke-width="3.4"/><line x1="0" y1="-24" x2="0" y2="-12" stroke-width="3.4"/><line x1="0" y1="-9" x2="0" y2="24" stroke-width="4.6"/></g></g>
+    <g transform="translate(43 32) scale(0.6)"><g><path d="M1.8 -24c-5 3-6.5 12-6.5 21h6.5z" stroke="none"/><line x1="0" y1="-3" x2="0" y2="24" stroke-width="4.6" stroke-linecap="round"/></g></g>
+  </g>
 </svg>
