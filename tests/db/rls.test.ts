@@ -306,7 +306,7 @@ describe('The set-up itself (guards against a forgotten table or function)', () 
       ...['audit_events', 'meals', 'profiles', 'target_plans'].map(
         (t) => `authenticated:${t}:SELECT`,
       ),
-      ...['favorites', 'weight_entries'].flatMap((t) =>
+      ...['favorites', 'product_photos', 'products', 'weight_entries'].flatMap((t) =>
         ['DELETE', 'INSERT', 'SELECT', 'UPDATE'].map((p) => `authenticated:${t}:${p}`),
       ),
     ].sort();

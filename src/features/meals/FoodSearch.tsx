@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { searchFoods, type FoodRecord } from '../../core/food';
+import { buildFoodIndex, searchFoods, type FoodRecord, type UserProduct } from '../../core/food';
 import { useFoodDb, useFoodUsage, useRemoveFavorite } from '../../app/data-hooks';
 import { formatDecimal, formatInt, he } from '../../i18n/he';
 import { Button } from '../../ui/Button';
@@ -15,13 +15,27 @@ interface FoodSearchProps {
   onPickFavorite: (id: string) => void;
   /** Nothing fits: fall back to manual entry, keeping what was typed as the meal name. */
   onManual: (name: string) => void;
+  /** The person's own products (saved from a label): those that match come first. */
+  products: readonly UserProduct[];
+  /** Save a new product from its label, starting with what was typed as its name. */
+  onAddProduct: (name: string) => void;
 }
 
 const MAX_RESULTS = 15;
 const MAX_FREQUENT = 8;
+const MAX_PRODUCTS = 8;
+/** The person's products are searched on their own, with no "popular foods" boost. */
+const NO_POPULAR: ReadonlySet<string> = new Set();
 
 /** Search the national nutrition database in Hebrew; foods the user eats often come first. */
-export function FoodSearch({ onPick, favorites, onPickFavorite, onManual }: FoodSearchProps) {
+export function FoodSearch({
+  onPick,
+  favorites,
+  onPickFavorite,
+  onManual,
+  products,
+  onAddProduct,
+}: FoodSearchProps) {
   const [text, setText] = useState('');
   const removeFavorite = useRemoveFavorite();
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
@@ -31,12 +45,23 @@ export function FoodSearch({ onPick, favorites, onPickFavorite, onManual }: Food
 
   const frequent = useMemo(() => {
     if (!loaded || !usage || usage.size === 0) return [];
-    const byId = new Map(loaded.db.foods.map((food) => [food.id, food]));
+    const byId = new Map<string, FoodRecord>(loaded.db.foods.map((food) => [food.id, food]));
+    for (const product of products) byId.set(product.id, product);
     return [...usage.entries()]
       .sort((a, b) => b[1] - a[1])
       .slice(0, MAX_FREQUENT)
       .flatMap(([id]) => byId.get(id) ?? []);
-  }, [loaded, usage]);
+  }, [loaded, usage, products]);
+
+  const productIndex = useMemo(() => buildFoodIndex(products, NO_POPULAR), [products]);
+  const myProducts = useMemo(
+    () =>
+      searchFoods(productIndex, text, {
+        limit: MAX_PRODUCTS,
+        ...(usage ? { usage } : {}),
+      }) as UserProduct[],
+    [productIndex, text, usage],
+  );
 
   const results = useMemo(
     () =>
@@ -49,6 +74,7 @@ export function FoodSearch({ onPick, favorites, onPickFavorite, onManual }: Food
   const trimmed = text.trim();
   const showResults = trimmed.length >= 2;
   const list = showResults ? results : frequent;
+  const isProduct = (food: FoodRecord): boolean => products.some((p) => p.id === food.id);
   const mine = useMemo(() => matchFavorites(favorites, text), [favorites, text]);
 
   return (
@@ -61,6 +87,10 @@ export function FoodSearch({ onPick, favorites, onPickFavorite, onManual }: Food
         autoComplete="off"
         placeholder={he.addMeal.searchPlaceholder}
       />
+
+      <Button variant="ghost" className="-ms-4" onClick={() => onAddProduct(trimmed)}>
+        <Icon name="plus" /> {trimmed ? he.products.fromSearch(trimmed) : he.products.addNew}
+      </Button>
 
       {database.isPending && (
         <p role="status" className="text-muted">
@@ -142,6 +172,32 @@ export function FoodSearch({ onPick, favorites, onPickFavorite, onManual }: Food
         </>
       )}
 
+      {showResults && myProducts.length > 0 && (
+        <>
+          <h3 className="text-base font-semibold text-muted">{he.products.title}</h3>
+          <ul className="divide-y divide-faint overflow-hidden rounded-2xl bg-surface-2">
+            {myProducts.map((product) => (
+              <li key={product.id}>
+                <button
+                  type="button"
+                  onClick={() => onPick(product)}
+                  className="flex min-h-14 w-full items-center justify-between gap-3 px-4 py-2 text-start transition hover:bg-faint/60"
+                >
+                  <span className="min-w-0">
+                    <span className="block break-words text-base font-medium">{product.name}</span>
+                    <span className="block text-sm text-muted">
+                      {he.products.per100(formatInt(product.kcal100), product.basis === 'ml')}
+                      {product.grain && ` · ${he.flour.tag[product.grain]}`}
+                    </span>
+                  </span>
+                  <Icon name="plus" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
       {list.length > 0 && (
         <ul className="divide-y divide-faint overflow-hidden rounded-2xl bg-surface-2">
           {list.map((food) => (
@@ -154,6 +210,7 @@ export function FoodSearch({ onPick, favorites, onPickFavorite, onManual }: Food
                 <span className="min-w-0">
                   <span className="block break-words text-base font-medium">{food.name}</span>
                   <span className="block text-sm text-muted">
+                    {isProduct(food) && `${he.products.tag} · `}
                     {he.addMeal.per100(formatInt(food.kcal100))}
                     {' · '}
                     {food.addedSugar100 === undefined
@@ -171,11 +228,12 @@ export function FoodSearch({ onPick, favorites, onPickFavorite, onManual }: Food
         </ul>
       )}
 
-      {loaded && showResults && results.length === 0 && (
+      {loaded && showResults && results.length === 0 && myProducts.length === 0 && (
         <p role="status" className="text-base">
           {he.addMeal.noResults}
         </p>
       )}
+
       {(database.isError || (loaded && showResults && results.length === 0)) && (
         <Button onClick={() => onManual(trimmed)}>
           {trimmed ? he.addMeal.manualWithName(trimmed) : he.addMeal.manualInstead}

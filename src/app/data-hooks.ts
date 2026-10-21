@@ -8,6 +8,8 @@ import {
   type MealPatch,
   type NewFavorite,
   type NewMeal,
+  type NewProduct,
+  type ProductPatch,
   type Profile,
   type StoredPlan,
 } from '../data';
@@ -35,6 +37,8 @@ export const keys = {
   weights: ['weights'] as const,
   favorites: ['favorites'] as const,
   usage: ['usage'] as const,
+  products: ['products'] as const,
+  productPhoto: (id: string) => ['product-photo', id] as const,
   foodDb: ['food-db'] as const,
 };
 
@@ -70,6 +74,22 @@ export function useWeights() {
 export function useFavorites() {
   const { repos } = useServices();
   return useQuery({ queryKey: keys.favorites, queryFn: () => repos.favorites.list() });
+}
+
+/** The person's own products. Empty while loading or when the server has not had the products update yet. */
+export function useProducts() {
+  const { repos } = useServices();
+  return useQuery({ queryKey: keys.products, queryFn: () => repos.products.list(), retry: 1 });
+}
+
+/** A product's label photo (a data URL), fetched only when it is shown. */
+export function useProductPhoto(id: string | null) {
+  const { repos } = useServices();
+  return useQuery({
+    queryKey: keys.productPhoto(id ?? ''),
+    queryFn: () => repos.products.photo(id ?? ''),
+    enabled: id !== null,
+  });
 }
 
 export function useFoodUsage() {
@@ -231,6 +251,46 @@ export function useReorderFavorites() {
       );
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: keys.favorites }),
+  });
+}
+
+export function useAddProduct() {
+  const { repos } = useServices();
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: (product: NewProduct) => repos.products.add(product),
+    retry: retryTransient,
+    onSuccess: () => invalidate(keys.products),
+  });
+}
+
+export function useUpdateProduct() {
+  const { repos } = useServices();
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: (input: { id: string; baseVersion: number; patch: ProductPatch }) =>
+      repos.products.update(input.id, input.baseVersion, input.patch),
+    onSuccess: () => invalidate(keys.products),
+  });
+}
+
+export function useRemoveProduct() {
+  const { repos } = useServices();
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: (id: string) => repos.products.remove(id),
+    onSuccess: (_, id) => invalidate(keys.products, keys.productPhoto(id)),
+  });
+}
+
+export function useSetProductPhoto() {
+  const { repos } = useServices();
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: (input: { id: string; dataUrl: string | null }) =>
+      repos.products.setPhoto(input.id, input.dataUrl),
+    retry: retryTransient,
+    onSuccess: (_, input) => invalidate(keys.productPhoto(input.id)),
   });
 }
 

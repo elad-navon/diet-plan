@@ -128,7 +128,8 @@ function MealDetails({
 function ItemDetails({ item, foods }: { item: FoodEntry; foods: ReadonlyMap<string, FoodRecord> }) {
   const typed = isManualEntry(item);
   const kind = typed ? manualGrain(item.name)?.kind : foods.get(item.foodId)?.grain;
-  const split = typed && (item.refinedCarbsG !== undefined || item.wholeCarbsG !== undefined);
+  // Typed for a food typed by hand, or kept from the mark of the person's own product.
+  const split = item.refinedCarbsG !== undefined || item.wholeCarbsG !== undefined;
   return (
     <li className="space-y-0.5 rounded-2xl bg-surface-2 p-3">
       <p className="break-words font-medium">{item.name}</p>

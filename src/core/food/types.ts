@@ -29,6 +29,23 @@ export interface FoodRecord {
   swap?: 'bread' | 'pasta' | 'rice' | 'cereal' | 'cracker';
   /** Name of the unit to preselect (one of `units`); absent when the food only has grams. */
   defaultUnit?: string;
+  /** The values are per 100 ml (a drink); absent = per 100 g. Amounts of it are then in ml. */
+  basis?: 'ml';
+}
+
+/** Where a product's added sugar comes from: printed on the label, typed by the person, or estimated. */
+export type AddedSugarBasis = 'label' | 'user' | 'estimate';
+
+/**
+ * A product the person saved from its nutrition label ("המוצרים שלי"). It is a food like those of the database
+ * (values per 100 g or 100 ml, its own units), so it is searched, measured and summed the same way. Its id is
+ * `product:<uuid>`.
+ */
+export interface UserProduct extends FoodRecord {
+  /** How `addedSugar100` was found; null when there is no sugar value at all. */
+  addedSugarBasis: AddedSugarBasis | null;
+  /** Bumped on every change; used to detect edits from another device. */
+  version: number;
 }
 
 export interface FoodDbMeta {

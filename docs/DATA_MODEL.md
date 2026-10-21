@@ -40,6 +40,8 @@
 
 **`favorites`**: `id`, `user_id`, `name 1..80`, `kcal`, מאקרו (null), `added_sugar_g numeric(5,1) null` (מיגרציה `20261004000000`), `refined_carbs_g`/`whole_carbs_g numeric(5,1) null` (מיגרציה `20261004010000`), `items`, `tags text[]` (הכנה להתאמה אישית), `sort_order int null 1..1000` (מיון ידני של הארוחות השמורות, 1 = למעלה; null = לא מוקם ידנית; פונקציה `reorder_favorites(uuid[])`; מיגרציה `20261014000000`), `use_count`, `last_used_at`, `created_from_meal_id`, `version`; תקרה 200.
 
+**`products`** (מיגרציה `20261021000000`): המוצרים של המשתמש מתוויות. `id` (uuid; באפליקציה `product:<uuid>`), `user_id`, `name 1..80`, `kcal_100 0..900`, `protein_100`/`carbs_100`/`fat_100 0..100` (חובה; סכומם עד 105 כש-`basis = 'g'`), `sugar_100`/`fiber_100`/`added_sugar_100 null 0..100`, `added_sugar_basis` (`label`/`user`/`estimate`; חובה כשיש סוכר מוסף), `grain` (`refined`/`whole`/null), `basis` (`g`/`ml`), `units jsonb` (עד 10), `version`; תקרה 500; עדכון דרך `update_product(uuid, int, jsonb)` עם בדיקת גרסה. ארוחה שומרת עותק של הערכים בפריטים שלה (כולל חלוקת הקמח), כך ששינוי או מחיקה של מוצר לא משנים ארוחות. **`product_photos`**: `id` (= המוצר, נמחק איתו), `user_id`, `data` (JPEG כ-data URL, עד 700,000 תווים); כתיבה דרך `set_product_photo(uuid, text)`; לא נרשמת ביומן השינויים.
+
 **`ai_estimates`** (כתיבה: שרת בלבד): `id = request_id`, `user_id`, `input_text`, `input_hash`, `language`, `context jsonb`, `contract_version`, `model`, `prompt_version`, `status ∈ {ok,needs_clarification,not_food,unsupported,failed}`, `error_code`, `response jsonb`, `tokens_in/out`, `latency_ms`, `created_at`.
 
 **`ai_quota_counters`**: `(user_id, bucket text) PK`, `count`; גישה רק דרך `consume_ai_quota / refund_ai_quota / get_ai_quota`. **`ai_global_counters`** לנתיב הגנה גלובלי.

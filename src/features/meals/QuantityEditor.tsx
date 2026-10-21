@@ -50,6 +50,9 @@ export function QuantityEditor({ food, initial, onConfirm, onCancel }: QuantityE
         : { kind: 'unit', unit, count: parsed };
   const result = quantity ? computeEntry(food, quantity) : null;
   const isUnit = unit !== GRAMS;
+  // A drink labelled per 100 ml is measured in ml (the same arithmetic as grams).
+  const ml = food.basis === 'ml';
+  const short = ml ? he.mlShort : he.gramsShort;
 
   const error =
     result && !result.ok
@@ -89,10 +92,10 @@ export function QuantityEditor({ food, initial, onConfirm, onCancel }: QuantityE
           setAmount(value === GRAMS ? '100' : '1');
         }}
         options={[
-          { value: GRAMS, label: he.addMeal.grams },
+          { value: GRAMS, label: ml ? he.addMeal.ml : he.addMeal.grams },
           ...food.units.map((u) => ({
             value: u.name,
-            label: `${u.name} (${formatDecimal(u.grams)} ${he.gramsShort})`,
+            label: `${u.name} (${formatDecimal(u.grams)} ${short})`,
           })),
         ]}
       />
@@ -140,7 +143,7 @@ export function QuantityEditor({ food, initial, onConfirm, onCancel }: QuantityE
             )}
             {isUnit && (
               <span className="block text-sm text-muted">
-                = <bdi>{formatDecimal(result.entry.grams)}</bdi> {he.gramsShort}
+                = <bdi>{formatDecimal(result.entry.grams)}</bdi> {short}
               </span>
             )}
           </>

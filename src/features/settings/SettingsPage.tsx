@@ -15,6 +15,7 @@ import { Button } from '../../ui/Button';
 import { SelectField } from '../../ui/Field';
 import { Sheet } from '../../ui/Sheet';
 import { useToast } from '../../ui/Toast';
+import { ProductsSection } from '../products/ProductsSection';
 import { useRequiredProfile } from '../shell/ProfileGate';
 
 export function SettingsPage() {
@@ -153,6 +154,8 @@ export function SettingsPage() {
           </Button>
         </section>
       )}
+
+      <ProductsSection />
 
       <section aria-labelledby="look-title" className="card p-5">
         <h2 id="look-title" className="mb-2 text-xl font-bold">

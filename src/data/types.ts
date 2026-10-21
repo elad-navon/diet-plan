@@ -1,5 +1,5 @@
 import { type MealRecord, type TargetPlanSnapshot } from '../core/dayview';
-import { type FoodEntry } from '../core/food';
+import { type AddedSugarBasis, type FoodEntry, type UserProduct } from '../core/food';
 import { type Macros, type Plan, type PlanInputs, type Sex } from '../core/nutrition';
 import { type MealSlot } from '../core/schedule';
 import { type Instant, type LocalDate, type Tz } from '../core/time';
@@ -97,6 +97,25 @@ export type NewFavorite = Omit<
   'useCount' | 'lastUsedAt' | 'version' | 'addedSugarG'
 > & { addedSugarG?: number | null };
 
+/** A product to save from its label (values per 100 g or 100 ml). `id` is `product:<uuid>`, made by the client. */
+export interface NewProduct {
+  id: string;
+  name: string;
+  kcal100: number;
+  protein100: number;
+  carbs100: number;
+  fat100: number;
+  sugar100: number | null;
+  fiber100: number | null;
+  addedSugar100: number | null;
+  addedSugarBasis: AddedSugarBasis | null;
+  grain: 'refined' | 'whole' | null;
+  basis: 'g' | 'ml';
+  units: { name: string; grams: number }[];
+}
+
+export type ProductPatch = Omit<NewProduct, 'id'>;
+
 /** What an export file contains (docs/PRODUCT_SPEC.md C.2 "יצוא"). */
 export interface ExportDocument {
   schemaVersion: 1;
@@ -107,6 +126,8 @@ export interface ExportDocument {
   meals: StoredMeal[];
   weights: WeightRecord[];
   favorites: FavoriteRecord[];
+  /** The person's own products (without their photos). */
+  products?: UserProduct[];
 }
 
 export type DataErrorCode =
@@ -178,12 +199,26 @@ export interface FavoriteRepository {
   reorder(ids: readonly string[]): Promise<void>;
 }
 
+export interface ProductRepository {
+  list(): Promise<UserProduct[]>;
+  /** Idempotent: the same `id` again returns the product already saved. */
+  add(product: NewProduct): Promise<UserProduct>;
+  update(id: string, baseVersion: number, patch: ProductPatch): Promise<UserProduct>;
+  /** Deletes the product and its photo. Meals that hold it keep their own copy of its values. */
+  remove(id: string): Promise<void>;
+  /** The label photo (a JPEG data URL), or null when there is none. */
+  photo(id: string): Promise<string | null>;
+  /** Puts or replaces the label photo; null removes it. */
+  setPhoto(id: string, dataUrl: string | null): Promise<void>;
+}
+
 export interface Repositories {
   profile: ProfileRepository;
   plans: PlanRepository;
   meals: MealRepository;
   weights: WeightRepository;
   favorites: FavoriteRepository;
+  products: ProductRepository;
   exportAll(): Promise<ExportDocument>;
   /** Deletes everything stored for the user. */
   reset(): Promise<void>;
