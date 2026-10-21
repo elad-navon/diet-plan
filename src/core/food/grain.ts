@@ -28,7 +28,7 @@ const CEREAL_GROUP = '57';
 const BAKERY_GROUPS = new Set(['51', '52', '53', '54', '55', '58']);
 /** Groups where a high fiber content means the flour was not refined. */
 const FIBER_DECIDES_GROUPS = new Set(['51', '52', '54', '57']);
-const WHOLE_FIBER_PER_100 = 7;
+export const WHOLE_FIBER_PER_100 = 7;
 
 /** "מלא" as a word of its own ("מחיטה מלאה", "קמח מלא/לבן"), not a piece of another word. */
 const SAYS_WHOLE_WORD = /(?<![א-ת])מלא(?:ה|ים)?(?![א-ת])/;
@@ -137,12 +137,18 @@ const round1 = (value: number): number => Math.round(value * 10) / 10;
 
 /** The marked foods of a meal, looked up by food id; foods of no kind (and unknown ones) add nothing. */
 export function mealGrainCarbs(
-  items: readonly Pick<FoodEntry, 'foodId' | 'carbsG'>[],
+  items: readonly Pick<FoodEntry, 'foodId' | 'carbsG' | 'refinedCarbsG' | 'wholeCarbsG'>[],
   foods: ReadonlyMap<string, FoodRecord>,
 ): GrainTotals {
   let refined = 0;
   let whole = 0;
   for (const item of items) {
+    // A product of the person's own carries its split; a database food is looked up.
+    if (item.refinedCarbsG !== undefined || item.wholeCarbsG !== undefined) {
+      refined += item.refinedCarbsG ?? 0;
+      whole += item.wholeCarbsG ?? 0;
+      continue;
+    }
     const grain = foods.get(item.foodId)?.grain;
     if (grain === 'refined') refined += item.carbsG;
     else if (grain === 'whole') whole += item.carbsG;
@@ -206,6 +212,9 @@ function partsOfItem(item: GrainItem, foods: ReadonlyMap<string, FoodRecord>): G
       namedPart(item.name, item.carbsG)
     );
   }
+  // A product of the person's own carries the split from its mark (database foods never do).
+  const kept = typedSplit(item.name, item.refinedCarbsG, item.wholeCarbsG);
+  if (kept) return kept;
   const food = foods.get(item.foodId);
   return food?.grain ? [{ kind: food.grain, swap: food.swap ?? null, carbsG: item.carbsG }] : [];
 }

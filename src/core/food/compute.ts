@@ -29,9 +29,14 @@ export interface FoodEntry {
   fiberG?: number;
   /** A food typed by hand without its macros (the three macro fields are then 0, not real values). */
   noMacros?: true;
-  /** A food typed by hand: how its carbohydrate splits into white flour and whole grains (grams), when typed. */
+  /**
+   * How its carbohydrate splits into white flour and whole grains (grams): typed for a food typed by hand, and kept
+   * from the product's mark for a product of the person's own (so a later change of the product changes no meal).
+   */
   refinedCarbsG?: number;
   wholeCarbsG?: number;
+  /** The amount is in ml, not grams (a product labelled per 100 ml). */
+  ml?: true;
 }
 
 /** Ids of foods typed by hand inside a meal start with this; they are not in the food database. */
@@ -39,6 +44,11 @@ const MANUAL_FOOD_PREFIX = 'manual:';
 
 export const isManualEntry = (entry: Pick<FoodEntry, 'foodId'>): boolean =>
   entry.foodId.startsWith(MANUAL_FOOD_PREFIX);
+
+/** Ids of the person's own products (saved from a label) start with this; they are not in the food database. */
+export const PRODUCT_PREFIX = 'product:';
+
+export const isProductId = (foodId: string): boolean => foodId.startsWith(PRODUCT_PREFIX);
 
 /**
  * A food typed by hand (name, calories, optionally macros and added sugar) as an item of a meal, next to foods
@@ -119,6 +129,9 @@ export function computeEntry(food: FoodRecord, quantity: Quantity): EntryResult 
   }
 
   const scale = grams / 100;
+  const carbsG = round1(food.carbs100 * scale);
+  // A product's flour mark is kept on the item itself: the product may change or go, the meal must not.
+  const own = isProductId(food.id);
   return {
     ok: true,
     entry: {
@@ -128,13 +141,16 @@ export function computeEntry(food: FoodRecord, quantity: Quantity): EntryResult 
       ...(unit !== undefined && count !== undefined ? { unit, count } : {}),
       kcal: roundTo(food.kcal100 * scale, 0),
       proteinG: round1(food.protein100 * scale),
-      carbsG: round1(food.carbs100 * scale),
+      carbsG,
       fatG: round1(food.fat100 * scale),
       ...(food.sugar100 !== undefined ? { sugarG: round1(food.sugar100 * scale) } : {}),
       ...(food.addedSugar100 !== undefined
         ? { addedSugarG: round1(food.addedSugar100 * scale) }
         : {}),
       ...(food.fiber100 !== undefined ? { fiberG: round1(food.fiber100 * scale) } : {}),
+      ...(own && food.grain === 'refined' ? { refinedCarbsG: carbsG } : {}),
+      ...(own && food.grain === 'whole' ? { wholeCarbsG: carbsG } : {}),
+      ...(food.basis === 'ml' ? { ml: true as const } : {}),
     },
   };
 }

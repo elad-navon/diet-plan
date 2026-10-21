@@ -8,11 +8,14 @@ import {
   type InputError,
 } from '../../core/contracts';
 import { formatInstant, type Clock } from '../../core/time';
+import { checkedProduct } from '../product-check';
 import {
   DataError,
   type ExportDocument,
   type MealPatch,
   type NewMeal,
+  type NewProduct,
+  type ProductPatch,
   type Repositories,
 } from '../types';
 import { toDataError } from './errors';
@@ -23,6 +26,9 @@ import {
   mealFromRow,
   planFromRow,
   planToPayload,
+  productColumns,
+  productFromRow,
+  productUuid,
   profileFromRow,
   profileToPayload,
   weightFromRow,
@@ -311,14 +317,71 @@ export function createSupabaseRepositories(options: {
         }),
     },
 
+    products: {
+      list: () =>
+        guard(async () =>
+          (await gateway.select('products', { order: ['created_at', 'id'] })).map(productFromRow),
+        ),
+      add: (input: NewProduct) =>
+        guard(async () => {
+          const fields = checkedProduct(input.id, input, 1);
+          const uuid = productUuid(input.id);
+          try {
+            return productFromRow(
+              await gateway.insert('products', { id: uuid, ...productColumns(fields) }),
+            );
+          } catch (error) {
+            // A retry of the same request: the product is already there, so hand it back.
+            if (error instanceof ServerError && error.sqlState === '23505') {
+              const [existing] = await gateway.select('products', {
+                eq: { id: uuid },
+                order: ['id'],
+              });
+              if (existing) return productFromRow(existing);
+              throw new DataError('id_conflict');
+            }
+            throw error;
+          }
+        }),
+      update: (id: string, baseVersion: number, patch: ProductPatch) =>
+        guard(async () => {
+          const fields = checkedProduct(id, patch, baseVersion);
+          return productFromRow(
+            await rpcRow('update_product', {
+              p_id: productUuid(id),
+              p_base_version: baseVersion,
+              p: productColumns(fields),
+            }),
+          );
+        }),
+      // The photo goes with it (foreign key).
+      remove: (id) => guard(() => gateway.remove('products', productUuid(id))),
+      photo: (id) =>
+        guard(async () => {
+          const [row] = await gateway.select('product_photos', {
+            eq: { id: productUuid(id) },
+            order: ['id'],
+          });
+          const data = row?.['data'];
+          return typeof data === 'string' ? data : null;
+        }),
+      setPhoto: (id, dataUrl) =>
+        guard(async () => {
+          if (dataUrl === null) await gateway.remove('product_photos', productUuid(id));
+          else await gateway.rpc('set_product_photo', { p_id: productUuid(id), p_data: dataUrl });
+        }),
+    },
+
     exportAll: () =>
       guard(async (): Promise<ExportDocument> => {
-        const [profile, plans, meals, weights, favorites] = await Promise.all([
+        const [profile, plans, meals, weights, favorites, products] = await Promise.all([
           repos.profile.get(),
           repos.plans.list(),
           repos.meals.listRange(FIRST_DAY, LAST_DAY),
           repos.weights.list(),
           repos.favorites.list(),
+          // A server that has not had the products update yet still exports everything else.
+          repos.products.list().catch(() => []),
         ]);
         return {
           schemaVersion: 1,
@@ -329,6 +392,7 @@ export function createSupabaseRepositories(options: {
           meals,
           weights,
           favorites,
+          products,
         };
       }),
 

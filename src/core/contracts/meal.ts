@@ -24,7 +24,8 @@ export const MEAL_LIMITS = {
 
 export const WEIGHT_LIMITS = { minKg: 30, maxKg: 350, jumpConfirmKg: 3 } as const;
 
-export type InputField = 'name' | 'kcal' | 'macros' | 'sugar' | 'grain' | 'eatenAt' | 'weight';
+export type InputField =
+  'name' | 'kcal' | 'macros' | 'sugar' | 'grain' | 'eatenAt' | 'weight' | 'fiber' | 'units';
 
 export type InputErrorCode =
   | 'name_required'
@@ -44,7 +45,11 @@ export type InputErrorCode =
   | 'time_in_future'
   | 'time_too_old'
   | 'weight_invalid'
-  | 'weight_out_of_range';
+  | 'weight_out_of_range'
+  | 'kcal100_out_of_range'
+  | 'macro100_out_of_range'
+  | 'macros_above_100'
+  | 'units_invalid';
 
 export type InputWarning = 'kcal_large' | 'macro_kcal_mismatch' | 'weight_jump';
 

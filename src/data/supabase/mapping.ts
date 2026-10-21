@@ -1,4 +1,12 @@
-import { type FoodEntry } from '../../core/food';
+import {
+  productFoodId,
+  productUuid,
+  toUserProduct,
+  type AddedSugarBasis,
+  type FoodEntry,
+  type ProductFields,
+  type UserProduct,
+} from '../../core/food';
 import {
   type MacroState,
   type Macros,
@@ -207,3 +215,59 @@ export function favoriteFromRow(row: Row): FavoriteRecord {
     version: number(row, 'version'),
   };
 }
+
+const SUGAR_BASES = ['label', 'user', 'estimate'] as const satisfies readonly AddedSugarBasis[];
+const GRAINS = ['refined', 'whole'] as const;
+const BASES = ['g', 'ml'] as const;
+
+function oneOfOrNull<T extends string>(row: Row, column: string, allowed: readonly T[]): T | null {
+  return row[column] === null || row[column] === undefined ? null : oneOf(row, column, allowed);
+}
+
+function unitsOf(row: Row): { name: string; grams: number }[] {
+  return list(row, 'units').map((unit) => {
+    if (typeof unit !== 'object' || unit === null) throw bad('units');
+    const { name, grams } = unit as Record<string, unknown>;
+    if (typeof name !== 'string' || typeof grams !== 'number' || !Number.isFinite(grams)) {
+      throw bad('units');
+    }
+    return { name, grams };
+  });
+}
+
+export function productFromRow(row: Row): UserProduct {
+  return toUserProduct({
+    id: productFoodId(text(row, 'id')),
+    name: text(row, 'name'),
+    kcal100: number(row, 'kcal_100'),
+    protein100: number(row, 'protein_100'),
+    carbs100: number(row, 'carbs_100'),
+    fat100: number(row, 'fat_100'),
+    sugar100: numberOrNull(row, 'sugar_100'),
+    fiber100: numberOrNull(row, 'fiber_100'),
+    addedSugar100: numberOrNull(row, 'added_sugar_100'),
+    addedSugarBasis: oneOfOrNull(row, 'added_sugar_basis', SUGAR_BASES),
+    grain: oneOfOrNull(row, 'grain', GRAINS),
+    basis: oneOf(row, 'basis', BASES),
+    units: unitsOf(row),
+    version: number(row, 'version'),
+  });
+}
+
+/** The columns of a product (without its id and version). */
+export const productColumns = (product: ProductFields) => ({
+  name: product.name,
+  kcal_100: product.kcal100,
+  protein_100: product.protein100,
+  carbs_100: product.carbs100,
+  fat_100: product.fat100,
+  sugar_100: product.sugar100,
+  fiber_100: product.fiber100,
+  added_sugar_100: product.addedSugar100,
+  added_sugar_basis: product.addedSugarBasis,
+  grain: product.grain,
+  basis: product.basis,
+  units: product.units,
+});
+
+export { productUuid };

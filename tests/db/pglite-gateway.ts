@@ -12,7 +12,7 @@ import { type Session } from './harness';
  * repository code under test sees what it will see in production.
  */
 
-const IDENTIFIER = /^[a-z_]+$/;
+const IDENTIFIER = /^[a-z_][a-z0-9_]*$/;
 
 function identifier(name: string): string {
   if (!IDENTIFIER.test(name)) throw new Error(`unsafe identifier: ${name}`);

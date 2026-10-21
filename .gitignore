@@ -38,3 +38,6 @@ design/
 *.keystore
 keystore.properties
 *-keystore.properties
+
+# the user's own label photos used to try reading labels (their Lens texts are in tests/fixtures/labels)
+labels-test/

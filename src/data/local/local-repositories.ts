@@ -7,7 +7,10 @@ import {
   validateWeightInput,
   type InputError,
 } from '../../core/contracts';
+import { PRODUCT_LIMITS } from '../../core/contracts';
+import { toUserProduct, type UserProduct } from '../../core/food';
 import { localDateOf, type Clock, type Instant, type LocalDate } from '../../core/time';
+import { checkedProduct } from '../product-check';
 import {
   DataError,
   type ExportDocument,
@@ -15,6 +18,8 @@ import {
   type MealPatch,
   type NewFavorite,
   type NewMeal,
+  type NewProduct,
+  type ProductPatch,
   type Profile,
   type Repositories,
   type StoredMeal,
@@ -43,6 +48,8 @@ interface Doc {
   meals: StoredMeal[];
   weights: WeightRecord[];
   favorites: FavoriteRecord[];
+  /** Absent in data saved before products existed. */
+  products?: UserProduct[];
 }
 
 const emptyDoc = (): Doc => ({
@@ -52,6 +59,7 @@ const emptyDoc = (): Doc => ({
   meals: [],
   weights: [],
   favorites: [],
+  products: [],
 });
 
 function isDoc(value: unknown): value is Doc {
@@ -85,6 +93,7 @@ class Store {
         parsed.favorites = parsed.favorites.map((favorite) =>
           favorite.addedSugarG === undefined ? { ...favorite, addedSugarG: null } : favorite,
         );
+        if (!Array.isArray(parsed.products)) parsed.products = [];
         return parsed;
       }
     } catch {
@@ -135,6 +144,9 @@ export function createLocalRepositories(options: {
 }): Repositories {
   const store = new Store(options.storage);
   const { clock } = options;
+  // Label photos are not written to this device's storage (it holds only a few MB in all): they stay for the
+  // session. Saved in an account, they are kept on the server.
+  const photos = new Map<string, string>();
 
   const requireProfile = (doc: Doc): Profile => {
     if (!doc.profile) throw new DataError('no_profile');
@@ -486,6 +498,50 @@ export function createLocalRepositories(options: {
         }),
     },
 
+    products: {
+      list: () => run(() => [...(store.load().products ?? [])]),
+      add: (input: NewProduct) =>
+        run(() => {
+          const doc = store.load();
+          const products = doc.products ?? [];
+          const existing = products.find((p) => p.id === input.id);
+          if (existing) return existing; // idempotent
+          const product = toUserProduct(checkedProduct(input.id, input, 1));
+          if (products.length >= PRODUCT_LIMITS.productsMax) throw new DataError('limit_reached');
+          doc.products = [...products, product];
+          store.save(doc);
+          return product;
+        }),
+      update: (id: string, baseVersion: number, patch: ProductPatch) =>
+        run(() => {
+          const doc = store.load();
+          const products = doc.products ?? [];
+          const current = products.find((p) => p.id === id);
+          if (!current) throw new DataError('not_found');
+          if (current.version !== baseVersion) throw new DataError('version_conflict');
+          const product = toUserProduct(checkedProduct(id, patch, current.version + 1));
+          doc.products = products.map((p) => (p.id === id ? product : p));
+          store.save(doc);
+          return product;
+        }),
+      remove: (id) =>
+        run(() => {
+          const doc = store.load();
+          doc.products = (doc.products ?? []).filter((p) => p.id !== id);
+          photos.delete(id);
+          store.save(doc);
+        }),
+      photo: (id) => run(() => photos.get(id) ?? null),
+      setPhoto: (id, dataUrl) =>
+        run(() => {
+          if (!(store.load().products ?? []).some((p) => p.id === id)) {
+            throw new DataError('not_found');
+          }
+          if (dataUrl === null) photos.delete(id);
+          else photos.set(id, dataUrl);
+        }),
+    },
+
     exportAll: () =>
       run((): ExportDocument => {
         const doc = store.load();
@@ -498,9 +554,14 @@ export function createLocalRepositories(options: {
           meals: doc.meals,
           weights: doc.weights,
           favorites: doc.favorites,
+          products: doc.products ?? [],
         };
       }),
 
-    reset: () => run(() => store.clear()),
+    reset: () =>
+      run(() => {
+        photos.clear();
+        store.clear();
+      }),
   };
 }

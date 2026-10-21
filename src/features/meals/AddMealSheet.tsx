@@ -6,6 +6,7 @@ import {
   useFavorites,
   useFoodDb,
   useMarkFavoriteUsed,
+  useProducts,
   useRemoveFavorite,
   useUpdateMeal,
 } from '../../app/data-hooks';
@@ -43,6 +44,8 @@ import { Button } from '../../ui/Button';
 import { SelectField, TextField } from '../../ui/Field';
 import { Icon } from '../../ui/Icon';
 import { Sheet } from '../../ui/Sheet';
+import { useToast } from '../../ui/Toast';
+import { ProductForm } from '../products/ProductForm';
 import {
   favoriteKey,
   isSavedMeal,
@@ -130,6 +133,8 @@ function MealForm({
 }: AddMealSheetProps & { onRestart: () => void }) {
   const database = useFoodDb(false);
   const favorites = useFavorites().data ?? [];
+  const products = useProducts().data ?? [];
+  const toast = useToast();
   const addMeal = useAddMeal();
   const updateMeal = useUpdateMeal();
   const addFavorite = useAddFavorite();
@@ -152,6 +157,8 @@ function MealForm({
   const [items, setItems] = useState<FoodEntry[]>(seedItems);
   const [pickedFood, setPickedFood] = useState<FoodRecord | null>(null);
   const [editIndex, setEditIndex] = useState<number | null>(null);
+  /** A new product being saved from its label (the name typed in the search), or null. */
+  const [newProductName, setNewProductName] = useState<string | null>(null);
 
   const [name, setName] = useState(draft?.name ?? seed?.name ?? '');
   const [kcalText, setKcalText] = useState(draft?.kcalText ?? (seed ? String(seed.kcal) : ''));
@@ -657,6 +664,23 @@ function MealForm({
     }
   }
 
+  // --- a new product from its label: once saved, its quantity is chosen like any food's
+  if (newProductName !== null) {
+    return (
+      <ProductForm
+        initialName={newProductName}
+        products={products}
+        saveLabel={he.products.saveAndAdd}
+        onCancel={() => setNewProductName(null)}
+        onSaved={(product, { photoFailed }) => {
+          setNewProductName(null);
+          if (photoFailed) toast.show({ message: he.products.photoNotSaved });
+          startQuantity(product, null);
+        }}
+      />
+    );
+  }
+
   // --- while choosing a quantity, nothing else competes for attention
   if (pickedFood) {
     const initial = editIndex !== null ? items[editIndex] : undefined;
@@ -732,6 +756,8 @@ function MealForm({
             setName(typed);
             setMode('manual');
           }}
+          products={products}
+          onAddProduct={setNewProductName}
         />
       )}
 
@@ -852,7 +878,9 @@ function MealForm({
           </h3>
           <ul className="divide-y divide-faint overflow-hidden rounded-2xl bg-surface-2">
             {items.map((item, index) => {
-              const food = database.data?.db.foods.find((f) => f.id === item.foodId);
+              const food =
+                database.data?.db.foods.find((f) => f.id === item.foodId) ??
+                products.find((p) => p.id === item.foodId);
               return (
                 <li
                   key={`${item.foodId}-${index}`}
