@@ -69,9 +69,12 @@ test('PROD-01: save a product from its label text, eat two slices, find it again
   await expect(page.getByText(he.today.saved)).toBeVisible();
   await expect(remaining(page)).toHaveAttribute('aria-label', /1,255/); // 1,390 - 135
 
-  // Next time it is the first thing the search offers.
+  // Next time it is the first thing the window offers, before anything is typed...
   await openNewMeal(page);
   const again = page.getByRole('dialog', { name: he.addMeal.title });
+  await expect(again.getByRole('heading', { name: he.products.title })).toBeVisible();
+  await expect(again.getByRole('button', { name: /לחם אנג׳ל/ }).first()).toBeVisible();
+  // ...and while searching.
   await again.getByLabel(he.addMeal.searchLabel).fill('אנג׳ל');
   await expect(again.getByRole('heading', { name: he.products.title })).toBeVisible();
   await expect(again.getByRole('button', { name: /לחם אנג׳ל/ }).first()).toBeVisible();

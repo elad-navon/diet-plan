@@ -46,12 +46,11 @@ export function FoodSearch({
   const frequent = useMemo(() => {
     if (!loaded || !usage || usage.size === 0) return [];
     const byId = new Map<string, FoodRecord>(loaded.db.foods.map((food) => [food.id, food]));
-    for (const product of products) byId.set(product.id, product);
     return [...usage.entries()]
       .sort((a, b) => b[1] - a[1])
       .slice(0, MAX_FREQUENT)
       .flatMap(([id]) => byId.get(id) ?? []);
-  }, [loaded, usage, products]);
+  }, [loaded, usage]);
 
   const productIndex = useMemo(() => buildFoodIndex(products, NO_POPULAR), [products]);
   const myProducts = useMemo(
@@ -74,7 +73,21 @@ export function FoodSearch({
   const trimmed = text.trim();
   const showResults = trimmed.length >= 2;
   const list = showResults ? results : frequent;
-  const isProduct = (food: FoodRecord): boolean => products.some((p) => p.id === food.id);
+  // The person's own products come first: all of them (the most eaten first) before anything is typed, the
+  // matching ones once it is.
+  const shownProducts = useMemo(
+    () =>
+      showResults
+        ? myProducts
+        : [...products]
+            .sort(
+              (a, b) =>
+                (usage?.get(b.id) ?? 0) - (usage?.get(a.id) ?? 0) ||
+                a.name.localeCompare(b.name, 'he'),
+            )
+            .slice(0, MAX_PRODUCTS),
+    [showResults, myProducts, products, usage],
+  );
   const mine = useMemo(() => matchFavorites(favorites, text), [favorites, text]);
 
   return (
@@ -92,6 +105,32 @@ export function FoodSearch({
         <Icon name="plus" /> {trimmed ? he.products.fromSearch(trimmed) : he.products.addNew}
       </Button>
 
+      {shownProducts.length > 0 && (
+        <>
+          <h3 className="text-base font-semibold text-muted">{he.products.title}</h3>
+          <ul className="divide-y divide-faint overflow-hidden rounded-2xl bg-surface-2">
+            {shownProducts.map((product) => (
+              <li key={product.id}>
+                <button
+                  type="button"
+                  onClick={() => onPick(product)}
+                  className="flex min-h-14 w-full items-center justify-between gap-3 px-4 py-2 text-start transition hover:bg-faint/60"
+                >
+                  <span className="min-w-0">
+                    <span className="block break-words text-base font-medium">{product.name}</span>
+                    <span className="block text-sm text-muted">
+                      {he.products.per100(formatInt(product.kcal100), product.basis === 'ml')}
+                      {product.grain && ` · ${he.flour.tag[product.grain]}`}
+                    </span>
+                  </span>
+                  <Icon name="plus" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
       {database.isPending && (
         <p role="status" className="text-muted">
           {he.addMeal.foodLoading}
@@ -103,7 +142,7 @@ export function FoodSearch({
         </p>
       )}
 
-      {loaded && !showResults && frequent.length === 0 && (
+      {loaded && !showResults && frequent.length === 0 && products.length === 0 && (
         <p className="text-muted">{he.addMeal.hintType}</p>
       )}
       {loaded && !showResults && frequent.length > 0 && (
@@ -172,32 +211,6 @@ export function FoodSearch({
         </>
       )}
 
-      {showResults && myProducts.length > 0 && (
-        <>
-          <h3 className="text-base font-semibold text-muted">{he.products.title}</h3>
-          <ul className="divide-y divide-faint overflow-hidden rounded-2xl bg-surface-2">
-            {myProducts.map((product) => (
-              <li key={product.id}>
-                <button
-                  type="button"
-                  onClick={() => onPick(product)}
-                  className="flex min-h-14 w-full items-center justify-between gap-3 px-4 py-2 text-start transition hover:bg-faint/60"
-                >
-                  <span className="min-w-0">
-                    <span className="block break-words text-base font-medium">{product.name}</span>
-                    <span className="block text-sm text-muted">
-                      {he.products.per100(formatInt(product.kcal100), product.basis === 'ml')}
-                      {product.grain && ` · ${he.flour.tag[product.grain]}`}
-                    </span>
-                  </span>
-                  <Icon name="plus" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-
       {list.length > 0 && (
         <ul className="divide-y divide-faint overflow-hidden rounded-2xl bg-surface-2">
           {list.map((food) => (
@@ -210,7 +223,6 @@ export function FoodSearch({
                 <span className="min-w-0">
                   <span className="block break-words text-base font-medium">{food.name}</span>
                   <span className="block text-sm text-muted">
-                    {isProduct(food) && `${he.products.tag} · `}
                     {he.addMeal.per100(formatInt(food.kcal100))}
                     {' · '}
                     {food.addedSugar100 === undefined
@@ -228,7 +240,7 @@ export function FoodSearch({
         </ul>
       )}
 
-      {loaded && showResults && results.length === 0 && myProducts.length === 0 && (
+      {loaded && showResults && results.length === 0 && shownProducts.length === 0 && (
         <p role="status" className="text-base">
           {he.addMeal.noResults}
         </p>
