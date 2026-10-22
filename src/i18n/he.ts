@@ -247,7 +247,6 @@ export const he = {
     manualInstead: 'הוסף ידנית',
     manualWithName: (name: string) => `הוסף "${name}" ידנית`,
     hintType: 'התחל להקליד כדי לחפש במאגר התזונה הלאומי.',
-    frequent: 'מזונות שאכלת לאחרונה',
     foodLoading: 'טוען את מאגר המזון…',
     foodError: 'לא הצלחנו לטעון את מאגר המזון. אפשר להזין ידנית.',
     quantity: 'כמות',

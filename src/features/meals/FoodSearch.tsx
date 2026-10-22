@@ -22,7 +22,6 @@ interface FoodSearchProps {
 }
 
 const MAX_RESULTS = 15;
-const MAX_FREQUENT = 8;
 const MAX_PRODUCTS = 8;
 /** The person's products are searched on their own, with no "popular foods" boost. */
 const NO_POPULAR: ReadonlySet<string> = new Set();
@@ -42,15 +41,6 @@ export function FoodSearch({
   const database = useFoodDb();
   const usage = useFoodUsage().data;
   const loaded = database.data;
-
-  const frequent = useMemo(() => {
-    if (!loaded || !usage || usage.size === 0) return [];
-    const byId = new Map<string, FoodRecord>(loaded.db.foods.map((food) => [food.id, food]));
-    return [...usage.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, MAX_FREQUENT)
-      .flatMap(([id]) => byId.get(id) ?? []);
-  }, [loaded, usage]);
 
   const productIndex = useMemo(() => buildFoodIndex(products, NO_POPULAR), [products]);
   const myProducts = useMemo(
@@ -72,7 +62,7 @@ export function FoodSearch({
 
   const trimmed = text.trim();
   const showResults = trimmed.length >= 2;
-  const list = showResults ? results : frequent;
+  const list = showResults ? results : [];
   // The person's own products come first: all of them (the most eaten first) before anything is typed, the
   // matching ones once it is.
   const shownProducts = useMemo(
@@ -142,11 +132,8 @@ export function FoodSearch({
         </p>
       )}
 
-      {loaded && !showResults && frequent.length === 0 && products.length === 0 && (
+      {loaded && !showResults && products.length === 0 && (
         <p className="text-muted">{he.addMeal.hintType}</p>
-      )}
-      {loaded && !showResults && frequent.length > 0 && (
-        <h3 className="text-base font-semibold text-muted">{he.addMeal.frequent}</h3>
       )}
 
       {mine.length > 0 && (
