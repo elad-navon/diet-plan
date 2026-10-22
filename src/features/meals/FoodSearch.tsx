@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { buildFoodIndex, searchFoods, type FoodRecord, type UserProduct } from '../../core/food';
+import { searchFoods, type FoodRecord, type UserProduct } from '../../core/food';
 import { useFoodDb, useFoodUsage, useRemoveFavorite } from '../../app/data-hooks';
 import { formatDecimal, formatInt, he } from '../../i18n/he';
 import { Button } from '../../ui/Button';
@@ -22,9 +22,6 @@ interface FoodSearchProps {
 }
 
 const MAX_RESULTS = 15;
-const MAX_PRODUCTS = 8;
-/** The person's products are searched on their own, with no "popular foods" boost. */
-const NO_POPULAR: ReadonlySet<string> = new Set();
 
 /** Search the national nutrition database in Hebrew; foods the user eats often come first. */
 export function FoodSearch({
@@ -42,16 +39,6 @@ export function FoodSearch({
   const usage = useFoodUsage().data;
   const loaded = database.data;
 
-  const productIndex = useMemo(() => buildFoodIndex(products, NO_POPULAR), [products]);
-  const myProducts = useMemo(
-    () =>
-      searchFoods(productIndex, text, {
-        limit: MAX_PRODUCTS,
-        ...(usage ? { usage } : {}),
-      }) as UserProduct[],
-    [productIndex, text, usage],
-  );
-
   const results = useMemo(
     () =>
       loaded
@@ -63,20 +50,10 @@ export function FoodSearch({
   const trimmed = text.trim();
   const showResults = trimmed.length >= 2;
   const list = showResults ? results : [];
-  // The person's own products come first: all of them (the most eaten first) before anything is typed, the
-  // matching ones once it is.
+  // The person's own products always come first, all of them, in alphabetical order.
   const shownProducts = useMemo(
-    () =>
-      showResults
-        ? myProducts
-        : [...products]
-            .sort(
-              (a, b) =>
-                (usage?.get(b.id) ?? 0) - (usage?.get(a.id) ?? 0) ||
-                a.name.localeCompare(b.name, 'he'),
-            )
-            .slice(0, MAX_PRODUCTS),
-    [showResults, myProducts, products, usage],
+    () => [...products].sort((a, b) => a.name.localeCompare(b.name, 'he')),
+    [products],
   );
   const mine = useMemo(() => matchFavorites(favorites, text), [favorites, text]);
 
@@ -227,7 +204,7 @@ export function FoodSearch({
         </ul>
       )}
 
-      {loaded && showResults && results.length === 0 && shownProducts.length === 0 && (
+      {loaded && showResults && results.length === 0 && (
         <p role="status" className="text-base">
           {he.addMeal.noResults}
         </p>
